@@ -1,4 +1,3 @@
-
 import { useState } from "react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { Calendar, TrendingUp, Users, CreditCard, Download, Filter } from "lucide-react"
@@ -116,15 +115,15 @@ export default function LaporanIuran() {
         </div>
       </div>
 
-      {/* Filter Controls */}
+      {/* Filter Controls - Updated with better dark mode support */}
       <div className="flex items-center space-x-4 p-4 bg-card rounded-lg border">
         <Filter className="h-5 w-5 text-muted-foreground" />
         <div className="flex items-center space-x-2">
-          <label className="text-sm font-medium">Periode:</label>
+          <label className="text-sm font-medium text-foreground">Periode:</label>
           <select
             value={filterPeriod}
             onChange={(e) => setFilterPeriod(e.target.value)}
-            className="p-2 border rounded-md text-sm"
+            className="custom-select text-sm"
           >
             <option value="2024">2024</option>
             <option value="2023">2023</option>
@@ -132,11 +131,11 @@ export default function LaporanIuran() {
           </select>
         </div>
         <div className="flex items-center space-x-2">
-          <label className="text-sm font-medium">Jenis Iuran:</label>
+          <label className="text-sm font-medium text-foreground">Jenis Iuran:</label>
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="p-2 border rounded-md text-sm"
+            className="custom-select text-sm"
           >
             <option value="semua">Semua Jenis</option>
             <option value="sampah">Iuran Sampah</option>
@@ -233,8 +232,8 @@ export default function LaporanIuran() {
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${
                     transaction.status === 'Lunas' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                   }`}>
                     {transaction.status}
                   </span>

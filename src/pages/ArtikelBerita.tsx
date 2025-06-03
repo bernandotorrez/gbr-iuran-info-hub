@@ -1,8 +1,8 @@
-
 import { useState } from "react"
 import { Plus, Search, Edit2, Trash2, Eye, Calendar, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
@@ -145,7 +145,6 @@ export default function ArtikelBerita() {
   const openView = (artikel: Artikel) => {
     setSelectedArtikel(artikel)
     setIsViewOpen(true)
-    // Increment views
     const updated = artikelList.map(a => a.id === artikel.id ? { ...a, views: a.views + 1 } : a)
     setArtikelList(updated)
   }
@@ -170,7 +169,7 @@ export default function ArtikelBerita() {
               Tulis Artikel
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl bg-card text-card-foreground">
             <DialogHeader>
               <DialogTitle>Tulis Artikel Baru</DialogTitle>
             </DialogHeader>
@@ -190,7 +189,7 @@ export default function ArtikelBerita() {
                   id="kategori"
                   value={formData.kategori}
                   onChange={(e) => setFormData({...formData, kategori: e.target.value})}
-                  className="w-full p-2 border rounded-md"
+                  className="custom-select"
                 >
                   <option value="">-- Pilih Kategori --</option>
                   {kategoriOptions.map(kategori => (
@@ -200,13 +199,12 @@ export default function ArtikelBerita() {
               </div>
               <div>
                 <Label htmlFor="konten">Konten Artikel</Label>
-                <textarea
+                <Textarea
                   id="konten"
                   value={formData.konten}
                   onChange={(e) => setFormData({...formData, konten: e.target.value})}
                   placeholder="Tulis konten artikel di sini..."
                   rows={6}
-                  className="w-full p-2 border rounded-md"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -235,7 +233,7 @@ export default function ArtikelBerita() {
                   id="status"
                   value={formData.status}
                   onChange={(e) => setFormData({...formData, status: e.target.value as any})}
-                  className="w-full p-2 border rounded-md"
+                  className="custom-select"
                 >
                   <option value="draft">Draft</option>
                   <option value="published">Publikasi</option>
@@ -317,10 +315,10 @@ export default function ArtikelBerita() {
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${
                     artikel.status === 'published' 
-                      ? 'bg-green-100 text-green-800'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                       : artikel.status === 'draft'
-                      ? 'bg-yellow-100 text-yellow-800' 
-                      : 'bg-gray-100 text-gray-800'
+                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' 
+                      : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
                   }`}>
                     {artikel.status}
                   </span>
@@ -338,7 +336,7 @@ export default function ArtikelBerita() {
                       variant="ghost" 
                       size="sm" 
                       onClick={() => handleDelete(artikel.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -352,7 +350,7 @@ export default function ArtikelBerita() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl bg-card text-card-foreground">
           <DialogHeader>
             <DialogTitle>Edit Artikel</DialogTitle>
           </DialogHeader>
@@ -371,7 +369,7 @@ export default function ArtikelBerita() {
                 id="edit-kategori"
                 value={formData.kategori}
                 onChange={(e) => setFormData({...formData, kategori: e.target.value})}
-                className="w-full p-2 border rounded-md"
+                className="custom-select"
               >
                 <option value="">-- Pilih Kategori --</option>
                 {kategoriOptions.map(kategori => (
@@ -381,12 +379,11 @@ export default function ArtikelBerita() {
             </div>
             <div>
               <Label htmlFor="edit-konten">Konten Artikel</Label>
-              <textarea
+              <Textarea
                 id="edit-konten"
                 value={formData.konten}
                 onChange={(e) => setFormData({...formData, konten: e.target.value})}
                 rows={6}
-                className="w-full p-2 border rounded-md"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -413,7 +410,7 @@ export default function ArtikelBerita() {
                 id="edit-status"
                 value={formData.status}
                 onChange={(e) => setFormData({...formData, status: e.target.value as any})}
-                className="w-full p-2 border rounded-md"
+                className="custom-select"
               >
                 <option value="draft">Draft</option>
                 <option value="published">Publikasi</option>
@@ -429,7 +426,7 @@ export default function ArtikelBerita() {
 
       {/* View Dialog */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl bg-card text-card-foreground">
           <DialogHeader>
             <DialogTitle>Preview Artikel</DialogTitle>
           </DialogHeader>
@@ -447,7 +444,7 @@ export default function ArtikelBerita() {
                   <span>{selectedArtikel.views} views</span>
                 </div>
               </div>
-              <div className="prose max-w-none">
+              <div className="prose max-w-none dark:prose-invert">
                 <p>{selectedArtikel.konten}</p>
               </div>
               <div className="flex space-x-2 pt-4">

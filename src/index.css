@@ -94,6 +94,58 @@
   body {
     @apply bg-background text-foreground font-poppins;
   }
+
+  /* Dark theme form fixes */
+  .dark select {
+    @apply bg-background text-foreground border-border;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+  }
+
+  .dark select option {
+    @apply bg-background text-foreground;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+  }
+
+  .dark textarea {
+    @apply bg-background text-foreground border-border;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+  }
+
+  .dark input[type="text"],
+  .dark input[type="email"],
+  .dark input[type="password"],
+  .dark input[type="number"],
+  .dark input[type="tel"],
+  .dark input[type="date"] {
+    @apply bg-background text-foreground border-border;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+  }
+
+  /* Placeholder text in dark mode */
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Label text in dark mode */
+  .dark label {
+    color: hsl(var(--foreground));
+  }
+
+  /* Table text in dark mode */
+  .dark table {
+    color: hsl(var(--foreground));
+  }
+
+  /* Dialog and popover content in dark mode */
+  .dark [data-radix-popper-content-wrapper] {
+    background-color: hsl(var(--popover));
+    color: hsl(var(--popover-foreground));
+  }
 }
 
 @layer components {
@@ -103,5 +155,21 @@
   
   .card-hover {
     @apply transition-all duration-300 hover:shadow-lg hover:scale-105;
+  }
+
+  /* Custom select styling for better dark mode support */
+  .custom-select {
+    @apply w-full p-2 border rounded-md bg-background text-foreground border-border;
+  }
+
+  .dark .custom-select {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--border));
+  }
+
+  .dark .custom-select option {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }
