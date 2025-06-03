@@ -6,6 +6,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
+import MasterWarga from "./pages/MasterWarga";
+import MasterTipeIuran from "./pages/MasterTipeIuran";
+import InputIuran from "./pages/InputIuran";
+import OutputKas from "./pages/OutputKas";
+import LaporanIuran from "./pages/LaporanIuran";
+import ArtikelBerita from "./pages/ArtikelBerita";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,13 +26,13 @@ const App = () => (
         <Layout>
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/warga" element={<div>Master Data Warga - Coming Soon</div>} />
-            <Route path="/tipe-iuran" element={<div>Master Tipe Iuran - Coming Soon</div>} />
-            <Route path="/input-iuran" element={<div>Input Iuran - Coming Soon</div>} />
-            <Route path="/output-kas" element={<div>Output Kas - Coming Soon</div>} />
-            <Route path="/laporan" element={<div>Laporan Iuran - Coming Soon</div>} />
-            <Route path="/artikel" element={<div>Artikel Berita - Coming Soon</div>} />
-            <Route path="/settings" element={<div>Pengaturan - Coming Soon</div>} />
+            <Route path="/warga" element={<MasterWarga />} />
+            <Route path="/tipe-iuran" element={<MasterTipeIuran />} />
+            <Route path="/input-iuran" element={<InputIuran />} />
+            <Route path="/output-kas" element={<OutputKas />} />
+            <Route path="/laporan" element={<LaporanIuran />} />
+            <Route path="/artikel" element={<ArtikelBerita />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>
