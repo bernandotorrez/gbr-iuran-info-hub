@@ -9,13 +9,303 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      artikel_berita: {
+        Row: {
+          author_id: string
+          created_at: string | null
+          excerpt: string | null
+          gambar_url: string | null
+          id: string
+          judul: string
+          kategori: string | null
+          konten: string
+          published_at: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_id: string
+          created_at?: string | null
+          excerpt?: string | null
+          gambar_url?: string | null
+          id?: string
+          judul: string
+          kategori?: string | null
+          konten: string
+          published_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string
+          created_at?: string | null
+          excerpt?: string | null
+          gambar_url?: string | null
+          id?: string
+          judul?: string
+          kategori?: string | null
+          konten?: string
+          published_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artikel_berita_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      iuran: {
+        Row: {
+          bulan: number
+          created_at: string | null
+          id: string
+          keterangan: string | null
+          nominal: number
+          status_verifikasi: string | null
+          tahun: number
+          tanggal_bayar: string
+          tipe_iuran_id: string
+          updated_at: string | null
+          verified_at: string | null
+          verified_by: string | null
+          warga_id: string
+        }
+        Insert: {
+          bulan: number
+          created_at?: string | null
+          id?: string
+          keterangan?: string | null
+          nominal: number
+          status_verifikasi?: string | null
+          tahun: number
+          tanggal_bayar?: string
+          tipe_iuran_id: string
+          updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          warga_id: string
+        }
+        Update: {
+          bulan?: number
+          created_at?: string | null
+          id?: string
+          keterangan?: string | null
+          nominal?: number
+          status_verifikasi?: string | null
+          tahun?: number
+          tanggal_bayar?: string
+          tipe_iuran_id?: string
+          updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          warga_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "iuran_tipe_iuran_id_fkey"
+            columns: ["tipe_iuran_id"]
+            isOneToOne: false
+            referencedRelation: "tipe_iuran"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iuran_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iuran_warga_id_fkey"
+            columns: ["warga_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kas_keluar: {
+        Row: {
+          bukti_transaksi_url: string | null
+          created_at: string | null
+          deskripsi: string | null
+          diinput_oleh: string
+          disetujui_oleh: string | null
+          id: string
+          judul: string
+          kategori: string | null
+          nominal: number
+          status_persetujuan: string | null
+          tanggal_keluar: string
+          tanggal_persetujuan: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          bukti_transaksi_url?: string | null
+          created_at?: string | null
+          deskripsi?: string | null
+          diinput_oleh: string
+          disetujui_oleh?: string | null
+          id?: string
+          judul: string
+          kategori?: string | null
+          nominal: number
+          status_persetujuan?: string | null
+          tanggal_keluar?: string
+          tanggal_persetujuan?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          bukti_transaksi_url?: string | null
+          created_at?: string | null
+          deskripsi?: string | null
+          diinput_oleh?: string
+          disetujui_oleh?: string | null
+          id?: string
+          judul?: string
+          kategori?: string | null
+          nominal?: number
+          status_persetujuan?: string | null
+          tanggal_keluar?: string
+          tanggal_persetujuan?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kas_keluar_diinput_oleh_fkey"
+            columns: ["diinput_oleh"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kas_keluar_disetujui_oleh_fkey"
+            columns: ["disetujui_oleh"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          alamat: string | null
+          created_at: string | null
+          id: string
+          nama: string
+          phone_number: string
+          role: string | null
+          rt_rw: string | null
+          status_aktif: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          alamat?: string | null
+          created_at?: string | null
+          id: string
+          nama: string
+          phone_number: string
+          role?: string | null
+          rt_rw?: string | null
+          status_aktif?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          alamat?: string | null
+          created_at?: string | null
+          id?: string
+          nama?: string
+          phone_number?: string
+          role?: string | null
+          rt_rw?: string | null
+          status_aktif?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          updated_by: string | null
+          value: string | null
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tipe_iuran: {
+        Row: {
+          created_at: string | null
+          deskripsi: string | null
+          id: string
+          nama: string
+          nominal: number
+          status_aktif: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deskripsi?: string | null
+          id?: string
+          nama: string
+          nominal?: number
+          status_aktif?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deskripsi?: string | null
+          id?: string
+          nama?: string
+          nominal?: number
+          status_aktif?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_monthly_report: {
+        Args: { target_month: number; target_year: number }
+        Returns: Json
+      }
+      get_dashboard_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
