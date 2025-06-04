@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { Plus, Search, Edit2, Trash2, Eye, Calendar, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -21,6 +20,17 @@ interface Artikel {
   gambar_url?: string
   excerpt?: string
   created_at: string
+}
+
+// Valid status types for artikel
+type ValidStatus = "draft" | "published" | "archived";
+
+// Function to validate and normalize artikel status
+const normalizeStatus = (status: string | null | undefined): ValidStatus => {
+  if (status === "published" || status === "draft" || status === "archived") {
+    return status;
+  }
+  return "draft"; // Default to draft for any invalid status
 }
 
 const kategoriOptions = [
@@ -48,14 +58,24 @@ export default function ArtikelBerita() {
     kategori: "",
     gambar_url: "",
     excerpt: "",
-    status: "draft" as "draft" | "published" | "archived"
+    status: "draft" as ValidStatus
   })
 
   const loadArtikel = async () => {
     try {
       setLoading(true)
       const data = await fetchArtikel()
-      setArtikelList(data)
+      
+      // Transform the data to ensure it conforms to the Artikel interface
+      const typedData: Artikel[] = data.map(item => ({
+        ...item,
+        status: normalizeStatus(item.status),
+        excerpt: item.excerpt || "",
+        gambar_url: item.gambar_url || "",
+        published_at: item.published_at || undefined
+      }));
+      
+      setArtikelList(typedData)
     } catch (error) {
       toast({ 
         title: "Error", 
@@ -149,7 +169,7 @@ export default function ArtikelBerita() {
     setIsViewOpen(true)
   }
 
-  const updateStatus = async (id: string, status: "draft" | "published" | "archived") => {
+  const updateStatus = async (id: string, status: ValidStatus) => {
     try {
       await updateArtikel(id, { status })
       await loadArtikel()
@@ -314,7 +334,11 @@ export default function ArtikelBerita() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredArtikel.map((artikel) => (
+            {artikelList.filter(artikel =>
+              artikel.judul.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              artikel.konten.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              artikel.kategori.toLowerCase().includes(searchTerm.toLowerCase())
+            ).map((artikel) => (
               <TableRow key={artikel.id}>
                 <TableCell className="font-medium max-w-xs truncate">{artikel.judul}</TableCell>
                 <TableCell>{artikel.kategori}</TableCell>

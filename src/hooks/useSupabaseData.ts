@@ -1,7 +1,17 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+
+// Define valid status types for articles
+type ArticleStatus = "draft" | "published" | "archived";
+
+// Helper function to validate article status
+const validateArticleStatus = (status: string | null | undefined): ArticleStatus => {
+  if (status === "published" || status === "draft" || status === "archived") {
+    return status;
+  }
+  return "draft"; // Default to draft for any invalid status
+}
 
 export const useSupabaseData = () => {
   const { session } = useAuth();
@@ -270,7 +280,7 @@ export const useSupabaseData = () => {
     return data;
   };
 
-  // Artikel functions
+  // Artikel functions with improved type handling
   const fetchArtikel = async () => {
     const { data, error } = await supabase
       .from('artikel_berita')
@@ -286,12 +296,16 @@ export const useSupabaseData = () => {
   };
 
   const addArtikel = async (artikelData: any) => {
+    // Ensure the status is valid before sending to the database
+    const status = validateArticleStatus(artikelData.status);
+    
     const { data, error } = await supabase
       .from('artikel_berita')
       .insert([{
         ...artikelData,
+        status,
         author_id: session?.user?.id,
-        published_at: artikelData.status === 'published' ? new Date().toISOString() : null
+        published_at: status === 'published' ? new Date().toISOString() : null
       }])
       .select()
       .single();
@@ -306,7 +320,14 @@ export const useSupabaseData = () => {
 
   const updateArtikel = async (id: string, artikelData: any) => {
     const updateData = { ...artikelData };
-    if (artikelData.status === 'published' && !updateData.published_at) {
+    
+    // Validate and set the status if provided
+    if (artikelData.status) {
+      updateData.status = validateArticleStatus(artikelData.status);
+    }
+    
+    // Set published_at when status changes to published
+    if (updateData.status === 'published' && !updateData.published_at) {
       updateData.published_at = new Date().toISOString();
     }
 
