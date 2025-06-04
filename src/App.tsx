@@ -7,6 +7,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { Layout } from "./components/Layout";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import LoginPage from "./components/auth/LoginPage";
+import ForgotPasswordPage from "./components/auth/ForgotPasswordPage";
 import Dashboard from "./pages/Dashboard";
 import MasterWarga from "./pages/MasterWarga";
 import MasterTipeIuran from "./pages/MasterTipeIuran";
@@ -27,6 +28,7 @@ const App = () => (
         <Sonner />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/*" element={
             <ProtectedRoute>
               <Layout>
