@@ -1,5 +1,5 @@
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Search, TrendingDown, Calendar, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,58 +7,26 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { useSupabaseData } from "@/hooks/useSupabaseData"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface Pengeluaran {
   id: string
-  tanggal: string
+  tanggal_keluar: string
   kategori: string
   deskripsi: string
+  judul: string
   nominal: number
-  penerima: string
-  bukti: string
-  status: "disetujui" | "pending" | "ditolak"
-  catatan: string
-  dibuat: string
-}
-
-const dummyData: Pengeluaran[] = [
-  {
-    id: "1",
-    tanggal: "2024-01-10",
-    kategori: "Operasional",
-    deskripsi: "Pembelian alat kebersihan",
-    nominal: 150000,
-    penerima: "Toko ABC",
-    bukti: "nota_001.jpg",
-    status: "disetujui",
-    catatan: "Untuk kebutuhan cleaning service",
-    dibuat: "2024-01-10"
-  },
-  {
-    id: "2",
-    tanggal: "2024-01-15",
-    kategori: "Keamanan",
-    deskripsi: "Gaji satpam bulan Januari",
-    nominal: 2500000,
-    penerima: "Pak Security",
-    bukti: "slip_gaji_jan.pdf",
-    status: "disetujui",
-    catatan: "Gaji bulanan security",
-    dibuat: "2024-01-15"
-  },
-  {
-    id: "3",
-    tanggal: "2024-01-20",
-    kategori: "Maintenance",
-    deskripsi: "Perbaikan lampu jalan",
-    nominal: 500000,
-    penerima: "Tukang Listrik",
-    bukti: "nota_listrik.jpg",
-    status: "pending",
-    catatan: "Lampu jalan Blok B rusak",
-    dibuat: "2024-01-20"
+  status_persetujuan: string
+  bukti_transaksi_url?: string
+  created_at: string
+  diinput_oleh?: {
+    nama: string
   }
-]
+  disetujui_oleh?: {
+    nama: string
+  }
+}
 
 const kategoriOptions = [
   "Operasional",
@@ -70,53 +38,92 @@ const kategoriOptions = [
 ]
 
 export default function OutputKas() {
-  const [pengeluaranList, setPengeluaranList] = useState<Pengeluaran[]>(dummyData)
+  const [pengeluaranList, setPengeluaranList] = useState<Pengeluaran[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddOpen, setIsAddOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
   const { toast } = useToast()
+  const { session } = useAuth()
+  const { fetchKasKeluar, addKasKeluar, updateKasKeluarStatus } = useSupabaseData()
 
   const [formData, setFormData] = useState({
-    tanggal: "",
+    tanggal_keluar: "",
     kategori: "",
+    judul: "",
     deskripsi: "",
     nominal: "",
-    penerima: "",
-    bukti: "",
-    catatan: ""
+    bukti_transaksi_url: ""
   })
+
+  const loadKasKeluar = async () => {
+    try {
+      setLoading(true)
+      const data = await fetchKasKeluar()
+      setPengeluaranList(data)
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Gagal memuat data kas keluar",
+        variant: "destructive" 
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadKasKeluar()
+  }, [])
 
   const filteredPengeluaran = pengeluaranList.filter(item =>
     item.deskripsi.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.kategori.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.penerima.toLowerCase().includes(searchTerm.toLowerCase())
+    item.judul.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleAdd = () => {
-    const newPengeluaran: Pengeluaran = {
-      id: Date.now().toString(),
-      tanggal: formData.tanggal,
-      kategori: formData.kategori,
-      deskripsi: formData.deskripsi,
-      nominal: parseInt(formData.nominal),
-      penerima: formData.penerima,
-      bukti: formData.bukti,
-      status: "pending",
-      catatan: formData.catatan,
-      dibuat: new Date().toISOString().split('T')[0]
-    }
+  const handleAdd = async () => {
+    try {
+      await addKasKeluar({
+        tanggal_keluar: formData.tanggal_keluar,
+        kategori: formData.kategori,
+        judul: formData.judul,
+        deskripsi: formData.deskripsi,
+        nominal: parseInt(formData.nominal),
+        bukti_transaksi_url: formData.bukti_transaksi_url
+      })
 
-    setPengeluaranList([...pengeluaranList, newPengeluaran])
-    setFormData({ tanggal: "", kategori: "", deskripsi: "", nominal: "", penerima: "", bukti: "", catatan: "" })
-    setIsAddOpen(false)
-    toast({ title: "Berhasil", description: "Pengeluaran berhasil dicatat" })
+      setFormData({ 
+        tanggal_keluar: "", 
+        kategori: "", 
+        judul: "",
+        deskripsi: "", 
+        nominal: "", 
+        bukti_transaksi_url: "" 
+      })
+      setIsAddOpen(false)
+      await loadKasKeluar()
+      toast({ title: "Berhasil", description: "Pengeluaran berhasil dicatat" })
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Gagal mencatat pengeluaran",
+        variant: "destructive" 
+      })
+    }
   }
 
-  const updateStatus = (id: string, status: "disetujui" | "pending" | "ditolak") => {
-    const updated = pengeluaranList.map(item => 
-      item.id === id ? { ...item, status } : item
-    )
-    setPengeluaranList(updated)
-    toast({ title: "Berhasil", description: `Status pengeluaran diubah menjadi ${status}` })
+  const updateStatus = async (id: string, status: "approved" | "pending" | "rejected") => {
+    try {
+      await updateKasKeluarStatus(id, status, session?.user?.id)
+      await loadKasKeluar()
+      toast({ title: "Berhasil", description: `Status pengeluaran diubah menjadi ${status}` })
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Gagal mengubah status",
+        variant: "destructive" 
+      })
+    }
   }
 
   const formatCurrency = (amount: number) => {
@@ -127,12 +134,16 @@ export default function OutputKas() {
   }
 
   const totalPengeluaran = pengeluaranList
-    .filter(item => item.status === "disetujui")
+    .filter(item => item.status_persetujuan === "approved")
     .reduce((sum, item) => sum + item.nominal, 0)
 
   const totalPending = pengeluaranList
-    .filter(item => item.status === "pending")
+    .filter(item => item.status_persetujuan === "pending")
     .reduce((sum, item) => sum + item.nominal, 0)
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-48">Memuat data...</div>
+  }
 
   return (
     <div className="space-y-6">
@@ -158,8 +169,8 @@ export default function OutputKas() {
                 <Input
                   id="tanggal"
                   type="date"
-                  value={formData.tanggal}
-                  onChange={(e) => setFormData({...formData, tanggal: e.target.value})}
+                  value={formData.tanggal_keluar}
+                  onChange={(e) => setFormData({...formData, tanggal_keluar: e.target.value})}
                 />
               </div>
               <div>
@@ -175,6 +186,15 @@ export default function OutputKas() {
                     <option key={kategori} value={kategori}>{kategori}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <Label htmlFor="judul">Judul</Label>
+                <Input
+                  id="judul"
+                  value={formData.judul}
+                  onChange={(e) => setFormData({...formData, judul: e.target.value})}
+                  placeholder="Judul pengeluaran"
+                />
               </div>
               <div>
                 <Label htmlFor="deskripsi">Deskripsi</Label>
@@ -196,30 +216,12 @@ export default function OutputKas() {
                 />
               </div>
               <div>
-                <Label htmlFor="penerima">Penerima</Label>
-                <Input
-                  id="penerima"
-                  value={formData.penerima}
-                  onChange={(e) => setFormData({...formData, penerima: e.target.value})}
-                  placeholder="Nama penerima/vendor"
-                />
-              </div>
-              <div>
-                <Label htmlFor="bukti">Bukti (Nama File)</Label>
+                <Label htmlFor="bukti">Bukti (URL)</Label>
                 <Input
                   id="bukti"
-                  value={formData.bukti}
-                  onChange={(e) => setFormData({...formData, bukti: e.target.value})}
-                  placeholder="nota_001.jpg"
-                />
-              </div>
-              <div>
-                <Label htmlFor="catatan">Catatan</Label>
-                <Input
-                  id="catatan"
-                  value={formData.catatan}
-                  onChange={(e) => setFormData({...formData, catatan: e.target.value})}
-                  placeholder="Catatan tambahan"
+                  value={formData.bukti_transaksi_url}
+                  onChange={(e) => setFormData({...formData, bukti_transaksi_url: e.target.value})}
+                  placeholder="https://example.com/nota.jpg"
                 />
               </div>
               <Button onClick={handleAdd} className="w-full">
@@ -280,42 +282,41 @@ export default function OutputKas() {
             <TableRow>
               <TableHead>Tanggal</TableHead>
               <TableHead>Kategori</TableHead>
+              <TableHead>Judul</TableHead>
               <TableHead>Deskripsi</TableHead>
               <TableHead>Nominal</TableHead>
-              <TableHead>Penerima</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Bukti</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredPengeluaran.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{new Date(item.tanggal).toLocaleDateString('id-ID')}</TableCell>
+                <TableCell>{new Date(item.tanggal_keluar).toLocaleDateString('id-ID')}</TableCell>
                 <TableCell>{item.kategori}</TableCell>
-                <TableCell className="font-medium">{item.deskripsi}</TableCell>
+                <TableCell className="font-medium">{item.judul}</TableCell>
+                <TableCell>{item.deskripsi}</TableCell>
                 <TableCell>{formatCurrency(item.nominal)}</TableCell>
-                <TableCell>{item.penerima}</TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${
-                    item.status === 'disetujui' 
+                    item.status_persetujuan === 'approved' 
                       ? 'bg-green-100 text-green-800'
-                      : item.status === 'pending'
+                      : item.status_persetujuan === 'pending'
                       ? 'bg-yellow-100 text-yellow-800' 
                       : 'bg-red-100 text-red-800'
                   }`}>
-                    {item.status}
+                    {item.status_persetujuan === 'approved' ? 'Disetujui' : 
+                     item.status_persetujuan === 'pending' ? 'Pending' : 'Ditolak'}
                   </span>
                 </TableCell>
-                <TableCell>{item.bukti}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end space-x-1">
-                    {item.status === 'pending' && (
+                    {item.status_persetujuan === 'pending' && (
                       <>
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => updateStatus(item.id, 'disetujui')}
+                          onClick={() => updateStatus(item.id, 'approved')}
                           className="text-green-600 hover:text-green-700"
                         >
                           Setujui
@@ -323,7 +324,7 @@ export default function OutputKas() {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => updateStatus(item.id, 'ditolak')}
+                          onClick={() => updateStatus(item.id, 'rejected')}
                           className="text-red-600 hover:text-red-700"
                         >
                           Tolak

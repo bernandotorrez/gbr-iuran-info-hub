@@ -270,6 +270,73 @@ export const useSupabaseData = () => {
     return data;
   };
 
+  // Artikel functions
+  const fetchArtikel = async () => {
+    const { data, error } = await supabase
+      .from('artikel_berita')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching artikel:', error);
+      return [];
+    }
+    
+    return data || [];
+  };
+
+  const addArtikel = async (artikelData: any) => {
+    const { data, error } = await supabase
+      .from('artikel_berita')
+      .insert([{
+        ...artikelData,
+        author_id: session?.user?.id,
+        published_at: artikelData.status === 'published' ? new Date().toISOString() : null
+      }])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error adding artikel:', error);
+      throw error;
+    }
+    
+    return data;
+  };
+
+  const updateArtikel = async (id: string, artikelData: any) => {
+    const updateData = { ...artikelData };
+    if (artikelData.status === 'published' && !updateData.published_at) {
+      updateData.published_at = new Date().toISOString();
+    }
+
+    const { data, error } = await supabase
+      .from('artikel_berita')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating artikel:', error);
+      throw error;
+    }
+    
+    return data;
+  };
+
+  const deleteArtikel = async (id: string) => {
+    const { error } = await supabase
+      .from('artikel_berita')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting artikel:', error);
+      throw error;
+    }
+  };
+
   return {
     dashboardStats,
     loading,
@@ -290,6 +357,11 @@ export const useSupabaseData = () => {
     // Kas Keluar functions
     fetchKasKeluar,
     addKasKeluar,
-    updateKasKeluarStatus
+    updateKasKeluarStatus,
+    // Artikel functions
+    fetchArtikel,
+    addArtikel,
+    updateArtikel,
+    deleteArtikel
   };
 };

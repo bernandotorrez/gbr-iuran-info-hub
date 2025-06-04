@@ -1,5 +1,5 @@
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Search, Edit2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,103 +7,111 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { useSupabaseData } from "@/hooks/useSupabaseData"
 
 interface TipeIuran {
   id: string
   nama: string
   nominal: number
-  periode: "bulanan" | "tahunan" | "sekali"
   deskripsi: string
-  status: "aktif" | "non-aktif"
-  tanggalBuat: string
+  status_aktif: boolean
+  created_at: string
 }
 
-const dummyData: TipeIuran[] = [
-  {
-    id: "1",
-    nama: "Iuran Sampah",
-    nominal: 25000,
-    periode: "bulanan",
-    deskripsi: "Iuran pengangkutan sampah bulanan",
-    status: "aktif",
-    tanggalBuat: "2024-01-01"
-  },
-  {
-    id: "2",
-    nama: "Kas Lingkungan",
-    nominal: 50000,
-    periode: "bulanan", 
-    deskripsi: "Kas untuk keperluan lingkungan dan keamanan",
-    status: "aktif",
-    tanggalBuat: "2024-01-01"
-  },
-  {
-    id: "3",
-    nama: "Iuran Keamanan",
-    nominal: 100000,
-    periode: "bulanan",
-    deskripsi: "Iuran untuk jasa keamanan 24 jam",
-    status: "aktif",
-    tanggalBuat: "2024-01-01"
-  }
-]
-
 export default function MasterTipeIuran() {
-  const [tipeIuranList, setTipeIuranList] = useState<TipeIuran[]>(dummyData)
+  const [tipeIuranList, setTipeIuranList] = useState<TipeIuran[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [selectedTipe, setSelectedTipe] = useState<TipeIuran | null>(null)
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
   const { toast } = useToast()
+  const { fetchTipeIuran, addTipeIuran, updateTipeIuran, deleteTipeIuran } = useSupabaseData()
 
   const [formData, setFormData] = useState({
     nama: "",
     nominal: "",
-    periode: "bulanan" as "bulanan" | "tahunan" | "sekali",
-    deskripsi: "",
-    status: "aktif" as "aktif" | "non-aktif"
+    deskripsi: ""
   })
+
+  const loadTipeIuran = async () => {
+    try {
+      setLoading(true)
+      const data = await fetchTipeIuran()
+      setTipeIuranList(data)
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Gagal memuat data tipe iuran",
+        variant: "destructive" 
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadTipeIuran()
+  }, [])
 
   const filteredTipe = tipeIuranList.filter(tipe =>
     tipe.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    tipe.deskripsi.toLowerCase().includes(searchTerm.toLowerCase())
+    tipe.deskripsi?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleAdd = () => {
-    const newTipe: TipeIuran = {
-      id: Date.now().toString(),
-      nama: formData.nama,
-      nominal: parseInt(formData.nominal),
-      periode: formData.periode,
-      deskripsi: formData.deskripsi,
-      status: formData.status,
-      tanggalBuat: new Date().toISOString().split('T')[0]
+  const handleAdd = async () => {
+    try {
+      await addTipeIuran({
+        nama: formData.nama,
+        nominal: parseInt(formData.nominal),
+        deskripsi: formData.deskripsi
+      })
+      setFormData({ nama: "", nominal: "", deskripsi: "" })
+      setIsAddOpen(false)
+      await loadTipeIuran()
+      toast({ title: "Berhasil", description: "Tipe iuran berhasil ditambahkan" })
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Gagal menambahkan tipe iuran",
+        variant: "destructive" 
+      })
     }
-    setTipeIuranList([...tipeIuranList, newTipe])
-    setFormData({ nama: "", nominal: "", periode: "bulanan", deskripsi: "", status: "aktif" })
-    setIsAddOpen(false)
-    toast({ title: "Berhasil", description: "Tipe iuran berhasil ditambahkan" })
   }
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedTipe) return
-    const updated = tipeIuranList.map(t => t.id === selectedTipe.id ? {
-      ...selectedTipe,
-      nama: formData.nama,
-      nominal: parseInt(formData.nominal),
-      periode: formData.periode,
-      deskripsi: formData.deskripsi,
-      status: formData.status
-    } : t)
-    setTipeIuranList(updated)
-    setIsEditOpen(false)
-    setSelectedTipe(null)
-    toast({ title: "Berhasil", description: "Tipe iuran berhasil diperbarui" })
+    try {
+      await updateTipeIuran(selectedTipe.id, {
+        nama: formData.nama,
+        nominal: parseInt(formData.nominal),
+        deskripsi: formData.deskripsi
+      })
+      setIsEditOpen(false)
+      setSelectedTipe(null)
+      await loadTipeIuran()
+      toast({ title: "Berhasil", description: "Tipe iuran berhasil diperbarui" })
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Gagal memperbarui tipe iuran",
+        variant: "destructive" 
+      })
+    }
   }
 
-  const handleDelete = (id: string) => {
-    setTipeIuranList(tipeIuranList.filter(t => t.id !== id))
-    toast({ title: "Berhasil", description: "Tipe iuran berhasil dihapus" })
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteTipeIuran(id)
+      await loadTipeIuran()
+      toast({ title: "Berhasil", description: "Tipe iuran berhasil dihapus" })
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Gagal menghapus tipe iuran",
+        variant: "destructive" 
+      })
+    }
   }
 
   const openEdit = (tipe: TipeIuran) => {
@@ -111,9 +119,7 @@ export default function MasterTipeIuran() {
     setFormData({
       nama: tipe.nama,
       nominal: tipe.nominal.toString(),
-      periode: tipe.periode,
-      deskripsi: tipe.deskripsi,
-      status: tipe.status
+      deskripsi: tipe.deskripsi || ""
     })
     setIsEditOpen(true)
   }
@@ -123,6 +129,10 @@ export default function MasterTipeIuran() {
       style: 'currency',
       currency: 'IDR'
     }).format(amount)
+  }
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-48">Memuat data...</div>
   }
 
   return (
@@ -164,19 +174,6 @@ export default function MasterTipeIuran() {
                 />
               </div>
               <div>
-                <Label htmlFor="periode">Periode</Label>
-                <select
-                  id="periode"
-                  value={formData.periode}
-                  onChange={(e) => setFormData({...formData, periode: e.target.value as any})}
-                  className="w-full p-2 border rounded-md"
-                >
-                  <option value="bulanan">Bulanan</option>
-                  <option value="tahunan">Tahunan</option>
-                  <option value="sekali">Sekali Bayar</option>
-                </select>
-              </div>
-              <div>
                 <Label htmlFor="deskripsi">Deskripsi</Label>
                 <Input
                   id="deskripsi"
@@ -211,7 +208,6 @@ export default function MasterTipeIuran() {
             <TableRow>
               <TableHead>Nama Iuran</TableHead>
               <TableHead>Nominal</TableHead>
-              <TableHead>Periode</TableHead>
               <TableHead>Deskripsi</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Tanggal Buat</TableHead>
@@ -223,20 +219,17 @@ export default function MasterTipeIuran() {
               <TableRow key={tipe.id}>
                 <TableCell className="font-medium">{tipe.nama}</TableCell>
                 <TableCell>{formatCurrency(tipe.nominal)}</TableCell>
-                <TableCell>
-                  <span className="capitalize">{tipe.periode}</span>
-                </TableCell>
-                <TableCell>{tipe.deskripsi}</TableCell>
+                <TableCell>{tipe.deskripsi || "-"}</TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${
-                    tipe.status === 'aktif' 
+                    tipe.status_aktif 
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-red-100 text-red-800'
                   }`}>
-                    {tipe.status}
+                    {tipe.status_aktif ? 'Aktif' : 'Non-aktif'}
                   </span>
                 </TableCell>
-                <TableCell>{new Date(tipe.tanggalBuat).toLocaleDateString('id-ID')}</TableCell>
+                <TableCell>{new Date(tipe.created_at).toLocaleDateString('id-ID')}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end space-x-2">
                     <Button variant="ghost" size="sm" onClick={() => openEdit(tipe)}>
@@ -281,19 +274,6 @@ export default function MasterTipeIuran() {
                 value={formData.nominal}
                 onChange={(e) => setFormData({...formData, nominal: e.target.value})}
               />
-            </div>
-            <div>
-              <Label htmlFor="edit-periode">Periode</Label>
-              <select
-                id="edit-periode"
-                value={formData.periode}
-                onChange={(e) => setFormData({...formData, periode: e.target.value as any})}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="bulanan">Bulanan</option>
-                <option value="tahunan">Tahunan</option>
-                <option value="sekali">Sekali Bayar</option>
-              </select>
             </div>
             <div>
               <Label htmlFor="edit-deskripsi">Deskripsi</Label>

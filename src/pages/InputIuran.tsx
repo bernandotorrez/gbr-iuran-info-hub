@@ -1,5 +1,5 @@
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Search, Calendar, User, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,114 +7,123 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { useSupabaseData } from "@/hooks/useSupabaseData"
 
 interface Transaksi {
   id: string
-  wargaId: string
-  namaWarga: string
-  alamat: string
-  tipeIuranId: string
-  namaIuran: string
+  warga_id: string
+  tipe_iuran_id: string
   nominal: number
-  tanggalBayar: string
-  bulanPeriode: string
-  tahunPeriode: string
-  status: "lunas" | "belum-lunas"
-  catatan: string
+  tanggal_bayar: string
+  bulan: number
+  tahun: number
+  status_verifikasi: string
+  keterangan?: string
+  warga?: {
+    nama: string
+    alamat: string
+    rt_rw: string
+  }
+  tipe_iuran?: {
+    nama: string
+  }
 }
 
-const dummyWarga = [
-  { id: "1", nama: "Ahmad Budiman", alamat: "Blok A No. 12" },
-  { id: "2", nama: "Siti Nurhaliza", alamat: "Blok B No. 05" },
-  { id: "3", nama: "Budi Santoso", alamat: "Blok C No. 08" }
-]
+interface Warga {
+  id: string
+  nama: string
+  alamat: string
+  rt_rw: string
+}
 
-const dummyTipeIuran = [
-  { id: "1", nama: "Iuran Sampah", nominal: 25000 },
-  { id: "2", nama: "Kas Lingkungan", nominal: 50000 },
-  { id: "3", nama: "Iuran Keamanan", nominal: 100000 }
-]
-
-const dummyTransaksi: Transaksi[] = [
-  {
-    id: "1",
-    wargaId: "1",
-    namaWarga: "Ahmad Budiman",
-    alamat: "Blok A No. 12",
-    tipeIuranId: "1",
-    namaIuran: "Iuran Sampah",
-    nominal: 25000,
-    tanggalBayar: "2024-01-15",
-    bulanPeriode: "Januari",
-    tahunPeriode: "2024",
-    status: "lunas",
-    catatan: "Bayar tepat waktu"
-  },
-  {
-    id: "2", 
-    wargaId: "2",
-    namaWarga: "Siti Nurhaliza",
-    alamat: "Blok B No. 05",
-    tipeIuranId: "2",
-    namaIuran: "Kas Lingkungan",
-    nominal: 50000,
-    tanggalBayar: "2024-01-20",
-    bulanPeriode: "Januari",
-    tahunPeriode: "2024",
-    status: "lunas",
-    catatan: ""
-  }
-]
+interface TipeIuran {
+  id: string
+  nama: string
+  nominal: number
+}
 
 export default function InputIuran() {
-  const [transaksiList, setTransaksiList] = useState<Transaksi[]>(dummyTransaksi)
+  const [transaksiList, setTransaksiList] = useState<Transaksi[]>([])
+  const [wargaList, setWargaList] = useState<Warga[]>([])
+  const [tipeIuranList, setTipeIuranList] = useState<TipeIuran[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddOpen, setIsAddOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
   const { toast } = useToast()
+  const { fetchWarga, fetchTipeIuran, fetchIuran, addIuran } = useSupabaseData()
 
   const [formData, setFormData] = useState({
-    wargaId: "",
-    tipeIuranId: "",
-    tanggalBayar: "",
-    bulanPeriode: "",
-    tahunPeriode: "",
-    catatan: ""
+    warga_id: "",
+    tipe_iuran_id: "",
+    tanggal_bayar: "",
+    bulan: "",
+    tahun: "",
+    keterangan: ""
   })
 
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      const [warga, tipeIuran, iuran] = await Promise.all([
+        fetchWarga(),
+        fetchTipeIuran(),
+        fetchIuran()
+      ])
+      setWargaList(warga)
+      setTipeIuranList(tipeIuran)
+      setTransaksiList(iuran)
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Gagal memuat data",
+        variant: "destructive" 
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
   const filteredTransaksi = transaksiList.filter(transaksi =>
-    transaksi.namaWarga.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaksi.namaIuran.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaksi.alamat.toLowerCase().includes(searchTerm.toLowerCase())
+    transaksi.warga?.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    transaksi.tipe_iuran?.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    transaksi.warga?.alamat.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleAdd = () => {
-    const selectedWarga = dummyWarga.find(w => w.id === formData.wargaId)
-    const selectedTipe = dummyTipeIuran.find(t => t.id === formData.tipeIuranId)
+  const handleAdd = async () => {
+    const selectedWarga = wargaList.find(w => w.id === formData.warga_id)
+    const selectedTipe = tipeIuranList.find(t => t.id === formData.tipe_iuran_id)
     
     if (!selectedWarga || !selectedTipe) {
       toast({ title: "Error", description: "Pilih warga dan tipe iuran", variant: "destructive" })
       return
     }
 
-    const newTransaksi: Transaksi = {
-      id: Date.now().toString(),
-      wargaId: formData.wargaId,
-      namaWarga: selectedWarga.nama,
-      alamat: selectedWarga.alamat,
-      tipeIuranId: formData.tipeIuranId,
-      namaIuran: selectedTipe.nama,
-      nominal: selectedTipe.nominal,
-      tanggalBayar: formData.tanggalBayar,
-      bulanPeriode: formData.bulanPeriode,
-      tahunPeriode: formData.tahunPeriode,
-      status: "lunas",
-      catatan: formData.catatan
-    }
+    try {
+      await addIuran({
+        warga_id: formData.warga_id,
+        tipe_iuran_id: formData.tipe_iuran_id,
+        nominal: selectedTipe.nominal,
+        tanggal_bayar: formData.tanggal_bayar,
+        bulan: parseInt(formData.bulan),
+        tahun: parseInt(formData.tahun),
+        keterangan: formData.keterangan
+      })
 
-    setTransaksiList([...transaksiList, newTransaksi])
-    setFormData({ wargaId: "", tipeIuranId: "", tanggalBayar: "", bulanPeriode: "", tahunPeriode: "", catatan: "" })
-    setIsAddOpen(false)
-    toast({ title: "Berhasil", description: "Pembayaran iuran berhasil dicatat" })
+      setFormData({ warga_id: "", tipe_iuran_id: "", tanggal_bayar: "", bulan: "", tahun: "", keterangan: "" })
+      setIsAddOpen(false)
+      await loadData()
+      toast({ title: "Berhasil", description: "Pembayaran iuran berhasil dicatat" })
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Gagal mencatat pembayaran",
+        variant: "destructive" 
+      })
+    }
   }
 
   const formatCurrency = (amount: number) => {
@@ -125,9 +134,22 @@ export default function InputIuran() {
   }
 
   const bulanOptions = [
-    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    { value: "1", label: "Januari" }, { value: "2", label: "Februari" }, 
+    { value: "3", label: "Maret" }, { value: "4", label: "April" }, 
+    { value: "5", label: "Mei" }, { value: "6", label: "Juni" },
+    { value: "7", label: "Juli" }, { value: "8", label: "Agustus" }, 
+    { value: "9", label: "September" }, { value: "10", label: "Oktober" }, 
+    { value: "11", label: "November" }, { value: "12", label: "Desember" }
   ]
+
+  const getBulanLabel = (bulan: number) => {
+    const option = bulanOptions.find(opt => opt.value === bulan.toString())
+    return option ? option.label : bulan.toString()
+  }
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-48">Memuat data...</div>
+  }
 
   return (
     <div className="space-y-6">
@@ -152,12 +174,12 @@ export default function InputIuran() {
                 <Label htmlFor="warga">Pilih Warga</Label>
                 <select
                   id="warga"
-                  value={formData.wargaId}
-                  onChange={(e) => setFormData({...formData, wargaId: e.target.value})}
+                  value={formData.warga_id}
+                  onChange={(e) => setFormData({...formData, warga_id: e.target.value})}
                   className="w-full p-2 border rounded-md"
                 >
                   <option value="">-- Pilih Warga --</option>
-                  {dummyWarga.map(warga => (
+                  {wargaList.map(warga => (
                     <option key={warga.id} value={warga.id}>
                       {warga.nama} - {warga.alamat}
                     </option>
@@ -168,12 +190,12 @@ export default function InputIuran() {
                 <Label htmlFor="tipeIuran">Tipe Iuran</Label>
                 <select
                   id="tipeIuran"
-                  value={formData.tipeIuranId}
-                  onChange={(e) => setFormData({...formData, tipeIuranId: e.target.value})}
+                  value={formData.tipe_iuran_id}
+                  onChange={(e) => setFormData({...formData, tipe_iuran_id: e.target.value})}
                   className="w-full p-2 border rounded-md"
                 >
                   <option value="">-- Pilih Tipe Iuran --</option>
-                  {dummyTipeIuran.map(tipe => (
+                  {tipeIuranList.map(tipe => (
                     <option key={tipe.id} value={tipe.id}>
                       {tipe.nama} - {formatCurrency(tipe.nominal)}
                     </option>
@@ -185,8 +207,8 @@ export default function InputIuran() {
                 <Input
                   id="tanggalBayar"
                   type="date"
-                  value={formData.tanggalBayar}
-                  onChange={(e) => setFormData({...formData, tanggalBayar: e.target.value})}
+                  value={formData.tanggal_bayar}
+                  onChange={(e) => setFormData({...formData, tanggal_bayar: e.target.value})}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -194,13 +216,13 @@ export default function InputIuran() {
                   <Label htmlFor="bulanPeriode">Bulan Periode</Label>
                   <select
                     id="bulanPeriode"
-                    value={formData.bulanPeriode}
-                    onChange={(e) => setFormData({...formData, bulanPeriode: e.target.value})}
+                    value={formData.bulan}
+                    onChange={(e) => setFormData({...formData, bulan: e.target.value})}
                     className="w-full p-2 border rounded-md"
                   >
                     <option value="">-- Pilih Bulan --</option>
                     {bulanOptions.map(bulan => (
-                      <option key={bulan} value={bulan}>{bulan}</option>
+                      <option key={bulan.value} value={bulan.value}>{bulan.label}</option>
                     ))}
                   </select>
                 </div>
@@ -209,18 +231,18 @@ export default function InputIuran() {
                   <Input
                     id="tahunPeriode"
                     type="number"
-                    value={formData.tahunPeriode}
-                    onChange={(e) => setFormData({...formData, tahunPeriode: e.target.value})}
+                    value={formData.tahun}
+                    onChange={(e) => setFormData({...formData, tahun: e.target.value})}
                     placeholder="2024"
                   />
                 </div>
               </div>
               <div>
-                <Label htmlFor="catatan">Catatan (Opsional)</Label>
+                <Label htmlFor="keterangan">Catatan (Opsional)</Label>
                 <Input
-                  id="catatan"
-                  value={formData.catatan}
-                  onChange={(e) => setFormData({...formData, catatan: e.target.value})}
+                  id="keterangan"
+                  value={formData.keterangan}
+                  onChange={(e) => setFormData({...formData, keterangan: e.target.value})}
                   placeholder="Catatan tambahan..."
                 />
               </div>
@@ -239,7 +261,7 @@ export default function InputIuran() {
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">Total Transaksi Hari Ini</p>
               <p className="text-2xl font-bold">
-                {transaksiList.filter(t => t.tanggalBayar === new Date().toISOString().split('T')[0]).length}
+                {transaksiList.filter(t => t.tanggal_bayar === new Date().toISOString().split('T')[0]).length}
               </p>
             </div>
           </div>
@@ -253,7 +275,7 @@ export default function InputIuran() {
               <p className="text-2xl font-bold">
                 {formatCurrency(
                   transaksiList
-                    .filter(t => t.tanggalBayar === new Date().toISOString().split('T')[0])
+                    .filter(t => t.tanggal_bayar === new Date().toISOString().split('T')[0])
                     .reduce((sum, t) => sum + t.nominal, 0)
                 )}
               </p>
@@ -301,18 +323,18 @@ export default function InputIuran() {
           <TableBody>
             {filteredTransaksi.map((transaksi) => (
               <TableRow key={transaksi.id}>
-                <TableCell className="font-medium">{transaksi.namaWarga}</TableCell>
-                <TableCell>{transaksi.alamat}</TableCell>
-                <TableCell>{transaksi.namaIuran}</TableCell>
+                <TableCell className="font-medium">{transaksi.warga?.nama}</TableCell>
+                <TableCell>{transaksi.warga?.alamat}</TableCell>
+                <TableCell>{transaksi.tipe_iuran?.nama}</TableCell>
                 <TableCell>{formatCurrency(transaksi.nominal)}</TableCell>
-                <TableCell>{transaksi.bulanPeriode} {transaksi.tahunPeriode}</TableCell>
-                <TableCell>{new Date(transaksi.tanggalBayar).toLocaleDateString('id-ID')}</TableCell>
+                <TableCell>{getBulanLabel(transaksi.bulan)} {transaksi.tahun}</TableCell>
+                <TableCell>{new Date(transaksi.tanggal_bayar).toLocaleDateString('id-ID')}</TableCell>
                 <TableCell>
                   <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                    {transaksi.status}
+                    {transaksi.status_verifikasi === 'verified' ? 'Terverifikasi' : 'Pending'}
                   </span>
                 </TableCell>
-                <TableCell>{transaksi.catatan || "-"}</TableCell>
+                <TableCell>{transaksi.keterangan || "-"}</TableCell>
               </TableRow>
             ))}
           </TableBody>
