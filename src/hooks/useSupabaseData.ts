@@ -62,6 +62,53 @@ export const useSupabaseData = () => {
     return data || [];
   };
 
+  const addWarga = async (wargaData: any) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert([{
+        ...wargaData,
+        role: 'warga',
+        status_aktif: true
+      }])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error adding warga:', error);
+      throw error;
+    }
+    
+    return data;
+  };
+
+  const updateWarga = async (id: string, wargaData: any) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(wargaData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating warga:', error);
+      throw error;
+    }
+    
+    return data;
+  };
+
+  const deleteWarga = async (id: string) => {
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting warga:', error);
+      throw error;
+    }
+  };
+
   const fetchTipeIuran = async () => {
     const { data, error } = await supabase
       .from('tipe_iuran')
@@ -75,6 +122,52 @@ export const useSupabaseData = () => {
     }
     
     return data || [];
+  };
+
+  const addTipeIuran = async (tipeIuranData: any) => {
+    const { data, error } = await supabase
+      .from('tipe_iuran')
+      .insert([{
+        ...tipeIuranData,
+        status_aktif: true
+      }])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error adding tipe iuran:', error);
+      throw error;
+    }
+    
+    return data;
+  };
+
+  const updateTipeIuran = async (id: string, tipeIuranData: any) => {
+    const { data, error } = await supabase
+      .from('tipe_iuran')
+      .update(tipeIuranData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating tipe iuran:', error);
+      throw error;
+    }
+    
+    return data;
+  };
+
+  const deleteTipeIuran = async (id: string) => {
+    const { error } = await supabase
+      .from('tipe_iuran')
+      .update({ status_aktif: false })
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting tipe iuran:', error);
+      throw error;
+    }
   };
 
   const fetchIuran = async () => {
@@ -95,6 +188,28 @@ export const useSupabaseData = () => {
     return data || [];
   };
 
+  const addIuran = async (iuranData: any) => {
+    const { data, error } = await supabase
+      .from('iuran')
+      .insert([{
+        ...iuranData,
+        status_verifikasi: 'verified'
+      }])
+      .select(`
+        *,
+        warga:profiles!warga_id(nama, alamat, rt_rw),
+        tipe_iuran:tipe_iuran!tipe_iuran_id(nama)
+      `)
+      .single();
+    
+    if (error) {
+      console.error('Error adding iuran:', error);
+      throw error;
+    }
+    
+    return data;
+  };
+
   const fetchKasKeluar = async () => {
     const { data, error } = await supabase
       .from('kas_keluar')
@@ -113,13 +228,68 @@ export const useSupabaseData = () => {
     return data || [];
   };
 
+  const addKasKeluar = async (kasKeluarData: any) => {
+    const { data, error } = await supabase
+      .from('kas_keluar')
+      .insert([{
+        ...kasKeluarData,
+        diinput_oleh: session?.user?.id,
+        status_persetujuan: 'pending'
+      }])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error adding kas keluar:', error);
+      throw error;
+    }
+    
+    return data;
+  };
+
+  const updateKasKeluarStatus = async (id: string, status: string, userId?: string) => {
+    const updateData: any = { status_persetujuan: status };
+    
+    if (status === 'approved' && userId) {
+      updateData.disetujui_oleh = userId;
+      updateData.tanggal_persetujuan = new Date().toISOString();
+    }
+    
+    const { data, error } = await supabase
+      .from('kas_keluar')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating kas keluar status:', error);
+      throw error;
+    }
+    
+    return data;
+  };
+
   return {
     dashboardStats,
     loading,
     fetchDashboardStats,
+    // Warga functions
     fetchWarga,
+    addWarga,
+    updateWarga,
+    deleteWarga,
+    // Tipe Iuran functions
     fetchTipeIuran,
+    addTipeIuran,
+    updateTipeIuran,
+    deleteTipeIuran,
+    // Iuran functions
     fetchIuran,
-    fetchKasKeluar
+    addIuran,
+    // Kas Keluar functions
+    fetchKasKeluar,
+    addKasKeluar,
+    updateKasKeluarStatus
   };
 };

@@ -49,12 +49,12 @@ export const dateSchema = z
 // Hook for creating forms with validation
 export const useFormValidation = <T extends Record<string, any>>(
   schema: z.ZodSchema<T>,
-  defaultValues?: Partial<T>
+  defaultValues?: T
 ) => {
   return useForm<T>({
     resolver: zodResolver(schema),
-    defaultValues,
-    mode: 'onChange', // Enable real-time validation
+    defaultValues: defaultValues as any,
+    mode: 'onChange',
   });
 };
 
@@ -78,15 +78,17 @@ export const iuranFormSchema = z.object({
   tipe_iuran_id: z.string().min(1, 'Tipe iuran wajib dipilih'),
   nominal: nominalSchema,
   tanggal_bayar: dateSchema,
+  bulan: z.number().min(1).max(12),
+  tahun: z.number().min(2020),
   keterangan: z.string().optional(),
 });
 
 export const kasKeluarFormSchema = z.object({
+  judul: z.string().min(1, 'Judul wajib diisi').min(5, 'Judul minimal 5 karakter'),
   deskripsi: z.string().min(1, 'Deskripsi wajib diisi').min(5, 'Deskripsi minimal 5 karakter'),
   nominal: nominalSchema,
   tanggal_keluar: dateSchema,
   kategori: z.string().min(1, 'Kategori wajib dipilih'),
-  keterangan: z.string().optional(),
 });
 
 export type WargaFormData = z.infer<typeof wargaFormSchema>;
