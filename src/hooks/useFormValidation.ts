@@ -91,7 +91,14 @@ export const kasKeluarFormSchema = z.object({
   kategori: z.string().min(1, 'Kategori wajib dipilih'),
 });
 
+// Updated login schema to use email
+export const loginFormSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+});
+
 export type WargaFormData = z.infer<typeof wargaFormSchema>;
 export type TipeIuranFormData = z.infer<typeof tipeIuranFormSchema>;
 export type IuranFormData = z.infer<typeof iuranFormSchema>;
 export type KasKeluarFormData = z.infer<typeof kasKeluarFormSchema>;
+export type LoginFormData = z.infer<typeof loginFormSchema>;

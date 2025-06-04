@@ -8,17 +8,17 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Home, Lock, Phone } from 'lucide-react';
+import { Home, Lock, Mail } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 const loginSchema = z.object({
-  phone: z
+  email: z
     .string()
-    .min(1, 'Nomor handphone wajib diisi')
-    .regex(/^(\+62|62|0)[0-9]{9,13}$/, 'Format nomor handphone tidak valid'),
+    .min(1, 'Email wajib diisi')
+    .email('Format email tidak valid'),
   password: z
     .string()
     .min(1, 'Password wajib diisi')
@@ -35,7 +35,7 @@ const LoginPage = () => {
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      phone: '',
+      email: '',
       password: '',
     },
   });
@@ -43,11 +43,11 @@ const LoginPage = () => {
   const onSubmit = async (data: LoginForm) => {
     setLoading(true);
 
-    const { error } = await signIn(data.phone, data.password);
+    const { error } = await signIn(data.email, data.password);
     
     if (error) {
-      toast.error('Nomor handphone atau password salah');
-      form.setError('root', { message: 'Nomor handphone atau password salah' });
+      toast.error('Email atau password salah');
+      form.setError('root', { message: 'Email atau password salah' });
     } else {
       toast.success('Login berhasil!');
       navigate('/');
@@ -58,10 +58,10 @@ const LoginPage = () => {
 
   const fillDemoCredentials = (type: 'admin' | 'warga') => {
     if (type === 'admin') {
-      form.setValue('phone', '081234567890');
+      form.setValue('email', 'admin@example.com');
       form.setValue('password', 'admin123');
     } else {
-      form.setValue('phone', '081234567891');
+      form.setValue('email', 'warga@example.com');
       form.setValue('password', 'warga123');
     }
     form.clearErrors();
@@ -82,7 +82,7 @@ const LoginPage = () => {
           <CardHeader className="space-y-1">
             <CardTitle className="text-xl md:text-2xl">Login</CardTitle>
             <CardDescription>
-              Masukkan nomor handphone dan password Anda
+              Masukkan email dan password Anda
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -90,15 +90,15 @@ const LoginPage = () => {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="phone"
+                  name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nomor Handphone</FormLabel>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                           <Input
-                            placeholder="081234567890"
+                            placeholder="admin@example.com"
                             className="pl-10"
                             {...field}
                           />
@@ -183,8 +183,8 @@ const LoginPage = () => {
               </div>
               
               <div className="text-center text-xs text-gray-500 mt-2">
-                <p>Admin: 081234567890 / admin123</p>
-                <p>Warga: 081234567891 / warga123</p>
+                <p>Admin: admin@example.com / admin123</p>
+                <p>Warga: warga@example.com / warga123</p>
               </div>
             </div>
           </CardContent>
