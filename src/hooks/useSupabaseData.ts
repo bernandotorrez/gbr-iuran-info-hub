@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,8 +29,14 @@ export const useSupabaseData = () => {
         return;
       }
       
-      if (data) {
-        setDashboardStats(data);
+      if (data && typeof data === 'object') {
+        setDashboardStats({
+          total_warga: Number(data.total_warga) || 0,
+          total_kas_masuk: Number(data.total_kas_masuk) || 0,
+          total_kas_keluar: Number(data.total_kas_keluar) || 0,
+          saldo_kas: Number(data.saldo_kas) || 0,
+          iuran_bulan_ini: Number(data.iuran_bulan_ini) || 0
+        });
       }
     } catch (error) {
       console.error('Error:', error);
