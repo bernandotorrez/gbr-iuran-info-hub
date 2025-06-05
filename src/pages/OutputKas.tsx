@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { Plus, Search, TrendingDown, Calendar, FileText, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,7 +10,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
 import { useAuth } from "@/contexts/AuthContext"
 import * as XLSX from 'xlsx'
-import jsPDF from 'jspdf'
+import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
 
 interface Pengeluaran {
