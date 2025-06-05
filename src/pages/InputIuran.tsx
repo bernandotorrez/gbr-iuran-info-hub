@@ -1,34 +1,14 @@
 
 import { useState, useEffect } from "react"
-import { Plus, Search, Calendar, User, CreditCard, Filter } from "lucide-react"
+import { Plus, Search, Calendar, Users, CreditCard, TrendingUp, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
-
-interface Transaksi {
-  id: string
-  warga_id: string
-  tipe_iuran_id: string
-  nominal: number
-  tanggal_bayar: string
-  bulan: number
-  tahun: number
-  status_verifikasi: string
-  keterangan?: string
-  warga?: {
-    nama: string
-    alamat: string
-    rt_rw: string
-  }
-  tipe_iuran?: {
-    nama: string
-  }
-}
 
 interface Warga {
   id: string
@@ -43,39 +23,68 @@ interface TipeIuran {
   nominal: number
 }
 
+interface Iuran {
+  id: string
+  warga: { nama: string; alamat: string; rt_rw: string }
+  tipe_iuran: { nama: string }
+  nominal: number
+  tanggal_bayar: string
+  bulan: number
+  tahun: number
+  status_verifikasi: string
+}
+
+const months = [
+  { value: "1", label: "Januari" }, { value: "2", label: "Februari" }, 
+  { value: "3", label: "Maret" }, { value: "4", label: "April" }, 
+  { value: "5", label: "Mei" }, { value: "6", label: "Juni" },
+  { value: "7", label: "Juli" }, { value: "8", label: "Agustus" }, 
+  { value: "9", label: "September" }, { value: "10", label: "Oktober" }, 
+  { value: "11", label: "November" }, { value: "12", label: "Desember" }
+]
+
+const years = Array.from({ length: 10 }, (_, i) => {
+  const year = new Date().getFullYear() - 5 + i
+  return { value: year.toString(), label: year.toString() }
+})
+
 export default function InputIuran() {
-  const [transaksiList, setTransaksiList] = useState<Transaksi[]>([])
-  const [filteredTransaksi, setFilteredTransaksi] = useState<Transaksi[]>([])
   const [wargaList, setWargaList] = useState<Warga[]>([])
   const [tipeIuranList, setTipeIuranList] = useState<TipeIuran[]>([])
+  const [iuranList, setIuranList] = useState<Iuran[]>([])
+  const [filteredIuran, setFilteredIuran] = useState<Iuran[]>([])
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterMonth, setFilterMonth] = useState((new Date().getMonth() + 1).toString())
-  const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString())
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [filterMonth, setFilterMonth] = useState("")
+  const [filterYear, setFilterYear] = useState("")
+  const [filterTipeIuran, setFilterTipeIuran] = useState("")
   const { toast } = useToast()
   const { fetchWarga, fetchTipeIuran, fetchIuran, addIuran } = useSupabaseData()
 
   const [formData, setFormData] = useState({
     warga_id: "",
     tipe_iuran_id: "",
+    nominal: "",
     tanggal_bayar: "",
-    bulan: "",
-    tahun: "",
+    bulan: new Date().getMonth() + 1,
+    tahun: new Date().getFullYear(),
     keterangan: ""
   })
 
   const loadData = async () => {
     try {
       setLoading(true)
-      const [warga, tipeIuran, iuran] = await Promise.all([
+      const [wargaData, tipeIuranData, iuranData] = await Promise.all([
         fetchWarga(),
         fetchTipeIuran(),
         fetchIuran()
       ])
-      setWargaList(warga)
-      setTipeIuranList(tipeIuran)
-      setTransaksiList(iuran)
+      
+      setWargaList(wargaData)
+      setTipeIuranList(tipeIuranData)
+      setIuranList(iuranData)
+      setFilteredIuran(iuranData)
     } catch (error) {
       toast({ 
         title: "Error", 
@@ -91,70 +100,98 @@ export default function InputIuran() {
     loadData()
   }, [])
 
+  // Apply filters
   useEffect(() => {
-    // Set current month and year as default
-    const currentDate = new Date()
-    setFormData(prev => ({
-      ...prev,
-      bulan: (currentDate.getMonth() + 1).toString(),
-      tahun: currentDate.getFullYear().toString(),
-      tanggal_bayar: currentDate.toISOString().split('T')[0]
-    }))
-  }, [])
+    let filtered = iuranList
 
-  useEffect(() => {
-    // Filter transactions based on search term and month/year filter
-    let filtered = transaksiList.filter(transaksi =>
-      transaksi.warga?.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaksi.tipe_iuran?.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaksi.warga?.alamat.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-
-    if (filterMonth && filterYear) {
-      filtered = filtered.filter(transaksi => 
-        transaksi.bulan === parseInt(filterMonth) && 
-        transaksi.tahun === parseInt(filterYear)
+    if (searchTerm) {
+      filtered = filtered.filter(item =>
+        item.warga?.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.tipe_iuran?.nama.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
 
-    setFilteredTransaksi(filtered)
-  }, [transaksiList, searchTerm, filterMonth, filterYear])
+    if (filterMonth) {
+      filtered = filtered.filter(item => item.bulan === parseInt(filterMonth))
+    }
+
+    if (filterYear) {
+      filtered = filtered.filter(item => item.tahun === parseInt(filterYear))
+    }
+
+    if (filterTipeIuran) {
+      filtered = filtered.filter(item => item.tipe_iuran?.nama === filterTipeIuran)
+    }
+
+    setFilteredIuran(filtered)
+  }, [iuranList, searchTerm, filterMonth, filterYear, filterTipeIuran])
+
+  const handleTipeIuranChange = (value: string) => {
+    setFormData({...formData, tipe_iuran_id: value})
+    const selectedTipe = tipeIuranList.find(t => t.id === value)
+    if (selectedTipe) {
+      setFormData(prev => ({...prev, tipe_iuran_id: value, nominal: selectedTipe.nominal.toString()}))
+    }
+  }
+
+  const handleNominalKeyDown = (e: React.KeyboardEvent) => {
+    // Allow only numbers, backspace, delete, tab, escape, enter
+    if (!/[0-9]/.test(e.key) && 
+        !['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      e.preventDefault()
+    }
+  }
+
+  const validateForm = () => {
+    if (!formData.warga_id) {
+      toast({ title: "Error", description: "Pilih warga terlebih dahulu", variant: "destructive" })
+      return false
+    }
+    if (!formData.tipe_iuran_id) {
+      toast({ title: "Error", description: "Pilih tipe iuran terlebih dahulu", variant: "destructive" })
+      return false
+    }
+    if (!formData.nominal || parseInt(formData.nominal) <= 0) {
+      toast({ title: "Error", description: "Nominal harus lebih dari 0", variant: "destructive" })
+      return false
+    }
+    if (!formData.tanggal_bayar) {
+      toast({ title: "Error", description: "Tanggal bayar wajib diisi", variant: "destructive" })
+      return false
+    }
+    return true
+  }
 
   const handleAdd = async () => {
-    const selectedWarga = wargaList.find(w => w.id === formData.warga_id)
-    const selectedTipe = tipeIuranList.find(t => t.id === formData.tipe_iuran_id)
-    
-    if (!selectedWarga || !selectedTipe) {
-      toast({ title: "Error", description: "Pilih warga dan tipe iuran", variant: "destructive" })
-      return
-    }
+    if (!validateForm()) return
 
     try {
       await addIuran({
         warga_id: formData.warga_id,
         tipe_iuran_id: formData.tipe_iuran_id,
-        nominal: selectedTipe.nominal,
+        nominal: parseInt(formData.nominal),
         tanggal_bayar: formData.tanggal_bayar,
-        bulan: parseInt(formData.bulan),
-        tahun: parseInt(formData.tahun),
+        bulan: formData.bulan,
+        tahun: formData.tahun,
         keterangan: formData.keterangan
       })
 
       setFormData({ 
         warga_id: "", 
         tipe_iuran_id: "", 
-        tanggal_bayar: new Date().toISOString().split('T')[0], 
-        bulan: (new Date().getMonth() + 1).toString(), 
-        tahun: new Date().getFullYear().toString(), 
-        keterangan: "" 
+        nominal: "", 
+        tanggal_bayar: "", 
+        bulan: new Date().getMonth() + 1,
+        tahun: new Date().getFullYear(),
+        keterangan: ""
       })
       setIsAddOpen(false)
       await loadData()
-      toast({ title: "Berhasil", description: "Pembayaran iuran berhasil dicatat" })
+      toast({ title: "Berhasil", description: "Iuran berhasil dicatat" })
     } catch (error) {
       toast({ 
         title: "Error", 
-        description: "Gagal mencatat pembayaran",
+        description: "Gagal mencatat iuran",
         variant: "destructive" 
       })
     }
@@ -167,40 +204,22 @@ export default function InputIuran() {
     }).format(amount)
   }
 
-  const bulanOptions = [
-    { value: "1", label: "Januari" }, { value: "2", label: "Februari" }, 
-    { value: "3", label: "Maret" }, { value: "4", label: "April" }, 
-    { value: "5", label: "Mei" }, { value: "6", label: "Juni" },
-    { value: "7", label: "Juli" }, { value: "8", label: "Agustus" }, 
-    { value: "9", label: "September" }, { value: "10", label: "Oktober" }, 
-    { value: "11", label: "November" }, { value: "12", label: "Desember" }
-  ]
+  // Calculate statistics
+  const totalTransaksiFiltered = filteredIuran.length
+  const totalNominalFiltered = filteredIuran.reduce((sum, item) => sum + item.nominal, 0)
+  
+  const selectedTipeIuranName = filterTipeIuran || "Semua Jenis"
+  const selectedMonthName = filterMonth ? months.find(m => m.value === filterMonth)?.label : "Semua Bulan"
+  const selectedYearName = filterYear || "Semua Tahun"
 
-  const years = Array.from({ length: 10 }, (_, i) => (new Date().getFullYear() - 5 + i).toString())
-
-  const getBulanLabel = (bulan: number) => {
-    const option = bulanOptions.find(opt => opt.value === bulan.toString())
-    return option ? option.label : bulan.toString()
-  }
-
-  const getStatsForPeriod = (month: number, year: number) => {
-    const periodTransactions = transaksiList.filter(t => 
-      t.bulan === month && t.tahun === year
-    )
-    
-    const todayTransactions = periodTransactions.filter(t => 
-      t.tanggal_bayar === new Date().toISOString().split('T')[0]
-    )
-
-    return {
-      todayCount: todayTransactions.length,
-      todayTotal: todayTransactions.reduce((sum, t) => sum + t.nominal, 0),
-      monthCount: periodTransactions.length,
-      monthTotal: periodTransactions.reduce((sum, t) => sum + t.nominal, 0)
-    }
-  }
-
-  const stats = getStatsForPeriod(parseInt(filterMonth), parseInt(filterYear))
+  // Calculate totals for selected type across all periods
+  const totalTransaksiTipe = filterTipeIuran 
+    ? iuranList.filter(item => item.tipe_iuran?.nama === filterTipeIuran).length
+    : iuranList.length
+  
+  const totalNominalTipe = filterTipeIuran
+    ? iuranList.filter(item => item.tipe_iuran?.nama === filterTipeIuran).reduce((sum, item) => sum + item.nominal, 0)
+    : iuranList.reduce((sum, item) => sum + item.nominal, 0)
 
   if (loading) {
     return <div className="flex justify-center items-center h-48">Memuat data...</div>
@@ -210,23 +229,23 @@ export default function InputIuran() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Input Pembayaran Iuran</h1>
-          <p className="text-muted-foreground">Catat pembayaran iuran dari warga</p>
+          <h1 className="text-3xl font-bold">Input Iuran</h1>
+          <p className="text-muted-foreground">Kelola pembayaran iuran warga</p>
         </div>
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary/90">
               <Plus className="w-4 h-4 mr-2" />
-              Input Pembayaran
+              Tambah Iuran
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Input Pembayaran Iuran</DialogTitle>
+              <DialogTitle>Tambah Pembayaran Iuran</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="warga">Pilih Warga</Label>
+                <Label htmlFor="warga">Warga</Label>
                 <Select value={formData.warga_id} onValueChange={(value) => setFormData({...formData, warga_id: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="-- Pilih Warga --" />
@@ -234,15 +253,15 @@ export default function InputIuran() {
                   <SelectContent>
                     {wargaList.map(warga => (
                       <SelectItem key={warga.id} value={warga.id}>
-                        {warga.nama} - {warga.alamat}
+                        {warga.nama} - {warga.rt_rw}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="tipeIuran">Tipe Iuran</Label>
-                <Select value={formData.tipe_iuran_id} onValueChange={(value) => setFormData({...formData, tipe_iuran_id: value})}>
+                <Label htmlFor="tipe_iuran">Tipe Iuran</Label>
+                <Select value={formData.tipe_iuran_id} onValueChange={handleTipeIuranChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="-- Pilih Tipe Iuran --" />
                   </SelectTrigger>
@@ -256,139 +275,161 @@ export default function InputIuran() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="tanggalBayar">Tanggal Bayar</Label>
+                <Label htmlFor="nominal">Nominal (Rp)</Label>
                 <Input
-                  id="tanggalBayar"
+                  id="nominal"
+                  type="text"
+                  value={formData.nominal}
+                  onChange={(e) => setFormData({...formData, nominal: e.target.value})}
+                  onKeyDown={handleNominalKeyDown}
+                  placeholder="150000"
+                />
+              </div>
+              <div>
+                <Label htmlFor="tanggal">Tanggal Bayar</Label>
+                <Input
+                  id="tanggal"
                   type="date"
                   value={formData.tanggal_bayar}
                   onChange={(e) => setFormData({...formData, tanggal_bayar: e.target.value})}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="bulanPeriode">Bulan Periode</Label>
-                  <Select value={formData.bulan} onValueChange={(value) => setFormData({...formData, bulan: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="-- Pilih Bulan --" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {bulanOptions.map(bulan => (
-                        <SelectItem key={bulan.value} value={bulan.value}>{bulan.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="tahunPeriode">Tahun</Label>
-                  <Select value={formData.tahun} onValueChange={(value) => setFormData({...formData, tahun: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tahun" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {years.map(year => (
-                        <SelectItem key={year} value={year}>{year}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
               <div>
-                <Label htmlFor="keterangan">Catatan (Opsional)</Label>
+                <Label htmlFor="keterangan">Keterangan</Label>
                 <Input
                   id="keterangan"
                   value={formData.keterangan}
                   onChange={(e) => setFormData({...formData, keterangan: e.target.value})}
-                  placeholder="Catatan tambahan..."
+                  placeholder="Keterangan tambahan (opsional)"
                 />
               </div>
               <Button onClick={handleAdd} className="w-full">
-                Simpan Pembayaran
+                Simpan Iuran
               </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
+      {/* Filter Controls */}
+      <div className="flex items-center space-x-4 p-4 bg-card rounded-lg border">
+        <Filter className="h-5 w-5 text-muted-foreground" />
+        <div className="flex items-center space-x-2">
+          <label className="text-sm font-medium">Bulan:</label>
+          <Select value={filterMonth} onValueChange={setFilterMonth}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Semua Bulan" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Bulan</SelectItem>
+              {months.map(month => (
+                <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center space-x-2">
+          <label className="text-sm font-medium">Tahun:</label>
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder="Semua Tahun" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Tahun</SelectItem>
+              {years.map(year => (
+                <SelectItem key={year.value} value={year.value}>{year.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center space-x-2">
+          <label className="text-sm font-medium">Jenis Iuran:</label>
+          <Select value={filterTipeIuran} onValueChange={setFilterTipeIuran}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Semua Jenis" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Jenis</SelectItem>
+              {Array.from(new Set(tipeIuranList.map(t => t.nama))).map(nama => (
+                <SelectItem key={nama} value={nama}>{nama}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-card p-6 rounded-lg border">
           <div className="flex items-center">
-            <CreditCard className="h-8 w-8 text-green-600" />
+            <Calendar className="h-8 w-8 text-blue-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Transaksi Hari Ini</p>
-              <p className="text-2xl font-bold">{stats.todayCount}</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Total Transaksi {selectedMonthName} {selectedYearName}
+              </p>
+              <p className="text-sm font-medium text-muted-foreground">
+                dari {selectedTipeIuranName}
+              </p>
+              <p className="text-2xl font-bold">{totalTransaksiFiltered}</p>
             </div>
           </div>
         </div>
         
         <div className="bg-card p-6 rounded-lg border">
           <div className="flex items-center">
-            <User className="h-8 w-8 text-blue-600" />
+            <CreditCard className="h-8 w-8 text-green-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Nominal Hari Ini</p>
-              <p className="text-2xl font-bold">{formatCurrency(stats.todayTotal)}</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Total Nominal {selectedMonthName} {selectedYearName}
+              </p>
+              <p className="text-sm font-medium text-muted-foreground">
+                dari {selectedTipeIuranName}
+              </p>
+              <p className="text-2xl font-bold">{formatCurrency(totalNominalFiltered)}</p>
             </div>
           </div>
         </div>
 
         <div className="bg-card p-6 rounded-lg border">
           <div className="flex items-center">
-            <Calendar className="h-8 w-8 text-purple-600" />
+            <Users className="h-8 w-8 text-purple-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Transaksi Periode</p>
-              <p className="text-2xl font-bold">{stats.monthCount}</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Total Transaksi Keseluruhan
+              </p>
+              <p className="text-sm font-medium text-muted-foreground">
+                dari {selectedTipeIuranName}
+              </p>
+              <p className="text-2xl font-bold">{totalTransaksiTipe}</p>
             </div>
           </div>
         </div>
 
         <div className="bg-card p-6 rounded-lg border">
           <div className="flex items-center">
-            <Calendar className="h-8 w-8 text-orange-600" />
+            <TrendingUp className="h-8 w-8 text-orange-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Total Periode</p>
-              <p className="text-2xl font-bold">{formatCurrency(stats.monthTotal)}</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Total Nominal Keseluruhan
+              </p>
+              <p className="text-sm font-medium text-muted-foreground">
+                dari {selectedTipeIuranName}
+              </p>
+              <p className="text-2xl font-bold">{formatCurrency(totalNominalTipe)}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filter Section */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center p-4 bg-card rounded-lg border">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Filter:</span>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <div className="relative max-w-sm">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Cari transaksi..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-          <Select value={filterMonth} onValueChange={setFilterMonth}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Pilih bulan" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Semua Bulan</SelectItem>
-              {bulanOptions.map(bulan => (
-                <SelectItem key={bulan.value} value={bulan.value}>{bulan.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterYear} onValueChange={setFilterYear}>
-            <SelectTrigger className="w-[100px]">
-              <SelectValue placeholder="Tahun" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Semua</SelectItem>
-              {years.map(year => (
-                <SelectItem key={year} value={year}>{year}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="flex items-center space-x-2">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Cari warga atau tipe iuran..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8"
+          />
         </div>
       </div>
 
@@ -398,39 +439,33 @@ export default function InputIuran() {
             <TableRow>
               <TableHead>Warga</TableHead>
               <TableHead>Alamat</TableHead>
-              <TableHead>Jenis Iuran</TableHead>
+              <TableHead>Tipe Iuran</TableHead>
               <TableHead>Nominal</TableHead>
-              <TableHead>Periode</TableHead>
               <TableHead>Tanggal Bayar</TableHead>
+              <TableHead>Periode</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Catatan</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTransaksi.length > 0 ? (
-              filteredTransaksi.map((transaksi) => (
-                <TableRow key={transaksi.id}>
-                  <TableCell className="font-medium">{transaksi.warga?.nama}</TableCell>
-                  <TableCell>{transaksi.warga?.alamat}</TableCell>
-                  <TableCell>{transaksi.tipe_iuran?.nama}</TableCell>
-                  <TableCell>{formatCurrency(transaksi.nominal)}</TableCell>
-                  <TableCell>{getBulanLabel(transaksi.bulan)} {transaksi.tahun}</TableCell>
-                  <TableCell>{new Date(transaksi.tanggal_bayar).toLocaleDateString('id-ID')}</TableCell>
-                  <TableCell>
-                    <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                      {transaksi.status_verifikasi === 'verified' ? 'Terverifikasi' : 'Pending'}
-                    </span>
-                  </TableCell>
-                  <TableCell>{transaksi.keterangan || "-"}</TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground">
-                  Tidak ada transaksi ditemukan
+            {filteredIuran.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell className="font-medium">{item.warga?.nama}</TableCell>
+                <TableCell>{item.warga?.alamat}</TableCell>
+                <TableCell>{item.tipe_iuran?.nama}</TableCell>
+                <TableCell>{formatCurrency(item.nominal)}</TableCell>
+                <TableCell>{new Date(item.tanggal_bayar).toLocaleDateString('id-ID')}</TableCell>
+                <TableCell>{months.find(m => m.value === item.bulan.toString())?.label} {item.tahun}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    item.status_verifikasi === 'verified' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {item.status_verifikasi === 'verified' ? 'Terverifikasi' : 'Pending'}
+                  </span>
                 </TableCell>
               </TableRow>
-            )}
+            ))}
           </TableBody>
         </Table>
       </div>

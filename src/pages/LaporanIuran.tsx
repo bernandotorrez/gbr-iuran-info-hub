@@ -7,6 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
+import * as XLSX from 'xlsx'
+import jsPDF from 'jspdf'
+import 'jspdf-autotable'
 
 interface Transaction {
   id: string
@@ -57,10 +60,74 @@ export default function LaporanIuran() {
   }
 
   const handleExportPDF = () => {
+    const doc = new jsPDF()
+    
+    // Title
+    doc.setFontSize(18)
+    doc.text('Laporan Iuran', 14, 22)
+    
+    // Period info
+    doc.setFontSize(12)
+    const monthName = months.find(m => m.value === filterMonth)?.label
+    doc.text(`Periode: ${monthName} ${filterPeriod}`, 14, 35)
+    
+    // Summary statistics
+    doc.text(`Total Pemasukan: ${formatCurrency(totalPemasukan)}`, 14, 48)
+    doc.text(`Total Pengeluaran: ${formatCurrency(totalPengeluaran)}`, 14, 55)
+    doc.text(`Saldo Kas: ${formatCurrency(saldoKas)}`, 14, 62)
+    
+    // Table data
+    const tableData = transactions.map(transaction => [
+      transaction.warga?.nama || '',
+      transaction.warga?.alamat || '',
+      transaction.tipe_iuran?.nama || '',
+      formatCurrency(transaction.nominal),
+      new Date(transaction.tanggal_bayar).toLocaleDateString('id-ID'),
+      transaction.status_verifikasi === 'verified' ? 'Terverifikasi' : 'Pending'
+    ])
+
+    ;(doc as any).autoTable({
+      head: [['Warga', 'Alamat', 'Jenis Iuran', 'Nominal', 'Tanggal', 'Status']],
+      body: tableData,
+      startY: 75,
+    })
+
+    doc.save(`laporan-iuran-${monthName}-${filterPeriod}.pdf`)
     toast({ title: "Berhasil", description: "Laporan PDF berhasil diunduh" })
   }
 
   const handleExportExcel = () => {
+    const monthName = months.find(m => m.value === filterMonth)?.label
+    
+    // Summary data
+    const summaryData = [
+      { Keterangan: 'Total Pemasukan', Nilai: totalPemasukan },
+      { Keterangan: 'Total Pengeluaran', Nilai: totalPengeluaran },
+      { Keterangan: 'Saldo Kas', Nilai: saldoKas },
+      { Keterangan: 'Tingkat Pembayaran', Nilai: `${tingkatPembayaran}%` }
+    ]
+
+    // Transaction data
+    const transactionData = transactions.map(transaction => ({
+      Warga: transaction.warga?.nama,
+      Alamat: transaction.warga?.alamat,
+      'Jenis Iuran': transaction.tipe_iuran?.nama,
+      Nominal: transaction.nominal,
+      Tanggal: new Date(transaction.tanggal_bayar).toLocaleDateString('id-ID'),
+      Status: transaction.status_verifikasi === 'verified' ? 'Terverifikasi' : 'Pending'
+    }))
+
+    const wb = XLSX.utils.book_new()
+    
+    // Add summary sheet
+    const wsSummary = XLSX.utils.json_to_sheet(summaryData)
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan')
+    
+    // Add transactions sheet
+    const wsTransactions = XLSX.utils.json_to_sheet(transactionData)
+    XLSX.utils.book_append_sheet(wb, wsTransactions, 'Transaksi')
+    
+    XLSX.writeFile(wb, `laporan-iuran-${monthName}-${filterPeriod}.xlsx`)
     toast({ title: "Berhasil", description: "Laporan Excel berhasil diunduh" })
   }
 
