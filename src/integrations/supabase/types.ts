@@ -196,6 +196,7 @@ export type Database = {
         Row: {
           alamat: string | null
           created_at: string | null
+          email: string | null
           id: string
           nama: string
           phone_number: string
@@ -207,6 +208,7 @@ export type Database = {
         Insert: {
           alamat?: string | null
           created_at?: string | null
+          email?: string | null
           id: string
           nama: string
           phone_number: string
@@ -218,6 +220,7 @@ export type Database = {
         Update: {
           alamat?: string | null
           created_at?: string | null
+          email?: string | null
           id?: string
           nama?: string
           phone_number?: string
@@ -304,6 +307,10 @@ export type Database = {
       }
       get_dashboard_stats: {
         Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_dashboard_stats_filtered: {
+        Args: { target_month?: number; target_year?: number }
         Returns: Json
       }
     }

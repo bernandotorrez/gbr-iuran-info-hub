@@ -1,15 +1,17 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
-import { TrendingUp, Users, CreditCard, AlertCircle, Wallet } from "lucide-react"
+import { TrendingUp, Users, CreditCard, AlertCircle, Wallet, Calendar } from "lucide-react"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
 import { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function Dashboard() {
-  const { dashboardStats, loading } = useSupabaseData();
-  const [iuranData, setIuranData] = useState([]);
-  const [recentActivities, setRecentActivities] = useState([]);
+  const { dashboardStats, loading, fetchDashboardStats } = useSupabaseData();
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
   const statusData = [
     { name: 'Sudah Bayar', value: 85, color: '#22c55e' },
@@ -23,6 +25,27 @@ export default function Dashboard() {
       minimumFractionDigits: 0
     }).format(amount);
   };
+
+  const handleFilterChange = async () => {
+    await fetchDashboardStats(selectedMonth, selectedYear);
+  };
+
+  const resetFilter = async () => {
+    setSelectedMonth(new Date().getMonth() + 1);
+    setSelectedYear(new Date().getFullYear());
+    await fetchDashboardStats();
+  };
+
+  const months = [
+    { value: 1, label: "Januari" }, { value: 2, label: "Februari" }, 
+    { value: 3, label: "Maret" }, { value: 4, label: "April" }, 
+    { value: 5, label: "Mei" }, { value: 6, label: "Juni" },
+    { value: 7, label: "Juli" }, { value: 8, label: "Agustus" }, 
+    { value: 9, label: "September" }, { value: 10, label: "Oktober" }, 
+    { value: 11, label: "November" }, { value: 12, label: "Desember" }
+  ];
+
+  const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i);
 
   if (loading) {
     return (
@@ -55,6 +78,48 @@ export default function Dashboard() {
         </p>
       </div>
 
+      {/* Filter Section */}
+      <Card className="p-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Filter Periode:</span>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Pilih bulan" />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map((month) => (
+                  <SelectItem key={month.value} value={month.value.toString()}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Tahun" />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={handleFilterChange} size="sm">
+              Filter
+            </Button>
+            <Button onClick={resetFilter} variant="outline" size="sm">
+              Reset
+            </Button>
+          </div>
+        </div>
+      </Card>
+
       {/* Stats Cards */}
       <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card className="card-hover">
@@ -67,7 +132,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="text-lg md:text-2xl font-bold">{dashboardStats.total_warga}</div>
             <p className="text-xs text-muted-foreground">
-              Warga aktif
+              Total semua warga
             </p>
           </CardContent>
         </Card>
@@ -130,7 +195,7 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="text-lg md:text-xl">Status Pembayaran</CardTitle>
             <CardDescription className="text-sm">
-              Persentase warga yang sudah/belum bayar iuran bulan ini
+              Persentase warga yang sudah/belum bayar iuran periode ini
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -160,14 +225,14 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="text-lg md:text-xl">Ringkasan Keuangan</CardTitle>
             <CardDescription className="text-sm">
-              Total iuran yang masuk bulan ini: {dashboardStats.iuran_bulan_ini} transaksi
+              Total iuran yang masuk periode ini: {dashboardStats.iuran_bulan_ini} transaksi
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center p-3 md:p-4 border rounded-lg">
               <div>
                 <p className="font-medium text-sm md:text-base">Total Kas Masuk</p>
-                <p className="text-xs md:text-sm text-muted-foreground">Dari semua iuran</p>
+                <p className="text-xs md:text-sm text-muted-foreground">Periode yang dipilih</p>
               </div>
               <div className="text-right">
                 <p className="font-medium text-primary text-sm md:text-base">
@@ -179,7 +244,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-center p-3 md:p-4 border rounded-lg">
               <div>
                 <p className="font-medium text-sm md:text-base">Total Kas Keluar</p>
-                <p className="text-xs md:text-sm text-muted-foreground">Pengeluaran kas</p>
+                <p className="text-xs md:text-sm text-muted-foreground">Periode yang dipilih</p>
               </div>
               <div className="text-right">
                 <p className="font-medium text-destructive text-sm md:text-base">

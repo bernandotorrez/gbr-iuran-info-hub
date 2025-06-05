@@ -20,7 +20,9 @@ export const useSupabaseData = () => {
     total_kas_masuk: 0,
     total_kas_keluar: 0,
     saldo_kas: 0,
-    iuran_bulan_ini: 0
+    iuran_bulan_ini: 0,
+    filter_month: new Date().getMonth() + 1,
+    filter_year: new Date().getFullYear()
   });
   const [loading, setLoading] = useState(true);
 
@@ -30,10 +32,13 @@ export const useSupabaseData = () => {
     }
   }, [session]);
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardStats = async (month?: number, year?: number) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.rpc('get_dashboard_stats');
+      const { data, error } = await supabase.rpc('get_dashboard_stats_filtered', {
+        target_month: month || null,
+        target_year: year || null
+      });
       
       if (error) {
         console.error('Error fetching dashboard stats:', error);
@@ -47,7 +52,9 @@ export const useSupabaseData = () => {
           total_kas_masuk: Number(statsData.total_kas_masuk) || 0,
           total_kas_keluar: Number(statsData.total_kas_keluar) || 0,
           saldo_kas: Number(statsData.saldo_kas) || 0,
-          iuran_bulan_ini: Number(statsData.iuran_bulan_ini) || 0
+          iuran_bulan_ini: Number(statsData.iuran_bulan_ini) || 0,
+          filter_month: Number(statsData.filter_month) || new Date().getMonth() + 1,
+          filter_year: Number(statsData.filter_year) || new Date().getFullYear()
         });
       }
     } catch (error) {
@@ -61,7 +68,6 @@ export const useSupabaseData = () => {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('role', 'warga')
       .order('nama');
     
     if (error) {
@@ -180,15 +186,22 @@ export const useSupabaseData = () => {
     }
   };
 
-  const fetchIuran = async () => {
-    const { data, error } = await supabase
+  const fetchIuran = async (month?: number, year?: number) => {
+    let query = supabase
       .from('iuran')
       .select(`
         *,
         warga:profiles!warga_id(nama, alamat, rt_rw),
         tipe_iuran:tipe_iuran!tipe_iuran_id(nama)
-      `)
-      .order('tanggal_bayar', { ascending: false });
+      `);
+
+    if (month && year) {
+      query = query
+        .eq('bulan', month)
+        .eq('tahun', year);
+    }
+
+    const { data, error } = await query.order('tanggal_bayar', { ascending: false });
     
     if (error) {
       console.error('Error fetching iuran:', error);
@@ -220,15 +233,22 @@ export const useSupabaseData = () => {
     return data;
   };
 
-  const fetchKasKeluar = async () => {
-    const { data, error } = await supabase
+  const fetchKasKeluar = async (month?: number, year?: number) => {
+    let query = supabase
       .from('kas_keluar')
       .select(`
         *,
         diinput_oleh:profiles!diinput_oleh(nama),
         disetujui_oleh:profiles!disetujui_oleh(nama)
-      `)
-      .order('tanggal_keluar', { ascending: false });
+      `);
+
+    if (month && year) {
+      query = query
+        .gte('tanggal_keluar', `${year}-${month.toString().padStart(2, '0')}-01`)
+        .lt('tanggal_keluar', `${year}-${(month + 1).toString().padStart(2, '0')}-01`);
+    }
+
+    const { data, error } = await query.order('tanggal_keluar', { ascending: false });
     
     if (error) {
       console.error('Error fetching kas keluar:', error);
