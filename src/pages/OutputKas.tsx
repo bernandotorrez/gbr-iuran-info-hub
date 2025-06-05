@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { Plus, Search, TrendingDown, Calendar, FileText, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -47,7 +46,7 @@ export default function OutputKas() {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const { session } = useAuth()
-  const { fetchKasKeluar, addKasKeluar, updateKasKeluarStatus } = useSupabaseData()
+  const { fetchKasKeluar, addKasKeluar, updateKasKeluarStatus, dashboardStats, fetchDashboardStats } = useSupabaseData()
 
   const [formData, setFormData] = useState({
     tanggal_keluar: "",
@@ -72,6 +71,8 @@ export default function OutputKas() {
       setLoading(true)
       const data = await fetchKasKeluar()
       setPengeluaranList(data)
+      // Load dashboard stats to get current saldo kas
+      await fetchDashboardStats()
     } catch (error) {
       toast({ 
         title: "Error", 
@@ -135,6 +136,13 @@ export default function OutputKas() {
 
     if (!formData.nominal || parseInt(formData.nominal) <= 0) {
       errors.nominal = "Nominal harus lebih dari 0"
+      isValid = false
+    }
+
+    // Check if cash balance is sufficient
+    const nominalValue = parseInt(formData.nominal)
+    if (nominalValue > dashboardStats.saldo_kas) {
+      errors.nominal = "Saldo Kas Tidak Mencukupi"
       isValid = false
     }
 
@@ -302,6 +310,9 @@ export default function OutputKas() {
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Tambah Pengeluaran Kas</DialogTitle>
+                <p className="text-sm text-muted-foreground">
+                  Saldo Kas Tersedia: {formatCurrency(dashboardStats.saldo_kas)}
+                </p>
               </DialogHeader>
               <div className="space-y-4">
                 <div>

@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
+import { useFormValidation, iuranFormSchema } from "@/hooks/useFormValidation"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 
 interface Warga {
   id: string
@@ -62,7 +64,7 @@ export default function InputIuran() {
   const { toast } = useToast()
   const { fetchWarga, fetchTipeIuran, fetchIuran, addIuran } = useSupabaseData()
 
-  const [formData, setFormData] = useState({
+  const form = useFormValidation(iuranFormSchema, {
     warga_id: "",
     tipe_iuran_id: "",
     nominal: "",
@@ -111,15 +113,15 @@ export default function InputIuran() {
       )
     }
 
-    if (filterMonth) {
+    if (filterMonth && filterMonth !== "all") {
       filtered = filtered.filter(item => item.bulan === parseInt(filterMonth))
     }
 
-    if (filterYear) {
+    if (filterYear && filterYear !== "all") {
       filtered = filtered.filter(item => item.tahun === parseInt(filterYear))
     }
 
-    if (filterTipeIuran) {
+    if (filterTipeIuran && filterTipeIuran !== "all") {
       filtered = filtered.filter(item => item.tipe_iuran?.nama === filterTipeIuran)
     }
 
@@ -127,60 +129,38 @@ export default function InputIuran() {
   }, [iuranList, searchTerm, filterMonth, filterYear, filterTipeIuran])
 
   const handleTipeIuranChange = (value: string) => {
-    setFormData({...formData, tipe_iuran_id: value})
+    form.setValue("tipe_iuran_id", value)
     const selectedTipe = tipeIuranList.find(t => t.id === value)
     if (selectedTipe) {
-      setFormData(prev => ({...prev, tipe_iuran_id: value, nominal: selectedTipe.nominal.toString()}))
+      form.setValue("nominal", selectedTipe.nominal.toString())
     }
   }
 
   const handleNominalKeyDown = (e: React.KeyboardEvent) => {
-    // Allow only numbers, backspace, delete, tab, escape, enter
+    // Allow only numbers, backspace, delete, tab, escape, enter, arrow keys
     if (!/[0-9]/.test(e.key) && 
         !['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault()
     }
   }
 
-  const validateForm = () => {
-    if (!formData.warga_id) {
-      toast({ title: "Error", description: "Pilih warga terlebih dahulu", variant: "destructive" })
-      return false
-    }
-    if (!formData.tipe_iuran_id) {
-      toast({ title: "Error", description: "Pilih tipe iuran terlebih dahulu", variant: "destructive" })
-      return false
-    }
-    if (!formData.nominal || parseInt(formData.nominal) <= 0) {
-      toast({ title: "Error", description: "Nominal harus lebih dari 0", variant: "destructive" })
-      return false
-    }
-    if (!formData.tanggal_bayar) {
-      toast({ title: "Error", description: "Tanggal bayar wajib diisi", variant: "destructive" })
-      return false
-    }
-    return true
-  }
-
-  const handleAdd = async () => {
-    if (!validateForm()) return
-
+  const onSubmit = async (data: any) => {
     try {
       await addIuran({
-        warga_id: formData.warga_id,
-        tipe_iuran_id: formData.tipe_iuran_id,
-        nominal: parseInt(formData.nominal),
-        tanggal_bayar: formData.tanggal_bayar,
-        bulan: formData.bulan,
-        tahun: formData.tahun,
-        keterangan: formData.keterangan
+        warga_id: data.warga_id,
+        tipe_iuran_id: data.tipe_iuran_id,
+        nominal: parseInt(data.nominal),
+        tanggal_bayar: data.tanggal_bayar,
+        bulan: data.bulan,
+        tahun: data.tahun,
+        keterangan: data.keterangan
       })
 
-      setFormData({ 
-        warga_id: "", 
-        tipe_iuran_id: "", 
-        nominal: "", 
-        tanggal_bayar: "", 
+      form.reset({
+        warga_id: "",
+        tipe_iuran_id: "",
+        nominal: "",
+        tanggal_bayar: "",
         bulan: new Date().getMonth() + 1,
         tahun: new Date().getFullYear(),
         keterangan: ""
@@ -208,16 +188,16 @@ export default function InputIuran() {
   const totalTransaksiFiltered = filteredIuran.length
   const totalNominalFiltered = filteredIuran.reduce((sum, item) => sum + item.nominal, 0)
   
-  const selectedTipeIuranName = filterTipeIuran || "Semua Jenis"
-  const selectedMonthName = filterMonth ? months.find(m => m.value === filterMonth)?.label : "Semua Bulan"
-  const selectedYearName = filterYear || "Semua Tahun"
+  const selectedTipeIuranName = filterTipeIuran && filterTipeIuran !== "all" ? filterTipeIuran : "Semua Jenis"
+  const selectedMonthName = filterMonth && filterMonth !== "all" ? months.find(m => m.value === filterMonth)?.label : "Semua Bulan"
+  const selectedYearName = filterYear && filterYear !== "all" ? filterYear : "Semua Tahun"
 
   // Calculate totals for selected type across all periods
-  const totalTransaksiTipe = filterTipeIuran 
+  const totalTransaksiTipe = filterTipeIuran && filterTipeIuran !== "all"
     ? iuranList.filter(item => item.tipe_iuran?.nama === filterTipeIuran).length
     : iuranList.length
   
-  const totalNominalTipe = filterTipeIuran
+  const totalNominalTipe = filterTipeIuran && filterTipeIuran !== "all"
     ? iuranList.filter(item => item.tipe_iuran?.nama === filterTipeIuran).reduce((sum, item) => sum + item.nominal, 0)
     : iuranList.reduce((sum, item) => sum + item.nominal, 0)
 
@@ -243,70 +223,116 @@ export default function InputIuran() {
             <DialogHeader>
               <DialogTitle>Tambah Pembayaran Iuran</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="warga">Warga</Label>
-                <Select value={formData.warga_id} onValueChange={(value) => setFormData({...formData, warga_id: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="-- Pilih Warga --" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {wargaList.map(warga => (
-                      <SelectItem key={warga.id} value={warga.id}>
-                        {warga.nama} - {warga.rt_rw}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="tipe_iuran">Tipe Iuran</Label>
-                <Select value={formData.tipe_iuran_id} onValueChange={handleTipeIuranChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="-- Pilih Tipe Iuran --" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tipeIuranList.map(tipe => (
-                      <SelectItem key={tipe.id} value={tipe.id}>
-                        {tipe.nama} - {formatCurrency(tipe.nominal)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="nominal">Nominal (Rp)</Label>
-                <Input
-                  id="nominal"
-                  type="text"
-                  value={formData.nominal}
-                  onChange={(e) => setFormData({...formData, nominal: e.target.value})}
-                  onKeyDown={handleNominalKeyDown}
-                  placeholder="150000"
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="warga_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Warga</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="-- Pilih Warga --" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {wargaList.map(warga => (
+                            <SelectItem key={warga.id} value={warga.id}>
+                              {warga.nama} - {warga.rt_rw}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div>
-                <Label htmlFor="tanggal">Tanggal Bayar</Label>
-                <Input
-                  id="tanggal"
-                  type="date"
-                  value={formData.tanggal_bayar}
-                  onChange={(e) => setFormData({...formData, tanggal_bayar: e.target.value})}
+
+                <FormField
+                  control={form.control}
+                  name="tipe_iuran_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipe Iuran</FormLabel>
+                      <Select value={field.value} onValueChange={handleTipeIuranChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="-- Pilih Tipe Iuran --" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {tipeIuranList.map(tipe => (
+                            <SelectItem key={tipe.id} value={tipe.id}>
+                              {tipe.nama} - {formatCurrency(tipe.nominal)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div>
-                <Label htmlFor="keterangan">Keterangan</Label>
-                <Input
-                  id="keterangan"
-                  value={formData.keterangan}
-                  onChange={(e) => setFormData({...formData, keterangan: e.target.value})}
-                  placeholder="Keterangan tambahan (opsional)"
+
+                <FormField
+                  control={form.control}
+                  name="nominal"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nominal (Rp)</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="text"
+                          onKeyDown={handleNominalKeyDown}
+                          placeholder="150000"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <Button onClick={handleAdd} className="w-full">
-                Simpan Iuran
-              </Button>
-            </div>
+
+                <FormField
+                  control={form.control}
+                  name="tanggal_bayar"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tanggal Bayar</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="date"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="keterangan"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Keterangan</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Keterangan tambahan (opsional)"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button type="submit" className="w-full">
+                  Simpan Iuran
+                </Button>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
       </div>
