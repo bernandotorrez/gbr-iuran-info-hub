@@ -11,10 +11,12 @@ import ForgotPasswordPage from "./components/auth/ForgotPasswordPage";
 import Dashboard from "./pages/Dashboard";
 import MasterWarga from "./pages/MasterWarga";
 import MasterTipeIuran from "./pages/MasterTipeIuran";
+import MasterKategoriKas from "./pages/MasterKategoriKas";
 import InputIuran from "./pages/InputIuran";
 import OutputKas from "./pages/OutputKas";
 import LaporanIuran from "./pages/LaporanIuran";
 import ArtikelBerita from "./pages/ArtikelBerita";
+import PublicArtikel from "./pages/PublicArtikel";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -29,6 +31,7 @@ const App = () => (
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/public/artikel" element={<PublicArtikel />} />
           <Route path="/*" element={
             <ProtectedRoute>
               <Layout>
@@ -36,6 +39,7 @@ const App = () => (
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/warga" element={<MasterWarga />} />
                   <Route path="/tipe-iuran" element={<MasterTipeIuran />} />
+                  <Route path="/master-kategori-kas" element={<MasterKategoriKas />} />
                   <Route path="/input-iuran" element={<InputIuran />} />
                   <Route path="/output-kas" element={<OutputKas />} />
                   <Route path="/laporan" element={<LaporanIuran />} />

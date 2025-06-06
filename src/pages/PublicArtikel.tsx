@@ -1,0 +1,203 @@
+
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Calendar, User, Eye } from "lucide-react"
+import { supabase } from "@/integrations/supabase/client"
+
+interface Artikel {
+  id: string
+  judul: string
+  konten: string
+  excerpt: string | null
+  gambar_url: string | null
+  kategori: string | null
+  published_at: string | null
+  author_id: string
+  profiles: {
+    nama: string
+  } | null
+}
+
+export default function PublicArtikel() {
+  const [artikelList, setArtikelList] = useState<Artikel[]>([])
+  const [selectedArtikel, setSelectedArtikel] = useState<Artikel | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const fetchArtikel = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('artikel_berita')
+        .select(`
+          *,
+          profiles:author_id(nama)
+        `)
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+      
+      if (error) {
+        console.error('Error fetching artikel:', error)
+        return
+      }
+      
+      setArtikelList(data || [])
+    } catch (error) {
+      console.error('Error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchArtikel()
+  }, [])
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('id-ID', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg">Memuat artikel...</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (selectedArtikel) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <button
+            onClick={() => setSelectedArtikel(null)}
+            className="mb-6 text-blue-600 hover:text-blue-800 font-medium"
+          >
+            ← Kembali ke Daftar Artikel
+          </button>
+          
+          <article className="bg-white rounded-lg shadow-lg overflow-hidden">
+            {selectedArtikel.gambar_url && (
+              <img
+                src={selectedArtikel.gambar_url}
+                alt={selectedArtikel.judul}
+                className="w-full h-64 md:h-96 object-cover"
+              />
+            )}
+            
+            <div className="p-6 md:p-8">
+              <div className="flex flex-wrap gap-2 mb-4">
+                <Badge variant="secondary">
+                  {selectedArtikel.kategori || 'Umum'}
+                </Badge>
+              </div>
+              
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                {selectedArtikel.judul}
+              </h1>
+              
+              <div className="flex items-center gap-4 text-gray-600 mb-6">
+                <div className="flex items-center gap-1">
+                  <User className="w-4 h-4" />
+                  <span>{selectedArtikel.profiles?.nama || 'Admin'}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  <span>{formatDate(selectedArtikel.published_at || '')}</span>
+                </div>
+              </div>
+              
+              <div 
+                className="prose prose-lg max-w-none text-gray-800 leading-relaxed"
+                dangerouslySetInnerHTML={{ 
+                  __html: selectedArtikel.konten.replace(/\n/g, '<br>') 
+                }}
+              />
+            </div>
+          </article>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Artikel & Berita Perumahan GBR
+          </h1>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Dapatkan informasi terkini seputar kegiatan dan pengumuman di Perumahan GBR
+          </p>
+        </div>
+
+        {artikelList.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-500 text-lg">
+              Belum ada artikel yang dipublikasikan
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {artikelList.map((artikel) => (
+              <Card 
+                key={artikel.id} 
+                className="cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => setSelectedArtikel(artikel)}
+              >
+                {artikel.gambar_url && (
+                  <div className="aspect-video overflow-hidden">
+                    <img
+                      src={artikel.gambar_url}
+                      alt={artikel.judul}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                )}
+                
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {artikel.kategori || 'Umum'}
+                    </Badge>
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <Calendar className="w-3 h-3" />
+                      <span>{formatDate(artikel.published_at || '')}</span>
+                    </div>
+                  </div>
+                  <CardTitle className="text-lg line-clamp-2">
+                    {artikel.judul}
+                  </CardTitle>
+                </CardHeader>
+                
+                <CardContent className="pt-0">
+                  <p className="text-gray-600 text-sm line-clamp-3 mb-3">
+                    {artikel.excerpt || artikel.konten.substring(0, 150) + '...'}
+                  </p>
+                  
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <User className="w-3 h-3" />
+                      <span>{artikel.profiles?.nama || 'Admin'}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-blue-600 font-medium">
+                      <Eye className="w-3 h-3" />
+                      <span>Baca Selengkapnya</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

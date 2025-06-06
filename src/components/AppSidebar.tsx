@@ -45,6 +45,11 @@ const menuItems = [
     icon: CreditCard,
   },
   {
+    title: "Master Kategori Kas",
+    url: "/master-kategori-kas",
+    icon: Settings,
+  },
+  {
     title: "Input Iuran",
     url: "/input-iuran",
     icon: TrendingUp,

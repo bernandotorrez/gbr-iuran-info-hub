@@ -1,97 +1,67 @@
 
 import { useState, useEffect } from "react"
-import { Plus, Search, Edit, Trash2 } from "lucide-react"
+import { Plus, Search, Edit, Trash2, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
+import { useKategoriKas } from "@/hooks/useKategoriKas"
 import { supabase } from "@/integrations/supabase/client"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface KategoriKas {
   id: string
   nama: string
   deskripsi: string | null
   status_aktif: boolean
-  created_at: string
-  updated_at: string
 }
 
 export default function MasterKategoriKas() {
-  const [kategoriList, setKategoriList] = useState<KategoriKas[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editingKategori, setEditingKategori] = useState<KategoriKas | null>(null)
-  const [loading, setLoading] = useState(true)
   const { toast } = useToast()
+  const { kategoriList, loading, fetchKategoriKas } = useKategoriKas()
+  const { user, session } = useAuth()
 
   const [formData, setFormData] = useState({
-    nama: "",
-    deskripsi: "",
-    status_aktif: true
-  })
-
-  const [formErrors, setFormErrors] = useState({
     nama: "",
     deskripsi: ""
   })
 
-  const loadKategoriKas = async () => {
-    try {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('kategori_kas_keluar')
-        .select('*')
-        .order('nama')
-      
-      if (error) throw error
-      setKategoriList(data || [])
-    } catch (error) {
-      toast({ 
-        title: "Error", 
-        description: "Gagal memuat data kategori kas",
-        variant: "destructive" 
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [userProfile, setUserProfile] = useState<any>(null)
 
   useEffect(() => {
-    loadKategoriKas()
-  }, [])
+    const fetchUserProfile = async () => {
+      if (user?.id) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        
+        if (!error && data) {
+          setUserProfile(data)
+        }
+      }
+    }
+    
+    fetchUserProfile()
+  }, [user])
 
   const filteredKategori = kategoriList.filter(item =>
     item.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (item.deskripsi && item.deskripsi.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
-  const validateForm = () => {
-    const errors = {
-      nama: "",
-      deskripsi: ""
-    }
-
-    let isValid = true
-
-    if (!formData.nama || formData.nama.length < 3) {
-      errors.nama = "Nama kategori wajib diisi minimal 3 karakter"
-      isValid = false
-    }
-
-    setFormErrors(errors)
-    return isValid
-  }
-
   const handleAdd = async () => {
-    if (!validateForm()) {
+    if (!formData.nama.trim()) {
       toast({ 
         title: "Error", 
-        description: "Periksa kembali form yang diisi",
+        description: "Nama kategori wajib diisi",
         variant: "destructive" 
       })
       return
@@ -103,41 +73,29 @@ export default function MasterKategoriKas() {
         .insert([{
           nama: formData.nama,
           deskripsi: formData.deskripsi || null,
-          status_aktif: formData.status_aktif
+          status_aktif: true
         }])
 
       if (error) throw error
 
-      setFormData({ nama: "", deskripsi: "", status_aktif: true })
-      setFormErrors({ nama: "", deskripsi: "" })
+      setFormData({ nama: "", deskripsi: "" })
       setIsAddOpen(false)
-      await loadKategoriKas()
-      toast({ title: "Berhasil", description: "Kategori kas berhasil ditambahkan" })
+      await fetchKategoriKas()
+      toast({ title: "Berhasil", description: "Kategori berhasil ditambahkan" })
     } catch (error) {
       toast({ 
         title: "Error", 
-        description: "Gagal menambahkan kategori kas",
+        description: "Gagal menambahkan kategori",
         variant: "destructive" 
       })
     }
   }
 
-  const handleEdit = (kategori: KategoriKas) => {
-    setEditingKategori(kategori)
-    setFormData({
-      nama: kategori.nama,
-      deskripsi: kategori.deskripsi || "",
-      status_aktif: kategori.status_aktif
-    })
-    setFormErrors({ nama: "", deskripsi: "" })
-    setIsEditOpen(true)
-  }
-
-  const handleUpdate = async () => {
-    if (!validateForm() || !editingKategori) {
+  const handleEdit = async () => {
+    if (!editingKategori || !formData.nama.trim()) {
       toast({ 
         title: "Error", 
-        description: "Periksa kembali form yang diisi",
+        description: "Nama kategori wajib diisi",
         variant: "destructive" 
       })
       return
@@ -148,32 +106,28 @@ export default function MasterKategoriKas() {
         .from('kategori_kas_keluar')
         .update({
           nama: formData.nama,
-          deskripsi: formData.deskripsi || null,
-          status_aktif: formData.status_aktif
+          deskripsi: formData.deskripsi || null
         })
         .eq('id', editingKategori.id)
 
       if (error) throw error
 
-      setFormData({ nama: "", deskripsi: "", status_aktif: true })
-      setFormErrors({ nama: "", deskripsi: "" })
+      setFormData({ nama: "", deskripsi: "" })
       setIsEditOpen(false)
       setEditingKategori(null)
-      await loadKategoriKas()
-      toast({ title: "Berhasil", description: "Kategori kas berhasil diperbarui" })
+      await fetchKategoriKas()
+      toast({ title: "Berhasil", description: "Kategori berhasil diperbarui" })
     } catch (error) {
       toast({ 
         title: "Error", 
-        description: "Gagal memperbarui kategori kas",
+        description: "Gagal memperbarui kategori",
         variant: "destructive" 
       })
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus kategori ini?")) {
-      return
-    }
+    if (!confirm('Apakah Anda yakin ingin menghapus kategori ini?')) return
 
     try {
       const { error } = await supabase
@@ -183,16 +137,27 @@ export default function MasterKategoriKas() {
 
       if (error) throw error
 
-      await loadKategoriKas()
-      toast({ title: "Berhasil", description: "Kategori kas berhasil dinonaktifkan" })
+      await fetchKategoriKas()
+      toast({ title: "Berhasil", description: "Kategori berhasil dihapus" })
     } catch (error) {
       toast({ 
         title: "Error", 
-        description: "Gagal menghapus kategori kas",
+        description: "Gagal menghapus kategori",
         variant: "destructive" 
       })
     }
   }
+
+  const openEditDialog = (kategori: KategoriKas) => {
+    setEditingKategori(kategori)
+    setFormData({
+      nama: kategori.nama,
+      deskripsi: kategori.deskripsi || ""
+    })
+    setIsEditOpen(true)
+  }
+
+  const isAdmin = userProfile?.role === 'admin'
 
   if (loading) {
     return <div className="flex justify-center items-center h-48">Memuat data...</div>
@@ -203,60 +168,46 @@ export default function MasterKategoriKas() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Master Kategori Output Kas</h1>
-          <p className="text-muted-foreground">Kelola kategori pengeluaran kas perumahan</p>
+          <p className="text-muted-foreground">Kelola kategori pengeluaran kas</p>
         </div>
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90">
-              <Plus className="w-4 h-4 mr-2" />
-              Tambah Kategori
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Tambah Kategori Kas</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="nama">Nama Kategori *</Label>
-                <Input
-                  id="nama"
-                  value={formData.nama}
-                  onChange={(e) => setFormData({...formData, nama: e.target.value})}
-                  placeholder="Nama kategori"
-                  className={formErrors.nama ? "border-red-500" : ""}
-                />
-                {formErrors.nama && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.nama}</p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="deskripsi">Deskripsi</Label>
-                <Textarea
-                  id="deskripsi"
-                  value={formData.deskripsi}
-                  onChange={(e) => setFormData({...formData, deskripsi: e.target.value})}
-                  placeholder="Deskripsi kategori"
-                  className={formErrors.deskripsi ? "border-red-500" : ""}
-                />
-                {formErrors.deskripsi && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.deskripsi}</p>
-                )}
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="status_aktif"
-                  checked={formData.status_aktif}
-                  onCheckedChange={(checked) => setFormData({...formData, status_aktif: checked})}
-                />
-                <Label htmlFor="status_aktif">Aktif</Label>
-              </div>
-              <Button onClick={handleAdd} className="w-full">
-                Simpan Kategori
+        {isAdmin && (
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90">
+                <Plus className="w-4 h-4 mr-2" />
+                Tambah Kategori
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Tambah Kategori Kas</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="nama">Nama Kategori *</Label>
+                  <Input
+                    id="nama"
+                    value={formData.nama}
+                    onChange={(e) => setFormData({...formData, nama: e.target.value})}
+                    placeholder="Nama kategori"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="deskripsi">Deskripsi</Label>
+                  <Input
+                    id="deskripsi"
+                    value={formData.deskripsi}
+                    onChange={(e) => setFormData({...formData, deskripsi: e.target.value})}
+                    placeholder="Deskripsi kategori"
+                  />
+                </div>
+                <Button onClick={handleAdd} className="w-full">
+                  Simpan Kategori
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <div className="flex items-center space-x-2">
@@ -278,14 +229,14 @@ export default function MasterKategoriKas() {
               <TableHead>Nama Kategori</TableHead>
               <TableHead>Deskripsi</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Aksi</TableHead>
+              {isAdmin && <TableHead className="text-right">Aksi</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredKategori.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="font-medium">{item.nama}</TableCell>
-                <TableCell>{item.deskripsi || "-"}</TableCell>
+                <TableCell>{item.deskripsi || '-'}</TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${
                     item.status_aktif 
@@ -295,17 +246,17 @@ export default function MasterKategoriKas() {
                     {item.status_aktif ? 'Aktif' : 'Tidak Aktif'}
                   </span>
                 </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end space-x-1">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleEdit(item)}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    {item.status_aktif && (
+                {isAdmin && (
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => openEditDialog(item)}
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
                       <Button 
                         variant="ghost" 
                         size="sm"
@@ -314,9 +265,9 @@ export default function MasterKategoriKas() {
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
-                    )}
-                  </div>
-                </TableCell>
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
@@ -337,34 +288,18 @@ export default function MasterKategoriKas() {
                 value={formData.nama}
                 onChange={(e) => setFormData({...formData, nama: e.target.value})}
                 placeholder="Nama kategori"
-                className={formErrors.nama ? "border-red-500" : ""}
               />
-              {formErrors.nama && (
-                <p className="text-sm text-red-500 mt-1">{formErrors.nama}</p>
-              )}
             </div>
             <div>
               <Label htmlFor="edit-deskripsi">Deskripsi</Label>
-              <Textarea
+              <Input
                 id="edit-deskripsi"
                 value={formData.deskripsi}
                 onChange={(e) => setFormData({...formData, deskripsi: e.target.value})}
                 placeholder="Deskripsi kategori"
-                className={formErrors.deskripsi ? "border-red-500" : ""}
               />
-              {formErrors.deskripsi && (
-                <p className="text-sm text-red-500 mt-1">{formErrors.deskripsi}</p>
-              )}
             </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="edit-status_aktif"
-                checked={formData.status_aktif}
-                onCheckedChange={(checked) => setFormData({...formData, status_aktif: checked})}
-              />
-              <Label htmlFor="edit-status_aktif">Aktif</Label>
-            </div>
-            <Button onClick={handleUpdate} className="w-full">
+            <Button onClick={handleEdit} className="w-full">
               Perbarui Kategori
             </Button>
           </div>

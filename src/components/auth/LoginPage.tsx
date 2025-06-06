@@ -58,7 +58,7 @@ const LoginPage = () => {
 
   const fillDemoCredentials = (type: 'admin' | 'warga') => {
     if (type === 'admin') {
-      form.setValue('email', 'admin@gbr.om');
+      form.setValue('email', 'admin@gbr.com');
       form.setValue('password', 'admin123');
     } else {
       form.setValue('email', 'warga@gbr.com');
@@ -98,7 +98,7 @@ const LoginPage = () => {
                         <div className="relative">
                           <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                           <Input
-                            placeholder="admin@gbr.om"
+                            placeholder="admin@gbr.com"
                             className="pl-10"
                             {...field}
                           />
@@ -183,7 +183,7 @@ const LoginPage = () => {
               </div>
               
               <div className="text-center text-xs text-gray-500 mt-2">
-                <p>Admin: admin@gbr.om / admin123</p>
+                <p>Admin: admin@gbr.com / admin123</p>
                 <p>Warga: warga@gbr.com / warga123</p>
               </div>
             </div>
