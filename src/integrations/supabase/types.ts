@@ -293,6 +293,56 @@ export type Database = {
           },
         ]
       }
+      struktur_pengurus: {
+        Row: {
+          blok_rumah: string | null
+          created_at: string
+          id: string
+          jabatan: string
+          level_jabatan: number
+          nama_pengurus: string
+          periode_mulai: number
+          periode_selesai: number
+          status_aktif: boolean
+          updated_at: string
+          warga_id: string | null
+        }
+        Insert: {
+          blok_rumah?: string | null
+          created_at?: string
+          id?: string
+          jabatan: string
+          level_jabatan?: number
+          nama_pengurus: string
+          periode_mulai: number
+          periode_selesai: number
+          status_aktif?: boolean
+          updated_at?: string
+          warga_id?: string | null
+        }
+        Update: {
+          blok_rumah?: string | null
+          created_at?: string
+          id?: string
+          jabatan?: string
+          level_jabatan?: number
+          nama_pengurus?: string
+          periode_mulai?: number
+          periode_selesai?: number
+          status_aktif?: boolean
+          updated_at?: string
+          warga_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "struktur_pengurus_warga_id_fkey"
+            columns: ["warga_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tipe_iuran: {
         Row: {
           created_at: string | null

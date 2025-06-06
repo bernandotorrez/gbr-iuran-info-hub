@@ -1,51 +1,102 @@
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Save, Users, CreditCard, Bell, Shield, Palette, Database } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { useSettings } from "@/hooks/useSettings"
 
 export default function Settings() {
   const { toast } = useToast()
+  const { settings, loading, updateMultipleSettings } = useSettings()
   
   const [generalSettings, setGeneralSettings] = useState({
-    namaPerumahan: "Perumahan GBR",
-    alamatPerumahan: "Jl. GBR No. 123, Jakarta Selatan",
-    emailKontak: "info@gbr-housing.com",
-    teleponKontak: "021-12345678",
-    ketuaRT: "Bapak Ahmad Budiman",
-    sekretarisRT: "Ibu Siti Nurhaliza"
+    nama_perumahan: "",
+    alamat_perumahan: "",
+    email_kontak: "",
+    telepon_kontak: "",
+    ketua_rt: "",
+    sekretaris_rt: ""
   })
 
   const [iuranSettings, setIuranSettings] = useState({
-    batasWaktuPembayaran: "25",
-    dendaKeterlambatan: "10000",
-    metodeNotifikasi: "whatsapp",
-    intervalNotifikasi: "7"
+    batas_waktu_pembayaran: "25",
+    denda_keterlambatan: "10000",
+    metode_notifikasi: "whatsapp",
+    interval_notifikasi: "7"
   })
 
   const [systemSettings, setSystemSettings] = useState({
     theme: "green",
     currency: "IDR",
     timezone: "Asia/Jakarta",
-    backupInterval: "weekly",
-    maxUploadSize: "5"
+    backup_interval: "weekly",
+    max_upload_size: "5"
   })
 
-  const handleSaveGeneral = () => {
-    console.log("General settings saved:", generalSettings)
-    toast({ title: "Berhasil", description: "Pengaturan umum berhasil disimpan" })
+  // Load settings from database when available
+  useEffect(() => {
+    if (!loading && settings) {
+      setGeneralSettings({
+        nama_perumahan: settings.nama_perumahan || "Perumahan GBR",
+        alamat_perumahan: settings.alamat_perumahan || "Jl. GBR No. 123, Jakarta Selatan",
+        email_kontak: settings.email_kontak || "info@gbr-housing.com",
+        telepon_kontak: settings.telepon_kontak || "021-12345678",
+        ketua_rt: settings.ketua_rt || "Bapak Ahmad Budiman",
+        sekretaris_rt: settings.sekretaris_rt || "Ibu Siti Nurhaliza"
+      })
+
+      setIuranSettings({
+        batas_waktu_pembayaran: settings.batas_waktu_pembayaran || "25",
+        denda_keterlambatan: settings.denda_keterlambatan || "10000",
+        metode_notifikasi: settings.metode_notifikasi || "whatsapp",
+        interval_notifikasi: settings.interval_notifikasi || "7"
+      })
+
+      setSystemSettings({
+        theme: settings.theme || "green",
+        currency: settings.currency || "IDR",
+        timezone: settings.timezone || "Asia/Jakarta",
+        backup_interval: settings.backup_interval || "weekly",
+        max_upload_size: settings.max_upload_size || "5"
+      })
+    }
+  }, [loading, settings])
+
+  const handleSaveGeneral = async () => {
+    try {
+      await updateMultipleSettings(generalSettings)
+      toast({ title: "Berhasil", description: "Pengaturan umum berhasil disimpan" })
+    } catch (error) {
+      toast({ title: "Error", description: "Gagal menyimpan pengaturan umum", variant: "destructive" })
+    }
   }
 
-  const handleSaveIuran = () => {
-    console.log("Iuran settings saved:", iuranSettings)
-    toast({ title: "Berhasil", description: "Pengaturan iuran berhasil disimpan" })
+  const handleSaveIuran = async () => {
+    try {
+      await updateMultipleSettings(iuranSettings)
+      toast({ title: "Berhasil", description: "Pengaturan iuran berhasil disimpan" })
+    } catch (error) {
+      toast({ title: "Error", description: "Gagal menyimpan pengaturan iuran", variant: "destructive" })
+    }
   }
 
-  const handleSaveSystem = () => {
-    console.log("System settings saved:", systemSettings)
-    toast({ title: "Berhasil", description: "Pengaturan sistem berhasil disimpan" })
+  const handleSaveSystem = async () => {
+    try {
+      await updateMultipleSettings(systemSettings)
+      toast({ title: "Berhasil", description: "Pengaturan sistem berhasil disimpan" })
+    } catch (error) {
+      toast({ title: "Error", description: "Gagal menyimpan pengaturan sistem", variant: "destructive" })
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-lg">Memuat pengaturan...</div>
+      </div>
+    )
   }
 
   return (
@@ -64,52 +115,52 @@ export default function Settings() {
           </div>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="namaPerumahan">Nama Perumahan</Label>
+              <Label htmlFor="nama_perumahan">Nama Perumahan</Label>
               <Input
-                id="namaPerumahan"
-                value={generalSettings.namaPerumahan}
-                onChange={(e) => setGeneralSettings({...generalSettings, namaPerumahan: e.target.value})}
+                id="nama_perumahan"
+                value={generalSettings.nama_perumahan}
+                onChange={(e) => setGeneralSettings({...generalSettings, nama_perumahan: e.target.value})}
               />
             </div>
             <div>
-              <Label htmlFor="alamatPerumahan">Alamat Perumahan</Label>
+              <Label htmlFor="alamat_perumahan">Alamat Perumahan</Label>
               <Input
-                id="alamatPerumahan"
-                value={generalSettings.alamatPerumahan}
-                onChange={(e) => setGeneralSettings({...generalSettings, alamatPerumahan: e.target.value})}
+                id="alamat_perumahan"
+                value={generalSettings.alamat_perumahan}
+                onChange={(e) => setGeneralSettings({...generalSettings, alamat_perumahan: e.target.value})}
               />
             </div>
             <div>
-              <Label htmlFor="emailKontak">Email Kontak</Label>
+              <Label htmlFor="email_kontak">Email Kontak</Label>
               <Input
-                id="emailKontak"
+                id="email_kontak"
                 type="email"
-                value={generalSettings.emailKontak}
-                onChange={(e) => setGeneralSettings({...generalSettings, emailKontak: e.target.value})}
+                value={generalSettings.email_kontak}
+                onChange={(e) => setGeneralSettings({...generalSettings, email_kontak: e.target.value})}
               />
             </div>
             <div>
-              <Label htmlFor="teleponKontak">Telepon Kontak</Label>
+              <Label htmlFor="telepon_kontak">Telepon Kontak</Label>
               <Input
-                id="teleponKontak"
-                value={generalSettings.teleponKontak}
-                onChange={(e) => setGeneralSettings({...generalSettings, teleponKontak: e.target.value})}
+                id="telepon_kontak"
+                value={generalSettings.telepon_kontak}
+                onChange={(e) => setGeneralSettings({...generalSettings, telepon_kontak: e.target.value})}
               />
             </div>
             <div>
-              <Label htmlFor="ketuaRT">Ketua RT</Label>
+              <Label htmlFor="ketua_rt">Ketua RT</Label>
               <Input
-                id="ketuaRT"
-                value={generalSettings.ketuaRT}
-                onChange={(e) => setGeneralSettings({...generalSettings, ketuaRT: e.target.value})}
+                id="ketua_rt"
+                value={generalSettings.ketua_rt}
+                onChange={(e) => setGeneralSettings({...generalSettings, ketua_rt: e.target.value})}
               />
             </div>
             <div>
-              <Label htmlFor="sekretarisRT">Sekretaris RT</Label>
+              <Label htmlFor="sekretaris_rt">Sekretaris RT</Label>
               <Input
-                id="sekretarisRT"
-                value={generalSettings.sekretarisRT}
-                onChange={(e) => setGeneralSettings({...generalSettings, sekretarisRT: e.target.value})}
+                id="sekretaris_rt"
+                value={generalSettings.sekretaris_rt}
+                onChange={(e) => setGeneralSettings({...generalSettings, sekretaris_rt: e.target.value})}
               />
             </div>
             <Button onClick={handleSaveGeneral} className="w-full">
@@ -127,12 +178,12 @@ export default function Settings() {
           </div>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="batasWaktu">Batas Waktu Pembayaran (Tanggal)</Label>
+              <Label htmlFor="batas_waktu">Batas Waktu Pembayaran (Tanggal)</Label>
               <Input
-                id="batasWaktu"
+                id="batas_waktu"
                 type="number"
-                value={iuranSettings.batasWaktuPembayaran}
-                onChange={(e) => setIuranSettings({...iuranSettings, batasWaktuPembayaran: e.target.value})}
+                value={iuranSettings.batas_waktu_pembayaran}
+                onChange={(e) => setIuranSettings({...iuranSettings, batas_waktu_pembayaran: e.target.value})}
                 placeholder="25"
               />
               <p className="text-xs text-muted-foreground mt-1">Tanggal batas pembayaran setiap bulan</p>
@@ -142,17 +193,17 @@ export default function Settings() {
               <Input
                 id="denda"
                 type="number"
-                value={iuranSettings.dendaKeterlambatan}
-                onChange={(e) => setIuranSettings({...iuranSettings, dendaKeterlambatan: e.target.value})}
+                value={iuranSettings.denda_keterlambatan}
+                onChange={(e) => setIuranSettings({...iuranSettings, denda_keterlambatan: e.target.value})}
                 placeholder="10000"
               />
             </div>
             <div>
-              <Label htmlFor="metodeNotif">Metode Notifikasi</Label>
+              <Label htmlFor="metode_notif">Metode Notifikasi</Label>
               <select
-                id="metodeNotif"
-                value={iuranSettings.metodeNotifikasi}
-                onChange={(e) => setIuranSettings({...iuranSettings, metodeNotifikasi: e.target.value})}
+                id="metode_notif"
+                value={iuranSettings.metode_notifikasi}
+                onChange={(e) => setIuranSettings({...iuranSettings, metode_notifikasi: e.target.value})}
                 className="w-full p-2 border rounded-md"
               >
                 <option value="whatsapp">WhatsApp</option>
@@ -161,12 +212,12 @@ export default function Settings() {
               </select>
             </div>
             <div>
-              <Label htmlFor="intervalNotif">Interval Notifikasi (Hari)</Label>
+              <Label htmlFor="interval_notif">Interval Notifikasi (Hari)</Label>
               <Input
-                id="intervalNotif"
+                id="interval_notif"
                 type="number"
-                value={iuranSettings.intervalNotifikasi}
-                onChange={(e) => setIuranSettings({...iuranSettings, intervalNotifikasi: e.target.value})}
+                value={iuranSettings.interval_notifikasi}
+                onChange={(e) => setIuranSettings({...iuranSettings, interval_notifikasi: e.target.value})}
                 placeholder="7"
               />
               <p className="text-xs text-muted-foreground mt-1">Interval pengiriman reminder</p>
@@ -229,8 +280,8 @@ export default function Settings() {
               <Label htmlFor="backup">Interval Backup</Label>
               <select
                 id="backup"
-                value={systemSettings.backupInterval}
-                onChange={(e) => setSystemSettings({...systemSettings, backupInterval: e.target.value})}
+                value={systemSettings.backup_interval}
+                onChange={(e) => setSystemSettings({...systemSettings, backup_interval: e.target.value})}
                 className="w-full p-2 border rounded-md"
               >
                 <option value="daily">Harian</option>
@@ -239,12 +290,12 @@ export default function Settings() {
               </select>
             </div>
             <div>
-              <Label htmlFor="maxUpload">Maksimal Upload File (MB)</Label>
+              <Label htmlFor="max_upload">Maksimal Upload File (MB)</Label>
               <Input
-                id="maxUpload"
+                id="max_upload"
                 type="number"
-                value={systemSettings.maxUploadSize}
-                onChange={(e) => setSystemSettings({...systemSettings, maxUploadSize: e.target.value})}
+                value={systemSettings.max_upload_size}
+                onChange={(e) => setSystemSettings({...systemSettings, max_upload_size: e.target.value})}
                 placeholder="5"
               />
             </div>

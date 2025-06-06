@@ -20,6 +20,8 @@ import PublicArtikel from "./pages/PublicArtikel";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import CompanyProfile from "./pages/CompanyProfile";
+import StrukturPengurus from "./pages/StrukturPengurus";
+import PublicPengurus from "./pages/PublicPengurus";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,7 @@ const App = () => (
           <Route path="/cms/login" element={<LoginPage />} />
           <Route path="/cms/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/public/artikel" element={<PublicArtikel />} />
+          <Route path="/public/pengurus" element={<PublicPengurus />} />
           <Route path="/cms/*" element={
             <ProtectedRoute>
               <Layout>
@@ -46,6 +49,7 @@ const App = () => (
                   <Route path="/output-kas" element={<OutputKas />} />
                   <Route path="/laporan" element={<LaporanIuran />} />
                   <Route path="/artikel" element={<ArtikelBerita />} />
+                  <Route path="/struktur-pengurus" element={<StrukturPengurus />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
