@@ -31,42 +31,42 @@ import { toast } from "sonner"
 const menuItems = [
   {
     title: "Dashboard",
-    url: "/",
+    url: "/cms",
     icon: Home,
   },
   {
     title: "Master Data Warga",
-    url: "/warga",
+    url: "/cms/warga",
     icon: Users,
   },
   {
     title: "Master Tipe Iuran",
-    url: "/tipe-iuran",
+    url: "/cms/tipe-iuran",
     icon: CreditCard,
   },
   {
     title: "Master Kategori Kas",
-    url: "/master-kategori-kas",
+    url: "/cms/master-kategori-kas",
     icon: Settings,
   },
   {
     title: "Input Iuran",
-    url: "/input-iuran",
+    url: "/cms/input-iuran",
     icon: TrendingUp,
   },
   {
     title: "Output Kas",
-    url: "/output-kas",
+    url: "/cms/output-kas",
     icon: ArrowUpDown,
   },
   {
     title: "Laporan Iuran",
-    url: "/laporan",
+    url: "/cms/laporan",
     icon: BarChart3,
   },
   {
     title: "Artikel Berita",
-    url: "/artikel",
+    url: "/cms/artikel",
     icon: Newspaper,
   },
 ]
@@ -128,7 +128,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="hover:bg-sidebar-accent">
-              <Link to="/settings" className="flex items-center space-x-2 md:space-x-3 py-2 md:py-3">
+              <Link to="/cms/settings" className="flex items-center space-x-2 md:space-x-3 py-2 md:py-3">
                 <Settings className="w-4 h-4 md:w-5 md:h-5" />
                 <span className="text-xs md:text-sm">Pengaturan</span>
               </Link>

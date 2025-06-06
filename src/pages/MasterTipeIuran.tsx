@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { Plus, Search, Edit2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -8,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
+import { useUserRole } from "@/hooks/useUserRole"
 
 interface TipeIuran {
   id: string
@@ -27,6 +27,7 @@ export default function MasterTipeIuran() {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const { fetchTipeIuran, addTipeIuran, updateTipeIuran, deleteTipeIuran } = useSupabaseData()
+  const { isAdmin } = useUserRole()
 
   const [formData, setFormData] = useState({
     nama: "",
@@ -142,52 +143,54 @@ export default function MasterTipeIuran() {
           <h1 className="text-3xl font-bold">Master Tipe Iuran</h1>
           <p className="text-muted-foreground">Kelola jenis-jenis iuran perumahan</p>
         </div>
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90">
-              <Plus className="w-4 h-4 mr-2" />
-              Tambah Tipe Iuran
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Tambah Tipe Iuran Baru</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="nama">Nama Iuran</Label>
-                <Input
-                  id="nama"
-                  value={formData.nama}
-                  onChange={(e) => setFormData({...formData, nama: e.target.value})}
-                  placeholder="Contoh: Iuran Sampah"
-                />
-              </div>
-              <div>
-                <Label htmlFor="nominal">Nominal (Rp)</Label>
-                <Input
-                  id="nominal"
-                  type="number"
-                  value={formData.nominal}
-                  onChange={(e) => setFormData({...formData, nominal: e.target.value})}
-                  placeholder="25000"
-                />
-              </div>
-              <div>
-                <Label htmlFor="deskripsi">Deskripsi</Label>
-                <Input
-                  id="deskripsi"
-                  value={formData.deskripsi}
-                  onChange={(e) => setFormData({...formData, deskripsi: e.target.value})}
-                  placeholder="Deskripsi singkat tentang iuran ini"
-                />
-              </div>
-              <Button onClick={handleAdd} className="w-full">
-                Simpan
+        {isAdmin && (
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90">
+                <Plus className="w-4 h-4 mr-2" />
+                Tambah Tipe Iuran
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Tambah Tipe Iuran Baru</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="nama">Nama Iuran</Label>
+                  <Input
+                    id="nama"
+                    value={formData.nama}
+                    onChange={(e) => setFormData({...formData, nama: e.target.value})}
+                    placeholder="Contoh: Iuran Sampah"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="nominal">Nominal (Rp)</Label>
+                  <Input
+                    id="nominal"
+                    type="number"
+                    value={formData.nominal}
+                    onChange={(e) => setFormData({...formData, nominal: e.target.value})}
+                    placeholder="25000"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="deskripsi">Deskripsi</Label>
+                  <Input
+                    id="deskripsi"
+                    value={formData.deskripsi}
+                    onChange={(e) => setFormData({...formData, deskripsi: e.target.value})}
+                    placeholder="Deskripsi singkat tentang iuran ini"
+                  />
+                </div>
+                <Button onClick={handleAdd} className="w-full">
+                  Simpan
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <div className="flex items-center space-x-2">
@@ -211,7 +214,7 @@ export default function MasterTipeIuran() {
               <TableHead>Deskripsi</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Tanggal Buat</TableHead>
-              <TableHead className="text-right">Aksi</TableHead>
+              {isAdmin && <TableHead className="text-right">Aksi</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -230,21 +233,23 @@ export default function MasterTipeIuran() {
                   </span>
                 </TableCell>
                 <TableCell>{new Date(tipe.created_at).toLocaleDateString('id-ID')}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(tipe)}>
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleDelete(tipe.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+                {isAdmin && (
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(tipe)}>
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleDelete(tipe.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

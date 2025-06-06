@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { Plus, Search, Edit2, Trash2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -11,6 +10,7 @@ import { useSupabaseData } from "@/hooks/useSupabaseData"
 import { useFormValidation, wargaFormSchema, type WargaFormData } from "@/hooks/useFormValidation"
 import { ValidatedInput } from "@/components/ui/validated-input"
 import { ValidatedSelect } from "@/components/ui/validated-select"
+import { useUserRole } from "@/hooks/useUserRole"
 
 interface Warga {
   id: string
@@ -33,6 +33,7 @@ export default function MasterWarga() {
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
   const { fetchWarga, addWarga, updateWarga, deleteWarga } = useSupabaseData()
+  const { isAdmin } = useUserRole()
 
   const form = useFormValidation(wargaFormSchema, {
     nama: "",
@@ -148,55 +149,57 @@ export default function MasterWarga() {
           <h1 className="text-3xl font-bold">Master Data Warga</h1>
           <p className="text-muted-foreground">Kelola data warga perumahan GBR</p>
         </div>
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90">
-              <Plus className="w-4 h-4 mr-2" />
-              Tambah Warga
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Tambah Warga Baru</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={form.handleSubmit(handleAdd)} className="space-y-4">
-              <ValidatedInput
-                label="Nama Lengkap"
-                placeholder="Masukkan nama lengkap"
-                error={form.formState.errors.nama?.message}
-                {...form.register("nama")}
-              />
-              <ValidatedInput
-                label="Nomor Handphone"
-                placeholder="081234567890"
-                error={form.formState.errors.phone_number?.message}
-                {...form.register("phone_number")}
-              />
-              <ValidatedInput
-                label="Alamat"
-                placeholder="Masukkan alamat lengkap"
-                error={form.formState.errors.alamat?.message}
-                {...form.register("alamat")}
-              />
-              <ValidatedInput
-                label="RT/RW"
-                placeholder="RT 01/RW 02"
-                error={form.formState.errors.rt_rw?.message}
-                {...form.register("rt_rw")}
-              />
-              <ValidatedInput
-                label="Email"
-                type="email"
-                placeholder="email@contoh.com"
-                error={form.formState.errors.email?.message}
-                {...form.register("email")}
-              />
-              <Button type="submit" className="w-full" disabled={loading}>
-                Simpan
+        {isAdmin && (
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90">
+                <Plus className="w-4 h-4 mr-2" />
+                Tambah Warga
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Tambah Warga Baru</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={form.handleSubmit(handleAdd)} className="space-y-4">
+                <ValidatedInput
+                  label="Nama Lengkap"
+                  placeholder="Masukkan nama lengkap"
+                  error={form.formState.errors.nama?.message}
+                  {...form.register("nama")}
+                />
+                <ValidatedInput
+                  label="Nomor Handphone"
+                  placeholder="081234567890"
+                  error={form.formState.errors.phone_number?.message}
+                  {...form.register("phone_number")}
+                />
+                <ValidatedInput
+                  label="Alamat"
+                  placeholder="Masukkan alamat lengkap"
+                  error={form.formState.errors.alamat?.message}
+                  {...form.register("alamat")}
+                />
+                <ValidatedInput
+                  label="RT/RW"
+                  placeholder="RT 01/RW 02"
+                  error={form.formState.errors.rt_rw?.message}
+                  {...form.register("rt_rw")}
+                />
+                <ValidatedInput
+                  label="Email"
+                  type="email"
+                  placeholder="email@contoh.com"
+                  error={form.formState.errors.email?.message}
+                  {...form.register("email")}
+                />
+                <Button type="submit" className="w-full" disabled={loading}>
+                  Simpan
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <div className="flex items-center space-x-2">
@@ -257,17 +260,21 @@ export default function MasterWarga() {
                       <Button variant="ghost" size="sm" onClick={() => openView(warga)}>
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(warga)}>
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleDelete(warga.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {isAdmin && (
+                        <>
+                          <Button variant="ghost" size="sm" onClick={() => openEdit(warga)}>
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleDelete(warga.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

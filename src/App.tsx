@@ -19,6 +19,7 @@ import ArtikelBerita from "./pages/ArtikelBerita";
 import PublicArtikel from "./pages/PublicArtikel";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import CompanyProfile from "./pages/CompanyProfile";
 
 const queryClient = new QueryClient();
 
@@ -29,10 +30,11 @@ const App = () => (
         <Toaster />
         <Sonner />
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/" element={<CompanyProfile />} />
+          <Route path="/cms/login" element={<LoginPage />} />
+          <Route path="/cms/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/public/artikel" element={<PublicArtikel />} />
-          <Route path="/*" element={
+          <Route path="/cms/*" element={
             <ProtectedRoute>
               <Layout>
                 <Routes>
@@ -50,6 +52,7 @@ const App = () => (
               </Layout>
             </ProtectedRoute>
           } />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

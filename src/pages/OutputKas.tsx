@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
 import { useAuth } from "@/contexts/AuthContext"
 import { useKategoriKas } from "@/hooks/useKategoriKas"
+import { useUserRole } from "@/hooks/useUserRole"
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
@@ -40,6 +41,7 @@ export default function OutputKas() {
   const { session } = useAuth()
   const { fetchKasKeluar, addKasKeluar, updateKasKeluarStatus, dashboardStats, fetchDashboardStats } = useSupabaseData()
   const { kategoriList, loading: kategoriLoading } = useKategoriKas()
+  const { isAdmin } = useUserRole()
 
   const [formData, setFormData] = useState({
     tanggal_keluar: "",
@@ -293,113 +295,115 @@ export default function OutputKas() {
             <Download className="w-4 h-4 mr-2" />
             Export Excel
           </Button>
-          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-primary/90">
-                <Plus className="w-4 h-4 mr-2" />
-                Tambah Pengeluaran
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Tambah Pengeluaran Kas</DialogTitle>
-                <p className="text-sm text-muted-foreground">
-                  Saldo Kas Tersedia: {formatCurrency(dashboardStats.saldo_kas)}
-                </p>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="tanggal">Tanggal *</Label>
-                  <Input
-                    id="tanggal"
-                    type="date"
-                    value={formData.tanggal_keluar}
-                    onChange={(e) => setFormData({...formData, tanggal_keluar: e.target.value})}
-                    className={formErrors.tanggal_keluar ? "border-red-500" : ""}
-                  />
-                  {formErrors.tanggal_keluar && (
-                    <p className="text-sm text-red-500 mt-1">{formErrors.tanggal_keluar}</p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="kategori">Kategori *</Label>
-                  <select
-                    id="kategori"
-                    value={formData.kategori}
-                    onChange={(e) => setFormData({...formData, kategori: e.target.value})}
-                    className={`w-full p-2 border rounded-md ${formErrors.kategori ? "border-red-500" : ""}`}
-                    disabled={kategoriLoading}
-                  >
-                    <option value="">-- Pilih Kategori --</option>
-                    {kategoriList.map(kategori => (
-                      <option key={kategori.id} value={kategori.nama}>{kategori.nama}</option>
-                    ))}
-                  </select>
-                  {formErrors.kategori && (
-                    <p className="text-sm text-red-500 mt-1">{formErrors.kategori}</p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="judul">Judul *</Label>
-                  <Input
-                    id="judul"
-                    value={formData.judul}
-                    onChange={(e) => setFormData({...formData, judul: e.target.value})}
-                    placeholder="Judul pengeluaran"
-                    className={formErrors.judul ? "border-red-500" : ""}
-                  />
-                  {formErrors.judul && (
-                    <p className="text-sm text-red-500 mt-1">{formErrors.judul}</p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="deskripsi">Deskripsi *</Label>
-                  <Input
-                    id="deskripsi"
-                    value={formData.deskripsi}
-                    onChange={(e) => setFormData({...formData, deskripsi: e.target.value})}
-                    placeholder="Deskripsi pengeluaran"
-                    className={formErrors.deskripsi ? "border-red-500" : ""}
-                  />
-                  {formErrors.deskripsi && (
-                    <p className="text-sm text-red-500 mt-1">{formErrors.deskripsi}</p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="nominal">Nominal (Rp) *</Label>
-                  <Input
-                    id="nominal"
-                    type="text"
-                    value={formData.nominal}
-                    onChange={(e) => setFormData({...formData, nominal: e.target.value})}
-                    onKeyDown={handleNominalKeyDown}
-                    placeholder="150000"
-                    className={formErrors.nominal ? "border-red-500" : ""}
-                  />
-                  {formErrors.nominal && (
-                    <p className="text-sm text-red-500 mt-1">{formErrors.nominal}</p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="bukti">Bukti (URL)</Label>
-                  <Input
-                    id="bukti"
-                    value={formData.bukti_transaksi_url}
-                    onChange={(e) => setFormData({...formData, bukti_transaksi_url: e.target.value})}
-                    placeholder="https://example.com/nota.jpg"
-                    className={formErrors.bukti_transaksi_url ? "border-red-500" : ""}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Format: .jpg, .jpeg, .png, .gif, .pdf</p>
-                  {formErrors.bukti_transaksi_url && (
-                    <p className="text-sm text-red-500 mt-1">{formErrors.bukti_transaksi_url}</p>
-                  )}
-                </div>
-                <Button onClick={handleAdd} className="w-full">
-                  Simpan Pengeluaran
+          {isAdmin && (
+            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-primary hover:bg-primary/90">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Tambah Pengeluaran
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Tambah Pengeluaran Kas</DialogTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Saldo Kas Tersedia: {formatCurrency(dashboardStats.saldo_kas)}
+                  </p>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="tanggal">Tanggal *</Label>
+                    <Input
+                      id="tanggal"
+                      type="date"
+                      value={formData.tanggal_keluar}
+                      onChange={(e) => setFormData({...formData, tanggal_keluar: e.target.value})}
+                      className={formErrors.tanggal_keluar ? "border-red-500" : ""}
+                    />
+                    {formErrors.tanggal_keluar && (
+                      <p className="text-sm text-red-500 mt-1">{formErrors.tanggal_keluar}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="kategori">Kategori *</Label>
+                    <select
+                      id="kategori"
+                      value={formData.kategori}
+                      onChange={(e) => setFormData({...formData, kategori: e.target.value})}
+                      className={`w-full p-2 border rounded-md ${formErrors.kategori ? "border-red-500" : ""}`}
+                      disabled={kategoriLoading}
+                    >
+                      <option value="">-- Pilih Kategori --</option>
+                      {kategoriList.map(kategori => (
+                        <option key={kategori.id} value={kategori.nama}>{kategori.nama}</option>
+                      ))}
+                    </select>
+                    {formErrors.kategori && (
+                      <p className="text-sm text-red-500 mt-1">{formErrors.kategori}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="judul">Judul *</Label>
+                    <Input
+                      id="judul"
+                      value={formData.judul}
+                      onChange={(e) => setFormData({...formData, judul: e.target.value})}
+                      placeholder="Judul pengeluaran"
+                      className={formErrors.judul ? "border-red-500" : ""}
+                    />
+                    {formErrors.judul && (
+                      <p className="text-sm text-red-500 mt-1">{formErrors.judul}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="deskripsi">Deskripsi *</Label>
+                    <Input
+                      id="deskripsi"
+                      value={formData.deskripsi}
+                      onChange={(e) => setFormData({...formData, deskripsi: e.target.value})}
+                      placeholder="Deskripsi pengeluaran"
+                      className={formErrors.deskripsi ? "border-red-500" : ""}
+                    />
+                    {formErrors.deskripsi && (
+                      <p className="text-sm text-red-500 mt-1">{formErrors.deskripsi}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="nominal">Nominal (Rp) *</Label>
+                    <Input
+                      id="nominal"
+                      type="text"
+                      value={formData.nominal}
+                      onChange={(e) => setFormData({...formData, nominal: e.target.value})}
+                      onKeyDown={handleNominalKeyDown}
+                      placeholder="150000"
+                      className={formErrors.nominal ? "border-red-500" : ""}
+                    />
+                    {formErrors.nominal && (
+                      <p className="text-sm text-red-500 mt-1">{formErrors.nominal}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="bukti">Bukti (URL)</Label>
+                    <Input
+                      id="bukti"
+                      value={formData.bukti_transaksi_url}
+                      onChange={(e) => setFormData({...formData, bukti_transaksi_url: e.target.value})}
+                      placeholder="https://example.com/nota.jpg"
+                      className={formErrors.bukti_transaksi_url ? "border-red-500" : ""}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Format: .jpg, .jpeg, .png, .gif, .pdf</p>
+                    {formErrors.bukti_transaksi_url && (
+                      <p className="text-sm text-red-500 mt-1">{formErrors.bukti_transaksi_url}</p>
+                    )}
+                  </div>
+                  <Button onClick={handleAdd} className="w-full">
+                    Simpan Pengeluaran
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
 
@@ -457,7 +461,7 @@ export default function OutputKas() {
               <TableHead>Deskripsi</TableHead>
               <TableHead>Nominal</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Aksi</TableHead>
+              {isAdmin && <TableHead className="text-right">Aksi</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -480,30 +484,32 @@ export default function OutputKas() {
                      item.status_persetujuan === 'pending' ? 'Pending' : 'Ditolak'}
                   </span>
                 </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end space-x-1">
-                    {item.status_persetujuan === 'pending' && (
-                      <>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => updateStatus(item.id, 'approved')}
-                          className="text-green-600 hover:text-green-700"
-                        >
-                          Setujui
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => updateStatus(item.id, 'rejected')}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          Tolak
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </TableCell>
+                {isAdmin && (
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-1">
+                      {item.status_persetujuan === 'pending' && (
+                        <>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => updateStatus(item.id, 'approved')}
+                            className="text-green-600 hover:text-green-700"
+                          >
+                            Setujui
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => updateStatus(item.id, 'rejected')}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            Tolak
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
