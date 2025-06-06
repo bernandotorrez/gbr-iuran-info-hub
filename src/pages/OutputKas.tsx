@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
 import { useAuth } from "@/contexts/AuthContext"
+import { useKategoriKas } from "@/hooks/useKategoriKas"
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
@@ -30,15 +31,6 @@ interface Pengeluaran {
   }
 }
 
-const kategoriOptions = [
-  "Operasional",
-  "Keamanan", 
-  "Maintenance",
-  "Kebersihan",
-  "Administrasi",
-  "Lainnya"
-]
-
 export default function OutputKas() {
   const [pengeluaranList, setPengeluaranList] = useState<Pengeluaran[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -47,6 +39,7 @@ export default function OutputKas() {
   const { toast } = useToast()
   const { session } = useAuth()
   const { fetchKasKeluar, addKasKeluar, updateKasKeluarStatus, dashboardStats, fetchDashboardStats } = useSupabaseData()
+  const { kategoriList, loading: kategoriLoading } = useKategoriKas()
 
   const [formData, setFormData] = useState({
     tanggal_keluar: "",
@@ -335,10 +328,11 @@ export default function OutputKas() {
                     value={formData.kategori}
                     onChange={(e) => setFormData({...formData, kategori: e.target.value})}
                     className={`w-full p-2 border rounded-md ${formErrors.kategori ? "border-red-500" : ""}`}
+                    disabled={kategoriLoading}
                   >
                     <option value="">-- Pilih Kategori --</option>
-                    {kategoriOptions.map(kategori => (
-                      <option key={kategori} value={kategori}>{kategori}</option>
+                    {kategoriList.map(kategori => (
+                      <option key={kategori.id} value={kategori.nama}>{kategori.nama}</option>
                     ))}
                   </select>
                   {formErrors.kategori && (

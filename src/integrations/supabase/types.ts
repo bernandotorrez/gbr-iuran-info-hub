@@ -192,6 +192,33 @@ export type Database = {
           },
         ]
       }
+      kategori_kas_keluar: {
+        Row: {
+          created_at: string | null
+          deskripsi: string | null
+          id: string
+          nama: string
+          status_aktif: boolean
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deskripsi?: string | null
+          id?: string
+          nama: string
+          status_aktif?: boolean
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deskripsi?: string | null
+          id?: string
+          nama?: string
+          status_aktif?: boolean
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           alamat: string | null
