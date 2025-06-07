@@ -1,13 +1,13 @@
+
 import { useState, useEffect } from "react"
 import { Plus, Search, Edit2, Trash2, Eye, Calendar, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
+import { ArtikelFormDialog } from "@/components/forms/ArtikelFormDialog"
 
 interface Artikel {
   id: string
@@ -33,14 +33,6 @@ const normalizeStatus = (status: string | null | undefined): ValidStatus => {
   return "draft"; // Default to draft for any invalid status
 }
 
-const kategoriOptions = [
-  "Pengumuman",
-  "Rapat", 
-  "Kegiatan",
-  "Informasi",
-  "Peringatan"
-]
-
 export default function ArtikelBerita() {
   const [artikelList, setArtikelList] = useState<Artikel[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -51,15 +43,6 @@ export default function ArtikelBerita() {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const { fetchArtikel, addArtikel, updateArtikel, deleteArtikel } = useSupabaseData()
-
-  const [formData, setFormData] = useState({
-    judul: "",
-    konten: "",
-    kategori: "",
-    gambar_url: "",
-    excerpt: "",
-    status: "draft" as ValidStatus
-  })
 
   const loadArtikel = async () => {
     try {
@@ -97,17 +80,9 @@ export default function ArtikelBerita() {
     artikel.kategori.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleAdd = async () => {
+  const handleAdd = async (formData: any) => {
     try {
       await addArtikel(formData)
-      setFormData({ 
-        judul: "", 
-        konten: "", 
-        kategori: "", 
-        gambar_url: "", 
-        excerpt: "",
-        status: "draft" 
-      })
       setIsAddOpen(false)
       await loadArtikel()
       toast({ title: "Berhasil", description: "Artikel berhasil ditambahkan" })
@@ -120,7 +95,7 @@ export default function ArtikelBerita() {
     }
   }
 
-  const handleEdit = async () => {
+  const handleEdit = async (formData: any) => {
     if (!selectedArtikel) return
     try {
       await updateArtikel(selectedArtikel.id, formData)
@@ -153,14 +128,6 @@ export default function ArtikelBerita() {
 
   const openEdit = (artikel: Artikel) => {
     setSelectedArtikel(artikel)
-    setFormData({
-      judul: artikel.judul,
-      konten: artikel.konten,
-      kategori: artikel.kategori,
-      gambar_url: artikel.gambar_url || "",
-      excerpt: artikel.excerpt || "",
-      status: artikel.status
-    })
     setIsEditOpen(true)
   }
 
@@ -194,88 +161,10 @@ export default function ArtikelBerita() {
           <h1 className="text-3xl font-bold">Artikel & Berita</h1>
           <p className="text-muted-foreground">Kelola artikel dan pengumuman untuk warga</p>
         </div>
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90">
-              <Plus className="w-4 h-4 mr-2" />
-              Tulis Artikel
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl bg-card text-card-foreground">
-            <DialogHeader>
-              <DialogTitle>Tulis Artikel Baru</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="judul">Judul Artikel</Label>
-                <Input
-                  id="judul"
-                  value={formData.judul}
-                  onChange={(e) => setFormData({...formData, judul: e.target.value})}
-                  placeholder="Masukkan judul artikel"
-                />
-              </div>
-              <div>
-                <Label htmlFor="kategori">Kategori</Label>
-                <select
-                  id="kategori"
-                  value={formData.kategori}
-                  onChange={(e) => setFormData({...formData, kategori: e.target.value})}
-                  className="w-full p-2 border rounded-md"
-                >
-                  <option value="">-- Pilih Kategori --</option>
-                  {kategoriOptions.map(kategori => (
-                    <option key={kategori} value={kategori}>{kategori}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="excerpt">Ringkasan</Label>
-                <Input
-                  id="excerpt"
-                  value={formData.excerpt}
-                  onChange={(e) => setFormData({...formData, excerpt: e.target.value})}
-                  placeholder="Ringkasan singkat artikel"
-                />
-              </div>
-              <div>
-                <Label htmlFor="konten">Konten Artikel</Label>
-                <Textarea
-                  id="konten"
-                  value={formData.konten}
-                  onChange={(e) => setFormData({...formData, konten: e.target.value})}
-                  placeholder="Tulis konten artikel di sini..."
-                  rows={6}
-                />
-              </div>
-              <div>
-                <Label htmlFor="gambar">Gambar URL</Label>
-                <Input
-                  id="gambar"
-                  value={formData.gambar_url}
-                  onChange={(e) => setFormData({...formData, gambar_url: e.target.value})}
-                  placeholder="https://example.com/gambar.jpg"
-                />
-              </div>
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <select
-                  id="status"
-                  value={formData.status}
-                  onChange={(e) => setFormData({...formData, status: e.target.value as any})}
-                  className="w-full p-2 border rounded-md"
-                >
-                  <option value="draft">Draft</option>
-                  <option value="published">Publikasi</option>
-                  <option value="archived">Arsip</option>
-                </select>
-              </div>
-              <Button onClick={handleAdd} className="w-full">
-                Simpan Artikel
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setIsAddOpen(true)} className="bg-primary hover:bg-primary/90">
+          <Plus className="w-4 h-4 mr-2" />
+          Tulis Artikel
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -334,11 +223,7 @@ export default function ArtikelBerita() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {artikelList.filter(artikel =>
-              artikel.judul.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              artikel.konten.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              artikel.kategori.toLowerCase().includes(searchTerm.toLowerCase())
-            ).map((artikel) => (
+            {filteredArtikel.map((artikel) => (
               <TableRow key={artikel.id}>
                 <TableCell className="font-medium max-w-xs truncate">{artikel.judul}</TableCell>
                 <TableCell>{artikel.kategori}</TableCell>
@@ -378,79 +263,20 @@ export default function ArtikelBerita() {
         </Table>
       </div>
 
+      {/* Add Dialog */}
+      <ArtikelFormDialog
+        open={isAddOpen}
+        onClose={() => setIsAddOpen(false)}
+        onSave={handleAdd}
+      />
+
       {/* Edit Dialog */}
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-2xl bg-card text-card-foreground">
-          <DialogHeader>
-            <DialogTitle>Edit Artikel</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-judul">Judul Artikel</Label>
-              <Input
-                id="edit-judul"
-                value={formData.judul}
-                onChange={(e) => setFormData({...formData, judul: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-kategori">Kategori</Label>
-              <select
-                id="edit-kategori"
-                value={formData.kategori}
-                onChange={(e) => setFormData({...formData, kategori: e.target.value})}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="">-- Pilih Kategori --</option>
-                {kategoriOptions.map(kategori => (
-                  <option key={kategori} value={kategori}>{kategori}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <Label htmlFor="edit-excerpt">Ringkasan</Label>
-              <Input
-                id="edit-excerpt"
-                value={formData.excerpt}
-                onChange={(e) => setFormData({...formData, excerpt: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-konten">Konten Artikel</Label>
-              <Textarea
-                id="edit-konten"
-                value={formData.konten}
-                onChange={(e) => setFormData({...formData, konten: e.target.value})}
-                rows={6}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-gambar">Gambar URL</Label>
-              <Input
-                id="edit-gambar"
-                value={formData.gambar_url}
-                onChange={(e) => setFormData({...formData, gambar_url: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-status">Status</Label>
-              <select
-                id="edit-status"
-                value={formData.status}
-                onChange={(e) => setFormData({...formData, status: e.target.value as any})}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="draft">Draft</option>
-                <option value="published">Publikasi</option>
-                <option value="archived">Arsip</option>
-              </select>
-            </div>
-            <Button onClick={handleEdit} className="w-full">
-              Update Artikel
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ArtikelFormDialog
+        open={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        onSave={handleEdit}
+        editData={selectedArtikel}
+      />
 
       {/* View Dialog */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
@@ -475,9 +301,7 @@ export default function ArtikelBerita() {
                   <p className="font-medium">{selectedArtikel.excerpt}</p>
                 </div>
               )}
-              <div className="prose max-w-none dark:prose-invert">
-                <p>{selectedArtikel.konten}</p>
-              </div>
+              <div className="prose max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: selectedArtikel.konten }} />
               <div className="flex space-x-2 pt-4">
                 {selectedArtikel.status === 'draft' && (
                   <Button onClick={() => updateStatus(selectedArtikel.id, 'published')}>

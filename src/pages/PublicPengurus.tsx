@@ -128,8 +128,8 @@ export default function PublicPengurus() {
                         Level {level}
                       </Badge>
                       <h3 className="text-2xl font-semibold text-gray-800">
-                        {parseInt(level) === 1 ? "Pimpinan Utama" :
-                         parseInt(level) === 2 ? "Pimpinan" :
+                        {parseInt(level) === 1 ? "Ketua" :
+                         parseInt(level) === 2 ? "Wakil Ketua" :
                          parseInt(level) === 3 ? "Koordinator" :
                          parseInt(level) === 4 ? "Anggota" : "Pengurus"}
                       </h3>

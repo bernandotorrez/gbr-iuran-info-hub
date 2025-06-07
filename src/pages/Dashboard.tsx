@@ -39,16 +39,23 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadTipeIuran();
+    // Load initial dashboard stats
+    fetchDashboardStats();
   }, []);
 
   const handleFilterChange = async () => {
-    await fetchDashboardStats(selectedMonth, selectedYear, selectedTipeIuran);
+    console.log('Applying filter:', { selectedMonth, selectedYear, selectedTipeIuran });
+    await fetchDashboardStats(selectedMonth, selectedYear, selectedTipeIuran !== "semua" ? selectedTipeIuran : undefined);
   };
 
   const resetFilter = async () => {
-    setSelectedMonth(new Date().getMonth() + 1);
-    setSelectedYear(new Date().getFullYear());
+    const currentMonth = new Date().getMonth() + 1;
+    const currentYear = new Date().getFullYear();
+    
+    setSelectedMonth(currentMonth);
+    setSelectedYear(currentYear);
     setSelectedTipeIuran("semua");
+    
     await fetchDashboardStats();
   };
 
@@ -179,7 +186,7 @@ export default function Dashboard() {
               {formatCurrency(dashboardStats.total_kas_masuk)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Total pemasukan
+              Periode {months.find(m => m.value === dashboardStats.filter_month)?.label} {dashboardStats.filter_year}
             </p>
           </CardContent>
         </Card>
@@ -196,7 +203,7 @@ export default function Dashboard() {
               {formatCurrency(dashboardStats.total_kas_keluar)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Total pengeluaran
+              Periode {months.find(m => m.value === dashboardStats.filter_month)?.label} {dashboardStats.filter_year}
             </p>
           </CardContent>
         </Card>
@@ -213,7 +220,7 @@ export default function Dashboard() {
               {formatCurrency(dashboardStats.saldo_kas)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Saldo saat ini
+              Saldo periode yang dipilih
             </p>
           </CardContent>
         </Card>
