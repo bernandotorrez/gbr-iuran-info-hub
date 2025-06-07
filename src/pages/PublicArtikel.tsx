@@ -2,7 +2,9 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, User, Eye } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Calendar, User, Eye, ArrowLeft, Building2 } from "lucide-react"
+import { Link } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
 
 interface Artikel {
@@ -63,7 +65,7 @@ export default function PublicArtikel() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center">
         <div className="text-center">
           <div className="text-lg">Memuat artikel...</div>
         </div>
@@ -73,15 +75,37 @@ export default function PublicArtikel() {
 
   if (selectedArtikel) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+        {/* Header */}
+        <header className="bg-white shadow-sm">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                  <Building2 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Perumahan GBR</h1>
+                  <p className="text-sm text-gray-600">Hunian Nyaman dan Asri</p>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedArtikel(null)}
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Kembali
+                </Button>
+                <Link to="/">
+                  <Button>Beranda</Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </header>
+        
         <div className="max-w-4xl mx-auto px-4 py-8">
-          <button
-            onClick={() => setSelectedArtikel(null)}
-            className="mb-6 text-blue-600 hover:text-blue-800 font-medium"
-          >
-            ← Kembali ke Daftar Artikel
-          </button>
-          
           <article className="bg-white rounded-lg shadow-lg overflow-hidden">
             {selectedArtikel.gambar_url && (
               <img
@@ -127,7 +151,32 @@ export default function PublicArtikel() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Perumahan GBR</h1>
+                <p className="text-sm text-gray-600">Hunian Nyaman dan Asri</p>
+              </div>
+            </div>
+            <div className="flex space-x-2">
+              <Link to="/public/pengurus">
+                <Button variant="outline">Struktur Pengurus</Button>
+              </Link>
+              <Link to="/">
+                <Button>Beranda</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -198,6 +247,26 @@ export default function PublicArtikel() {
           </div>
         )}
       </div>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-8 mt-16">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex items-center space-x-3 mb-4 md:mb-0">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <div className="font-bold">Perumahan GBR</div>
+                <div className="text-sm text-gray-400">Hunian Nyaman dan Asri</div>
+              </div>
+            </div>
+            <div className="text-sm text-gray-400">
+              © 2024 Perumahan GBR. All rights reserved.
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Newspaper,
   ArrowUpDown,
+  UserCheck,
 } from "lucide-react"
 import {
   Sidebar,
@@ -68,6 +69,11 @@ const menuItems = [
     title: "Artikel Berita",
     url: "/cms/artikel",
     icon: Newspaper,
+  },
+  {
+    title: "Struktur Pengurus",
+    url: "/cms/struktur-pengurus",
+    icon: UserCheck,
   },
 ]
 

@@ -8,17 +8,18 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Home, Lock, Mail } from 'lucide-react';
+import { Home, Lock, Phone } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 const loginSchema = z.object({
-  email: z
+  phone_number: z
     .string()
-    .min(1, 'Email wajib diisi')
-    .email('Format email tidak valid'),
+    .min(1, 'Nomor handphone wajib diisi')
+    .min(10, 'Nomor handphone minimal 10 digit')
+    .regex(/^[0-9]+$/, 'Nomor handphone hanya boleh berisi angka'),
   password: z
     .string()
     .min(1, 'Password wajib diisi')
@@ -35,7 +36,7 @@ const LoginPage = () => {
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      phone_number: '',
       password: '',
     },
   });
@@ -43,14 +44,17 @@ const LoginPage = () => {
   const onSubmit = async (data: LoginForm) => {
     setLoading(true);
 
-    const { error } = await signIn(data.email, data.password);
+    // Convert phone number to email format for Supabase auth
+    const emailFormat = `${data.phone_number}@gbr.com`;
+    
+    const { error } = await signIn(emailFormat, data.password);
     
     if (error) {
-      toast.error('Email atau password salah');
-      form.setError('root', { message: 'Email atau password salah' });
+      toast.error('Nomor handphone atau password salah');
+      form.setError('root', { message: 'Nomor handphone atau password salah' });
     } else {
       toast.success('Login berhasil!');
-      navigate('/');
+      navigate('/cms');
     }
     
     setLoading(false);
@@ -58,10 +62,10 @@ const LoginPage = () => {
 
   const fillDemoCredentials = (type: 'admin' | 'warga') => {
     if (type === 'admin') {
-      form.setValue('email', 'admin@gbr.com');
+      form.setValue('phone_number', '081234567890');
       form.setValue('password', 'admin123');
     } else {
-      form.setValue('email', 'warga@gbr.com');
+      form.setValue('phone_number', '081234567891');
       form.setValue('password', 'warga123');
     }
     form.clearErrors();
@@ -82,7 +86,7 @@ const LoginPage = () => {
           <CardHeader className="space-y-1">
             <CardTitle className="text-xl md:text-2xl">Login</CardTitle>
             <CardDescription>
-              Masukkan email dan password Anda
+              Masukkan nomor handphone dan password Anda
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -90,15 +94,15 @@ const LoginPage = () => {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="phone_number"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>Nomor Handphone</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                           <Input
-                            placeholder="admin@gbr.com"
+                            placeholder="081234567890"
                             className="pl-10"
                             {...field}
                           />
@@ -183,8 +187,8 @@ const LoginPage = () => {
               </div>
               
               <div className="text-center text-xs text-gray-500 mt-2">
-                <p>Admin: admin@gbr.com / admin123</p>
-                <p>Warga: warga@gbr.com / warga123</p>
+                <p>Admin: 081234567890 / admin123</p>
+                <p>Warga: 081234567891 / warga123</p>
               </div>
             </div>
           </CardContent>
