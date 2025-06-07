@@ -79,7 +79,12 @@ export function StrukturPengurusFormDialog({
     setLoading(true)
     
     try {
-      await onSave(formData)
+      // Convert "none" back to empty string for database storage
+      const submitData = {
+        ...formData,
+        warga_id: formData.warga_id === "none" ? "" : formData.warga_id
+      }
+      await onSave(submitData)
     } catch (error) {
       console.error('Error saving:', error)
     } finally {
@@ -88,12 +93,19 @@ export function StrukturPengurusFormDialog({
   }
 
   const handleWargaChange = (wargaId: string) => {
-    const selectedWarga = wargaList.find(w => w.id === wargaId)
-    setFormData(prev => ({
-      ...prev,
-      warga_id: wargaId,
-      nama_pengurus: selectedWarga ? selectedWarga.nama : prev.nama_pengurus
-    }))
+    if (wargaId === "none") {
+      setFormData(prev => ({
+        ...prev,
+        warga_id: "none"
+      }))
+    } else {
+      const selectedWarga = wargaList.find(w => w.id === wargaId)
+      setFormData(prev => ({
+        ...prev,
+        warga_id: wargaId,
+        nama_pengurus: selectedWarga ? selectedWarga.nama : prev.nama_pengurus
+      }))
+    }
   }
 
   const jabatanOptions = [
@@ -160,14 +172,14 @@ export function StrukturPengurusFormDialog({
           <div>
             <Label htmlFor="warga_id">Pilih Warga (Opsional)</Label>
             <Select
-              value={formData.warga_id}
+              value={formData.warga_id || "none"}
               onValueChange={handleWargaChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Pilih warga atau kosongkan jika bukan warga" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Bukan Warga / Kosongkan</SelectItem>
+                <SelectItem value="none">Bukan Warga / Kosongkan</SelectItem>
                 {wargaList.map((warga) => (
                   <SelectItem key={warga.id} value={warga.id}>
                     {warga.nama} - {warga.rt_rw}
