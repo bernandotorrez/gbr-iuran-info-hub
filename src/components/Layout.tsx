@@ -1,9 +1,7 @@
 
-import { SidebarProvider } from "@/components/ui/sidebar"
-import { TooltipProvider } from "@/components/ui/tooltip"
-import { AppSidebar } from "./AppSidebar"
-import { Header } from "./Header"
-import { ThemeProvider } from "./ThemeProvider"
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/AppSidebar"
+import { Header } from "@/components/Header"
 
 interface LayoutProps {
   children: React.ReactNode
@@ -11,20 +9,24 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   return (
-    <ThemeProvider defaultTheme="system" storageKey="si-iuran-theme">
-      <TooltipProvider>
-        <SidebarProvider>
-          <div className="min-h-screen flex w-full">
-            <AppSidebar />
-            <div className="flex-1 flex flex-col min-w-0">
-              <Header />
-              <main className="flex-1 p-3 md:p-6 bg-background overflow-auto">
-                {children}
-              </main>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset className="flex flex-col">
+        <Header />
+        <main className="flex-1 p-4 md:p-6 bg-background">
+          {children}
+        </main>
+        
+        {/* Footer */}
+        <footer className="border-t bg-muted/30 px-4 md:px-6 py-3">
+          <div className="flex flex-col sm:flex-row justify-between items-center text-xs text-muted-foreground">
+            <div>© 2024 SI Iuran GBR. All rights reserved.</div>
+            <div className="mt-1 sm:mt-0">
+              Created by: Bernand Dayamuntari Hermawan (Blok C1-5)
             </div>
           </div>
-        </SidebarProvider>
-      </TooltipProvider>
-    </ThemeProvider>
+        </footer>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

@@ -44,12 +44,18 @@ const LoginPage = () => {
   const onSubmit = async (data: LoginForm) => {
     setLoading(true);
 
-    // Convert phone number to email format for Supabase auth
-    const emailFormat = `${data.phone_number}@gbr.com`;
+    // Try direct login with phone number first
+    let { error } = await signIn(data.phone_number, data.password);
     
-    const { error } = await signIn(emailFormat, data.password);
+    // If that fails, try with email format for backward compatibility
+    if (error) {
+      const emailFormat = `${data.phone_number}@gbr.com`;
+      const result = await signIn(emailFormat, data.password);
+      error = result.error;
+    }
     
     if (error) {
+      console.error('Login error:', error);
       toast.error('Nomor handphone atau password salah');
       form.setError('root', { message: 'Nomor handphone atau password salah' });
     } else {
@@ -162,7 +168,7 @@ const LoginPage = () => {
 
             <div className="mt-6 space-y-3">
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-3">Akun Demo:</p>
+                <p className="text-sm text-gray-600 mb-3">Akun Demo (gunakan untuk testing):</p>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -189,6 +195,7 @@ const LoginPage = () => {
               <div className="text-center text-xs text-gray-500 mt-2">
                 <p>Admin: 081234567890 / admin123</p>
                 <p>Warga: 081234567891 / warga123</p>
+                <p className="text-orange-600 mt-1">Note: Jika belum ada akun, silakan hubungi admin untuk pendaftaran</p>
               </div>
             </div>
           </CardContent>

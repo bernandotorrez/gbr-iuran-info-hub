@@ -1,10 +1,24 @@
 
+import { useState, useEffect } from "react";
 import { Building2, Users, Shield, Phone, Mail, MapPin, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
+import { useSettings } from "@/hooks/useSettings";
 
 export default function CompanyProfile() {
+  const { settings, loading: settingsLoading } = useSettings();
+
+  // Default values that will be overridden by settings
+  const contactInfo = {
+    nama_perumahan: settings.nama_perumahan || "Perumahan GBR",
+    alamat_perumahan: settings.alamat_perumahan || "Jl. Perumahan GBR No. 1, Jakarta",
+    email_kontak: settings.email_kontak || "info@perumahangbr.com",
+    telepon_kontak: settings.telepon_kontak || "+62 21 1234 5678",
+    ketua_rt: settings.ketua_rt || "Bapak Ahmad Budiman",
+    sekretaris_rt: settings.sekretaris_rt || "Ibu Siti Nurhaliza"
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Header */}
@@ -16,13 +30,16 @@ export default function CompanyProfile() {
                 <Building2 className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Perumahan GBR</h1>
+                <h1 className="text-xl font-bold text-gray-900">{contactInfo.nama_perumahan}</h1>
                 <p className="text-sm text-gray-600">Hunian Nyaman dan Asri</p>
               </div>
             </div>
             <div className="flex space-x-2">
               <Link to="/public/artikel">
                 <Button variant="outline">Artikel & Berita</Button>
+              </Link>
+              <Link to="/public/pengurus">
+                <Button variant="outline">Struktur Pengurus</Button>
               </Link>
               <Link to="/cms/login">
                 <Button>Login Sistem</Button>
@@ -37,7 +54,7 @@ export default function CompanyProfile() {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
             Selamat Datang di
-            <span className="text-primary block">Perumahan GBR</span>
+            <span className="text-primary block">{contactInfo.nama_perumahan}</span>
           </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Kompleks perumahan modern dengan fasilitas lengkap dan sistem manajemen iuran yang transparan
@@ -64,7 +81,7 @@ export default function CompanyProfile() {
           <div className="text-center mb-12">
             <h3 className="text-3xl font-bold text-gray-900 mb-4">Fasilitas & Layanan</h3>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Perumahan GBR menyediakan berbagai fasilitas modern untuk kenyamanan seluruh penghuni
+              {contactInfo.nama_perumahan} menyediakan berbagai fasilitas modern untuk kenyamanan seluruh penghuni
             </p>
           </div>
           
@@ -107,15 +124,15 @@ export default function CompanyProfile() {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-6">Tentang Perumahan GBR</h3>
+              <h3 className="text-3xl font-bold text-gray-900 mb-6">Tentang {contactInfo.nama_perumahan}</h3>
               <p className="text-gray-600 mb-4">
-                Perumahan GBR adalah kompleks hunian modern yang mengutamakan kenyamanan, keamanan, dan 
+                {contactInfo.nama_perumahan} adalah kompleks hunian modern yang mengutamakan kenyamanan, keamanan, dan 
                 transparansi dalam pengelolaan. Dengan sistem informasi iuran yang terintegrasi, kami 
                 memastikan setiap penghuni mendapatkan pelayanan terbaik.
               </p>
               <p className="text-gray-600 mb-6">
                 Lokasi strategis dengan akses mudah ke berbagai fasilitas publik seperti sekolah, 
-                rumah sakit, dan pusat perbelanjaan membuat Perumahan GBR menjadi pilihan ideal 
+                rumah sakit, dan pusat perbelanjaan membuat {contactInfo.nama_perumahan} menjadi pilihan ideal 
                 untuk keluarga modern.
               </p>
               <div className="grid grid-cols-2 gap-4">
@@ -135,18 +152,26 @@ export default function CompanyProfile() {
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                   <MapPin className="w-5 h-5 text-primary" />
-                  <span className="text-gray-600">Jl. Perumahan GBR No. 1, Jakarta</span>
+                  <span className="text-gray-600">{contactInfo.alamat_perumahan}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Phone className="w-5 h-5 text-primary" />
-                  <span className="text-gray-600">+62 21 1234 5678</span>
+                  <span className="text-gray-600">{contactInfo.telepon_kontak}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="w-5 h-5 text-primary" />
-                  <span className="text-gray-600">info@perumahangbr.com</span>
+                  <span className="text-gray-600">{contactInfo.email_kontak}</span>
                 </div>
               </div>
               
+              <div className="mt-6 pt-6 border-t">
+                <h5 className="font-semibold text-gray-900 mb-3">Pengurus RT</h5>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <div><strong>Ketua RT:</strong> {contactInfo.ketua_rt}</div>
+                  <div><strong>Sekretaris:</strong> {contactInfo.sekretaris_rt}</div>
+                </div>
+              </div>
+
               <div className="mt-6 pt-6 border-t">
                 <h5 className="font-semibold text-gray-900 mb-3">Jam Operasional Kantor</h5>
                 <div className="text-sm text-gray-600 space-y-1">
@@ -169,12 +194,17 @@ export default function CompanyProfile() {
                 <Building2 className="w-5 h-5 text-white" />
               </div>
               <div>
-                <div className="font-bold">Perumahan GBR</div>
+                <div className="font-bold">{contactInfo.nama_perumahan}</div>
                 <div className="text-sm text-gray-400">Hunian Nyaman dan Asri</div>
               </div>
             </div>
-            <div className="text-sm text-gray-400">
-              © 2024 Perumahan GBR. All rights reserved.
+            <div className="text-center md:text-right">
+              <div className="text-sm text-gray-400 mb-1">
+                © 2024 {contactInfo.nama_perumahan}. All rights reserved.
+              </div>
+              <div className="text-xs text-gray-500">
+                Created by: Bernand Dayamuntari Hermawan (Blok C1-5)
+              </div>
             </div>
           </div>
         </div>
