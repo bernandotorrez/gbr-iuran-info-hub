@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -262,7 +261,13 @@ export const useSupabaseData = () => {
       return [];
     }
     
-    return data || [];
+    // Ensure tipe_iuran is included and has a default value if null
+    const processedData = (data || []).map(item => ({
+      ...item,
+      tipe_iuran: item.tipe_iuran || 'Tidak Ditentukan'
+    }));
+    
+    return processedData;
   };
 
   const addKasKeluar = async (kasKeluarData: any) => {

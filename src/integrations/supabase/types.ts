@@ -143,6 +143,7 @@ export type Database = {
           status_persetujuan: string | null
           tanggal_keluar: string
           tanggal_persetujuan: string | null
+          tipe_iuran: string | null
           updated_at: string | null
         }
         Insert: {
@@ -158,6 +159,7 @@ export type Database = {
           status_persetujuan?: string | null
           tanggal_keluar?: string
           tanggal_persetujuan?: string | null
+          tipe_iuran?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -173,6 +175,7 @@ export type Database = {
           status_persetujuan?: string | null
           tanggal_keluar?: string
           tanggal_persetujuan?: string | null
+          tipe_iuran?: string | null
           updated_at?: string | null
         }
         Relationships: [
