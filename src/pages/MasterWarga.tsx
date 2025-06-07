@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { Plus, Search, Edit2, Trash2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -285,44 +286,46 @@ export default function MasterWarga() {
       </div>
 
       {/* Edit Dialog */}
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Data Warga</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={editForm.handleSubmit(handleEdit)} className="space-y-4">
-            <ValidatedInput
-              label="Nama Lengkap"
-              error={editForm.formState.errors.nama?.message}
-              {...editForm.register("nama")}
-            />
-            <ValidatedInput
-              label="Nomor Handphone"
-              error={editForm.formState.errors.phone_number?.message}
-              {...editForm.register("phone_number")}
-            />
-            <ValidatedInput
-              label="Alamat"
-              error={editForm.formState.errors.alamat?.message}
-              {...editForm.register("alamat")}
-            />
-            <ValidatedInput
-              label="RT/RW"
-              error={editForm.formState.errors.rt_rw?.message}
-              {...editForm.register("rt_rw")}
-            />
-            <ValidatedInput
-              label="Email"
-              type="email"
-              error={editForm.formState.errors.email?.message}
-              {...editForm.register("email")}
-            />
-            <Button type="submit" className="w-full" disabled={loading}>
-              Update
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {isAdmin && (
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Data Warga</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={editForm.handleSubmit(handleEdit)} className="space-y-4">
+              <ValidatedInput
+                label="Nama Lengkap"
+                error={editForm.formState.errors.nama?.message}
+                {...editForm.register("nama")}
+              />
+              <ValidatedInput
+                label="Nomor Handphone"
+                error={editForm.formState.errors.phone_number?.message}
+                {...editForm.register("phone_number")}
+              />
+              <ValidatedInput
+                label="Alamat"
+                error={editForm.formState.errors.alamat?.message}
+                {...editForm.register("alamat")}
+              />
+              <ValidatedInput
+                label="RT/RW"
+                error={editForm.formState.errors.rt_rw?.message}
+                {...editForm.register("rt_rw")}
+              />
+              <ValidatedInput
+                label="Email"
+                type="email"
+                error={editForm.formState.errors.email?.message}
+                {...editForm.register("email")}
+              />
+              <Button type="submit" className="w-full" disabled={loading}>
+                Update
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* View Dialog */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { Calendar, TrendingUp, Users, CreditCard, Download, Filter } from "lucide-react"
@@ -9,7 +8,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import autoTable from 'jspdf-autotable'
 
 interface Transaction {
   id: string
@@ -86,7 +85,7 @@ export default function LaporanIuran() {
       transaction.status_verifikasi === 'verified' ? 'Terverifikasi' : 'Pending'
     ])
 
-    ;(doc as any).autoTable({
+    autoTable(doc, {
       head: [['Warga', 'Alamat', 'Jenis Iuran', 'Nominal', 'Tanggal', 'Status']],
       body: tableData,
       startY: 75,
@@ -96,7 +95,7 @@ export default function LaporanIuran() {
     toast({ title: "Berhasil", description: "Laporan PDF berhasil diunduh" })
   }
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     const monthName = months.find(m => m.value === filterMonth)?.label
     
     // Summary data

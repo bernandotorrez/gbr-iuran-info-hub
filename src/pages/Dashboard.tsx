@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
-import { TrendingUp, Users, CreditCard, AlertCircle, Wallet, Calendar } from "lucide-react"
+import { TrendingUp, Users, CreditCard, AlertCircle, Wallet, Calendar, Filter } from "lucide-react"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
 import { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function Dashboard() {
-  const { dashboardStats, loading, fetchDashboardStats } = useSupabaseData();
+  const { dashboardStats, loading, fetchDashboardStats, fetchTipeIuran } = useSupabaseData();
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedTipeIuran, setSelectedTipeIuran] = useState<string>("semua");
+  const [tipeIuranList, setTipeIuranList] = useState<any[]>([]);
 
   const statusData = [
     { name: 'Sudah Bayar', value: 85, color: '#22c55e' },
@@ -26,13 +28,27 @@ export default function Dashboard() {
     }).format(amount);
   };
 
+  const loadTipeIuran = async () => {
+    try {
+      const data = await fetchTipeIuran();
+      setTipeIuranList(data);
+    } catch (error) {
+      console.error('Error loading tipe iuran:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadTipeIuran();
+  }, []);
+
   const handleFilterChange = async () => {
-    await fetchDashboardStats(selectedMonth, selectedYear);
+    await fetchDashboardStats(selectedMonth, selectedYear, selectedTipeIuran);
   };
 
   const resetFilter = async () => {
     setSelectedMonth(new Date().getMonth() + 1);
     setSelectedYear(new Date().getFullYear());
+    setSelectedTipeIuran("semua");
     await fetchDashboardStats();
   };
 
@@ -80,10 +96,10 @@ export default function Dashboard() {
 
       {/* Filter Section */}
       <Card className="p-4">
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Filter Periode:</span>
+            <span className="text-sm font-medium">Filter:</span>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
@@ -110,7 +126,21 @@ export default function Dashboard() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={selectedTipeIuran} onValueChange={setSelectedTipeIuran}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Tipe Iuran" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="semua">Semua Tipe Iuran</SelectItem>
+                {tipeIuranList.map((tipe) => (
+                  <SelectItem key={tipe.id} value={tipe.nama}>
+                    {tipe.nama}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button onClick={handleFilterChange} size="sm">
+              <Filter className="h-4 w-4 mr-2" />
               Filter
             </Button>
             <Button onClick={resetFilter} variant="outline" size="sm">

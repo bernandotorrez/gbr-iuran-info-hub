@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,7 +33,7 @@ export const useSupabaseData = () => {
     }
   }, [session]);
 
-  const fetchDashboardStats = async (month?: number, year?: number) => {
+  const fetchDashboardStats = async (month?: number, year?: number, tipeIuran?: string) => {
     try {
       setLoading(true);
       const { data, error } = await supabase.rpc('get_dashboard_stats_filtered', {
@@ -79,22 +80,28 @@ export const useSupabaseData = () => {
   };
 
   const addWarga = async (wargaData: any) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert([{
-        ...wargaData,
-        role: 'warga',
-        status_aktif: true
-      }])
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error adding warga:', error);
-      throw error;
+    // Generate UUID for the new user
+    const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+      email: `${wargaData.phone_number}@gbr.com`,
+      password: 'warga123', // Default password
+      options: {
+        data: {
+          nama: wargaData.nama,
+          phone_number: wargaData.phone_number,
+          alamat: wargaData.alamat,
+          rt_rw: wargaData.rt_rw,
+          email: wargaData.email,
+          role: 'warga'
+        }
+      }
+    });
+
+    if (signUpError) {
+      console.error('Error creating user:', signUpError);
+      throw signUpError;
     }
-    
-    return data;
+
+    return user;
   };
 
   const updateWarga = async (id: string, wargaData: any) => {
@@ -186,7 +193,7 @@ export const useSupabaseData = () => {
     }
   };
 
-  const fetchIuran = async (month?: number, year?: number) => {
+  const fetchIuran = async (month?: number, year?: number, tipeIuran?: string) => {
     let query = supabase
       .from('iuran')
       .select(`

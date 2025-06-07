@@ -1,10 +1,12 @@
+
 import { useState, useEffect } from "react"
-import { Plus, Search, TrendingDown, Calendar, FileText, Download } from "lucide-react"
+import { Plus, Search, TrendingDown, Calendar, FileText, Download, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
 import { useAuth } from "@/contexts/AuthContext"
@@ -12,7 +14,7 @@ import { useKategoriKas } from "@/hooks/useKategoriKas"
 import { useUserRole } from "@/hooks/useUserRole"
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import autoTable from 'jspdf-autotable'
 
 interface Pengeluaran {
   id: string
@@ -24,6 +26,7 @@ interface Pengeluaran {
   status_persetujuan: string
   bukti_transaksi_url?: string
   created_at: string
+  tipe_iuran: string
   diinput_oleh?: {
     nama: string
   }
@@ -34,14 +37,17 @@ interface Pengeluaran {
 
 export default function OutputKas() {
   const [pengeluaranList, setPengeluaranList] = useState<Pengeluaran[]>([])
+  const [filteredPengeluaran, setFilteredPengeluaran] = useState<Pengeluaran[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [tipeIuranFilter, setTipeIuranFilter] = useState<string>("semua")
   const { toast } = useToast()
   const { session } = useAuth()
-  const { fetchKasKeluar, addKasKeluar, updateKasKeluarStatus, dashboardStats, fetchDashboardStats } = useSupabaseData()
+  const { fetchKasKeluar, addKasKeluar, updateKasKeluarStatus, dashboardStats, fetchDashboardStats, fetchTipeIuran } = useSupabaseData()
   const { kategoriList, loading: kategoriLoading } = useKategoriKas()
   const { isAdmin } = useUserRole()
+  const [tipeIuranList, setTipeIuranList] = useState<any[]>([])
 
   const [formData, setFormData] = useState({
     tanggal_keluar: "",
@@ -49,7 +55,8 @@ export default function OutputKas() {
     judul: "",
     deskripsi: "",
     nominal: "",
-    bukti_transaksi_url: ""
+    bukti_transaksi_url: "",
+    tipe_iuran: ""
   })
 
   const [formErrors, setFormErrors] = useState({
@@ -58,7 +65,8 @@ export default function OutputKas() {
     judul: "",
     deskripsi: "",
     nominal: "",
-    bukti_transaksi_url: ""
+    bukti_transaksi_url: "",
+    tipe_iuran: ""
   })
 
   const loadKasKeluar = async () => {
@@ -66,7 +74,6 @@ export default function OutputKas() {
       setLoading(true)
       const data = await fetchKasKeluar()
       setPengeluaranList(data)
-      // Load dashboard stats to get current saldo kas
       await fetchDashboardStats()
     } catch (error) {
       toast({ 
@@ -79,18 +86,41 @@ export default function OutputKas() {
     }
   }
 
+  const loadTipeIuran = async () => {
+    try {
+      const data = await fetchTipeIuran()
+      setTipeIuranList(data)
+    } catch (error) {
+      console.error('Error loading tipe iuran:', error)
+    }
+  }
+
   useEffect(() => {
     loadKasKeluar()
+    loadTipeIuran()
   }, [])
 
-  const filteredPengeluaran = pengeluaranList.filter(item =>
-    item.deskripsi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.kategori.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.judul.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  useEffect(() => {
+    let filtered = pengeluaranList
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(item =>
+        item.deskripsi.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.kategori.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.judul.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    // Filter by tipe iuran
+    if (tipeIuranFilter !== "semua") {
+      filtered = filtered.filter(item => item.tipe_iuran === tipeIuranFilter)
+    }
+
+    setFilteredPengeluaran(filtered)
+  }, [pengeluaranList, searchTerm, tipeIuranFilter])
 
   const handleNominalKeyDown = (e: React.KeyboardEvent) => {
-    // Allow only numbers, backspace, delete, tab, escape, enter
     if (!/[0-9]/.test(e.key) && 
         !['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault()
@@ -104,7 +134,8 @@ export default function OutputKas() {
       judul: "",
       deskripsi: "",
       nominal: "",
-      bukti_transaksi_url: ""
+      bukti_transaksi_url: "",
+      tipe_iuran: ""
     }
 
     let isValid = true
@@ -116,6 +147,11 @@ export default function OutputKas() {
 
     if (!formData.kategori) {
       errors.kategori = "Kategori wajib dipilih"
+      isValid = false
+    }
+
+    if (!formData.tipe_iuran) {
+      errors.tipe_iuran = "Tipe iuran wajib dipilih"
       isValid = false
     }
 
@@ -134,7 +170,6 @@ export default function OutputKas() {
       isValid = false
     }
 
-    // Check if cash balance is sufficient
     const nominalValue = parseInt(formData.nominal)
     if (nominalValue > dashboardStats.saldo_kas) {
       errors.nominal = "Saldo Kas Tidak Mencukupi"
@@ -173,7 +208,8 @@ export default function OutputKas() {
         judul: formData.judul,
         deskripsi: formData.deskripsi,
         nominal: parseInt(formData.nominal),
-        bukti_transaksi_url: formData.bukti_transaksi_url
+        bukti_transaksi_url: formData.bukti_transaksi_url,
+        tipe_iuran: formData.tipe_iuran
       })
 
       setFormData({ 
@@ -182,7 +218,8 @@ export default function OutputKas() {
         judul: "",
         deskripsi: "", 
         nominal: "", 
-        bukti_transaksi_url: "" 
+        bukti_transaksi_url: "",
+        tipe_iuran: ""
       })
       setFormErrors({
         tanggal_keluar: "",
@@ -190,7 +227,8 @@ export default function OutputKas() {
         judul: "",
         deskripsi: "",
         nominal: "",
-        bukti_transaksi_url: ""
+        bukti_transaksi_url: "",
+        tipe_iuran: ""
       })
       setIsAddOpen(false)
       await loadKasKeluar()
@@ -232,6 +270,7 @@ export default function OutputKas() {
     const tableData = filteredPengeluaran.map(item => [
       new Date(item.tanggal_keluar).toLocaleDateString('id-ID'),
       item.kategori,
+      item.tipe_iuran,
       item.judul,
       item.deskripsi,
       formatCurrency(item.nominal),
@@ -239,8 +278,8 @@ export default function OutputKas() {
        item.status_persetujuan === 'pending' ? 'Pending' : 'Ditolak'
     ])
 
-    ;(doc as any).autoTable({
-      head: [['Tanggal', 'Kategori', 'Judul', 'Deskripsi', 'Nominal', 'Status']],
+    autoTable(doc, {
+      head: [['Tanggal', 'Kategori', 'Tipe Iuran', 'Judul', 'Deskripsi', 'Nominal', 'Status']],
       body: tableData,
       startY: 30,
     })
@@ -253,6 +292,7 @@ export default function OutputKas() {
     const data = filteredPengeluaran.map(item => ({
       Tanggal: new Date(item.tanggal_keluar).toLocaleDateString('id-ID'),
       Kategori: item.kategori,
+      'Tipe Iuran': item.tipe_iuran,
       Judul: item.judul,
       Deskripsi: item.deskripsi,
       Nominal: item.nominal,
@@ -267,11 +307,11 @@ export default function OutputKas() {
     toast({ title: "Berhasil", description: "Laporan Excel berhasil diunduh" })
   }
 
-  const totalPengeluaran = pengeluaranList
+  const totalPengeluaran = filteredPengeluaran
     .filter(item => item.status_persetujuan === "approved")
     .reduce((sum, item) => sum + item.nominal, 0)
 
-  const totalPending = pengeluaranList
+  const totalPending = filteredPengeluaran
     .filter(item => item.status_persetujuan === "pending")
     .reduce((sum, item) => sum + item.nominal, 0)
 
@@ -322,6 +362,22 @@ export default function OutputKas() {
                     />
                     {formErrors.tanggal_keluar && (
                       <p className="text-sm text-red-500 mt-1">{formErrors.tanggal_keluar}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="tipe_iuran">Tipe Iuran *</Label>
+                    <Select value={formData.tipe_iuran} onValueChange={(value) => setFormData({...formData, tipe_iuran: value})}>
+                      <SelectTrigger className={formErrors.tipe_iuran ? "border-red-500" : ""}>
+                        <SelectValue placeholder="-- Pilih Tipe Iuran --" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tipeIuranList.map(tipe => (
+                          <SelectItem key={tipe.id} value={tipe.nama}>{tipe.nama}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrors.tipe_iuran && (
+                      <p className="text-sm text-red-500 mt-1">{formErrors.tipe_iuran}</p>
                     )}
                   </div>
                   <div>
@@ -433,13 +489,13 @@ export default function OutputKas() {
             <FileText className="h-8 w-8 text-blue-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">Total Transaksi</p>
-              <p className="text-2xl font-bold">{pengeluaranList.length}</p>
+              <p className="text-2xl font-bold">{filteredPengeluaran.length}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -449,6 +505,20 @@ export default function OutputKas() {
             className="pl-8"
           />
         </div>
+        <div className="flex items-center space-x-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <Select value={tipeIuranFilter} onValueChange={setTipeIuranFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter Tipe Iuran" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="semua">Semua Tipe Iuran</SelectItem>
+              {tipeIuranList.map(tipe => (
+                <SelectItem key={tipe.id} value={tipe.nama}>{tipe.nama}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="rounded-md border">
@@ -456,6 +526,7 @@ export default function OutputKas() {
           <TableHeader>
             <TableRow>
               <TableHead>Tanggal</TableHead>
+              <TableHead>Tipe Iuran</TableHead>
               <TableHead>Kategori</TableHead>
               <TableHead>Judul</TableHead>
               <TableHead>Deskripsi</TableHead>
@@ -468,6 +539,7 @@ export default function OutputKas() {
             {filteredPengeluaran.map((item) => (
               <TableRow key={item.id}>
                 <TableCell>{new Date(item.tanggal_keluar).toLocaleDateString('id-ID')}</TableCell>
+                <TableCell>{item.tipe_iuran}</TableCell>
                 <TableCell>{item.kategori}</TableCell>
                 <TableCell className="font-medium">{item.judul}</TableCell>
                 <TableCell>{item.deskripsi}</TableCell>
