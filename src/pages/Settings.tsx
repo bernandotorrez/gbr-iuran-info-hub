@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { Save, Users, CreditCard, Bell, Shield, Palette, Database, Download, Upload, Settings as SettingsIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -49,6 +50,15 @@ export default function Settings() {
     payment_reminders: true
   })
 
+  // Helper function to convert string to boolean
+  const stringToBoolean = (value: string | boolean | undefined, defaultValue: boolean = false): boolean => {
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'string') {
+      return value.toLowerCase() === 'true'
+    }
+    return defaultValue
+  }
+
   // Load settings from database when available
   useEffect(() => {
     if (!loading && settings) {
@@ -61,6 +71,13 @@ export default function Settings() {
         sekretaris_paguyuban: settings.sekretaris_paguyuban || settings.sekretaris_rt || "Ibu Siti Nurhaliza"
       })
 
+      setIuranSettings({
+        batas_waktu_pembayaran: settings.batas_waktu_pembayaran || "25",
+        denda_keterlambatan: settings.denda_keterlambatan || "10000",
+        metode_notifikasi: settings.metode_notifikasi || "whatsapp",
+        interval_notifikasi: settings.interval_notifikasi || "7"
+      })
+
       setSystemSettings({
         theme: settings.theme || "green",
         currency: settings.currency || "IDR",
@@ -70,17 +87,17 @@ export default function Settings() {
       })
 
       setPersonalizationSettings({
-        dark_mode: settings.dark_mode || false,
-        sidebar_collapsed: settings.sidebar_collapsed || false,
-        ui_animations: settings.ui_animations || true,
-        compact_view: settings.compact_view || false
+        dark_mode: stringToBoolean(settings.dark_mode, false),
+        sidebar_collapsed: stringToBoolean(settings.sidebar_collapsed, false),
+        ui_animations: stringToBoolean(settings.ui_animations, true),
+        compact_view: stringToBoolean(settings.compact_view, false)
       })
 
       setNotificationSettings({
-        email_notifications: settings.email_notifications || true,
-        whatsapp_notifications: settings.whatsapp_notifications || true,
-        push_notifications: settings.push_notifications || false,
-        payment_reminders: settings.payment_reminders || true
+        email_notifications: stringToBoolean(settings.email_notifications, true),
+        whatsapp_notifications: stringToBoolean(settings.whatsapp_notifications, true),
+        push_notifications: stringToBoolean(settings.push_notifications, false),
+        payment_reminders: stringToBoolean(settings.payment_reminders, true)
       })
     }
   }, [loading, settings])
@@ -122,6 +139,24 @@ export default function Settings() {
     }
   }
 
+  const handleSaveIuran = async () => {
+    try {
+      await updateMultipleSettings(iuranSettings)
+      toast({ title: "Berhasil", description: "Pengaturan iuran berhasil disimpan" })
+    } catch (error) {
+      toast({ title: "Error", description: "Gagal menyimpan pengaturan iuran", variant: "destructive" })
+    }
+  }
+
+  const handleSaveSystem = async () => {
+    try {
+      await updateMultipleSettings(systemSettings)
+      toast({ title: "Berhasil", description: "Pengaturan sistem berhasil disimpan" })
+    } catch (error) {
+      toast({ title: "Error", description: "Gagal menyimpan pengaturan sistem", variant: "destructive" })
+    }
+  }
+
   const handleSavePersonalization = async () => {
     try {
       await updateMultipleSettings({
@@ -133,6 +168,20 @@ export default function Settings() {
       toast({ title: "Berhasil", description: "Pengaturan personalisasi berhasil disimpan" })
     } catch (error) {
       toast({ title: "Error", description: "Gagal menyimpan pengaturan personalisasi", variant: "destructive" })
+    }
+  }
+
+  const handleSaveNotifications = async () => {
+    try {
+      await updateMultipleSettings({
+        email_notifications: notificationSettings.email_notifications.toString(),
+        whatsapp_notifications: notificationSettings.whatsapp_notifications.toString(),
+        push_notifications: notificationSettings.push_notifications.toString(),
+        payment_reminders: notificationSettings.payment_reminders.toString()
+      })
+      toast({ title: "Berhasil", description: "Pengaturan notifikasi berhasil disimpan" })
+    } catch (error) {
+      toast({ title: "Error", description: "Gagal menyimpan pengaturan notifikasi", variant: "destructive" })
     }
   }
 
@@ -473,6 +522,10 @@ export default function Settings() {
                 onCheckedChange={(checked) => setNotificationSettings({...notificationSettings, payment_reminders: checked})}
               />
             </div>
+            <Button onClick={handleSaveNotifications} className="w-full">
+              <Save className="w-4 h-4 mr-2" />
+              Simpan Notifikasi
+            </Button>
           </div>
         </div>
       </div>
