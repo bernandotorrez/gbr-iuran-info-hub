@@ -14,6 +14,18 @@ interface UserManagementDialogProps {
   onUserAdded: () => void
 }
 
+interface Warga {
+  id: string
+  blok_rumah: string
+  nama_suami?: string
+  nama_istri?: string
+  nomor_hp_suami?: string
+  nomor_hp_istri?: string
+  status_tinggal: 'Sudah' | 'Kadang-Kadang' | 'Belum'
+  created_at: string
+  updated_at: string
+}
+
 export function UserManagementDialog({ 
   open, 
   onClose, 
@@ -24,13 +36,50 @@ export function UserManagementDialog({
     phone_number: "",
     email: "",
     alamat: "",
-    rt_rw: "",
-    role: "warga"
+    role: "warga",
+    warga_id: ""
   })
   
+  const [wargaList, setWargaList] = useState<Warga[]>([])
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
-  const { addWarga } = useSupabaseData()
+  const { addWarga, fetchWarga } = useSupabaseData()
+
+  // Load warga data when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      loadWarga()
+    }
+  }, [open])
+
+  const loadWarga = async () => {
+    try {
+      const data = await fetchWarga()
+      setWargaList(data)
+    } catch (error) {
+      console.error('Error loading warga:', error)
+    }
+  }
+
+  const getWargaDisplayName = (warga: Warga) => {
+    const names = []
+    if (warga.nama_suami) names.push(warga.nama_suami)
+    if (warga.nama_istri) names.push(warga.nama_istri)
+    return names.length > 0 ? names.join(' & ') : 'Tidak ada nama'
+  }
+
+  const handleWargaChange = (wargaId: string) => {
+    const selectedWarga = wargaList.find(w => w.id === wargaId)
+    if (selectedWarga) {
+      setFormData(prev => ({
+        ...prev,
+        warga_id: wargaId,
+        nama: getWargaDisplayName(selectedWarga),
+        alamat: selectedWarga.blok_rumah,
+        phone_number: selectedWarga.nomor_hp_suami || selectedWarga.nomor_hp_istri || prev.phone_number
+      }))
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,8 +92,8 @@ export function UserManagementDialog({
         phone_number: "",
         email: "",
         alamat: "",
-        rt_rw: "",
-        role: "warga"
+        role: "warga",
+        warga_id: ""
       })
       onUserAdded()
       onClose()
@@ -72,6 +121,26 @@ export function UserManagementDialog({
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="warga_id">Pilih Data Warga (Opsional)</Label>
+            <Select
+              value={formData.warga_id}
+              onValueChange={handleWargaChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih warga untuk auto-fill data" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Tidak pilih warga</SelectItem>
+                {wargaList.map((warga) => (
+                  <SelectItem key={warga.id} value={warga.id}>
+                    {getWargaDisplayName(warga)} - {warga.blok_rumah}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="nama">Nama Lengkap</Label>
@@ -118,40 +187,28 @@ export function UserManagementDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="rt_rw">RT/RW</Label>
-              <Input
-                id="rt_rw"
-                value={formData.rt_rw}
-                onChange={(e) => setFormData(prev => ({ ...prev, rt_rw: e.target.value }))}
-                placeholder="RT 001/RW 001"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="role">Role</Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="warga">Warga</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="bendahara">Bendahara</SelectItem>
-                  <SelectItem value="ketua">Ketua</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label htmlFor="role">Role</Label>
+            <Select
+              value={formData.role}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="warga">Warga</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="bendahara">Bendahara</SelectItem>
+                <SelectItem value="ketua">Ketua</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="bg-blue-50 p-4 rounded-lg">
             <p className="text-sm text-blue-800">
               <strong>Info:</strong> User akan dibuat dengan email: {formData.phone_number}@gbr.com dan password default: <code>warga123</code>
+              {formData.warga_id && <br />}<span className="text-green-700">Data user akan terhubung dengan data warga yang dipilih.</span>
             </p>
           </div>
           

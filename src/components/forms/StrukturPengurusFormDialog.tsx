@@ -14,6 +14,18 @@ interface StrukturPengurusFormDialogProps {
   editData?: any
 }
 
+interface Warga {
+  id: string
+  blok_rumah: string
+  nama_suami?: string
+  nama_istri?: string
+  nomor_hp_suami?: string
+  nomor_hp_istri?: string
+  status_tinggal: 'Sudah' | 'Kadang-Kadang' | 'Belum'
+  created_at: string
+  updated_at: string
+}
+
 export function StrukturPengurusFormDialog({ 
   open, 
   onClose, 
@@ -33,7 +45,7 @@ export function StrukturPengurusFormDialog({
     status_aktif: true
   })
   
-  const [wargaList, setWargaList] = useState<any[]>([])
+  const [wargaList, setWargaList] = useState<Warga[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -92,25 +104,37 @@ export function StrukturPengurusFormDialog({
     }
   }
 
+  const getWargaDisplayName = (warga: Warga) => {
+    const names = []
+    if (warga.nama_suami) names.push(warga.nama_suami)
+    if (warga.nama_istri) names.push(warga.nama_istri)
+    return names.length > 0 ? names.join(' & ') : 'Tidak ada nama'
+  }
+
   const handleWargaChange = (wargaId: string) => {
     if (wargaId === "none") {
       setFormData(prev => ({
         ...prev,
-        warga_id: "none"
+        warga_id: "none",
+        blok_rumah: "",
+        nama_pengurus: ""
       }))
     } else {
       const selectedWarga = wargaList.find(w => w.id === wargaId)
-      setFormData(prev => ({
-        ...prev,
-        warga_id: wargaId,
-        nama_pengurus: selectedWarga ? selectedWarga.nama : prev.nama_pengurus
-      }))
+      if (selectedWarga) {
+        setFormData(prev => ({
+          ...prev,
+          warga_id: wargaId,
+          blok_rumah: selectedWarga.blok_rumah,
+          nama_pengurus: getWargaDisplayName(selectedWarga)
+        }))
+      }
     }
   }
 
   const jabatanOptions = [
-    "Ketua RT",
-    "Wakil Ketua RT", 
+    "Ketua Paguyuban",
+    "Wakil Ketua Paguyuban", 
     "Sekretaris",
     "Bendahara",
     "Sie Keamanan",
@@ -182,7 +206,7 @@ export function StrukturPengurusFormDialog({
                 <SelectItem value="none">Bukan Warga / Kosongkan</SelectItem>
                 {wargaList.map((warga) => (
                   <SelectItem key={warga.id} value={warga.id}>
-                    {warga.nama} - {warga.rt_rw}
+                    {getWargaDisplayName(warga)} - {warga.blok_rumah}
                   </SelectItem>
                 ))}
               </SelectContent>

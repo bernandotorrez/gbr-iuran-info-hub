@@ -20,9 +20,12 @@ interface StrukturPengurus {
   periode_selesai: number
   status_aktif: boolean
   warga?: {
-    nama: string
-    alamat: string
-    rt_rw: string
+    blok_rumah: string
+    nama_suami?: string
+    nama_istri?: string
+    nomor_hp_suami?: string
+    nomor_hp_istri?: string
+    status_tinggal: string
   }
 }
 
@@ -103,6 +106,14 @@ export default function StrukturPengurus() {
     }
   }
 
+  const getWargaDisplayName = (warga: any) => {
+    if (!warga) return null
+    const names = []
+    if (warga.nama_suami) names.push(warga.nama_suami)
+    if (warga.nama_istri) names.push(warga.nama_istri)
+    return names.length > 0 ? names.join(' & ') : 'Tidak ada nama'
+  }
+
   const filteredData = strukturList.filter(item => {
     const matchesSearch = item.nama_pengurus.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.jabatan.toLowerCase().includes(searchTerm.toLowerCase())
@@ -137,7 +148,7 @@ export default function StrukturPengurus() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Struktur Pengurus Paguyuban</h1>
-          <p className="text-muted-foreground">Kelola struktur organisasi pengurus paguyuban perumahan</p>
+          <p className="text-muted-foreground">Kelola struktur organisasi pengurus paguyuban perumahan GBR</p>
         </div>
         <Button onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-2" />
@@ -195,8 +206,8 @@ export default function StrukturPengurus() {
               {item.warga && (
                 <div className="text-sm">
                   <p className="font-medium text-muted-foreground">Data Warga:</p>
-                  <p>{item.warga.nama}</p>
-                  <p className="text-xs text-muted-foreground">{item.warga.alamat}</p>
+                  <p>{getWargaDisplayName(item.warga)}</p>
+                  <p className="text-xs text-muted-foreground">{item.warga.blok_rumah}</p>
                 </div>
               )}
               
