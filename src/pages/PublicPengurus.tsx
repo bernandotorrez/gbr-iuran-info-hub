@@ -45,7 +45,7 @@ export default function PublicPengurus() {
     }
   }
 
-  // Group by level for better organization
+  // Group by level for organization chart
   const groupedByLevel = strukturList.reduce((acc, item) => {
     if (!acc[item.level_jabatan]) {
       acc[item.level_jabatan] = []
@@ -53,6 +53,16 @@ export default function PublicPengurus() {
     acc[item.level_jabatan].push(item)
     return acc
   }, {} as Record<number, StrukturPengurus[]>)
+
+  const getLevelTitle = (level: number) => {
+    switch (level) {
+      case 1: return "Ketua Paguyuban"
+      case 2: return "Wakil Ketua"
+      case 3: return "Koordinator"
+      case 4: return "Anggota"
+      default: return "Pengurus"
+    }
+  }
 
   if (loading) {
     return (
@@ -76,7 +86,7 @@ export default function PublicPengurus() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">{namaPerumahan}</h1>
-                <p className="text-sm text-gray-600">Struktur Pengurus</p>
+                <p className="text-sm text-gray-600">Struktur Pengurus Paguyuban</p>
               </div>
             </div>
             <div className="flex space-x-2">
@@ -102,10 +112,10 @@ export default function PublicPengurus() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Struktur Pengurus {namaPerumahan}
+              Struktur Pengurus Paguyuban {namaPerumahan}
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Struktur organisasi pengurus {namaPerumahan} periode {new Date().getFullYear()}-{new Date().getFullYear() + 1}
+              Bagan organisasi pengurus paguyuban {namaPerumahan} periode {new Date().getFullYear()}-{new Date().getFullYear() + 1}
             </p>
           </div>
 
@@ -116,63 +126,74 @@ export default function PublicPengurus() {
               </div>
             </div>
           ) : (
-            <div className="space-y-12">
+            <div className="space-y-8">
+              {/* Organization Chart Layout */}
               {Object.keys(groupedByLevel)
                 .sort((a, b) => parseInt(a) - parseInt(b))
                 .map(level => (
-                  <div key={level} className="space-y-6">
-                    <div className="flex items-center gap-3 mb-6">
+                  <div key={level} className="relative">
+                    {/* Level Title */}
+                    <div className="text-center mb-6">
                       <Badge 
-                        className={`${getLevelBadgeColor(parseInt(level))} text-white px-4 py-2 text-base`}
+                        className={`${getLevelBadgeColor(parseInt(level))} text-white px-6 py-3 text-lg`}
                       >
-                        Level {level}
+                        {getLevelTitle(parseInt(level))}
                       </Badge>
-                      <h3 className="text-2xl font-semibold text-gray-800">
-                        {parseInt(level) === 1 ? "Ketua" :
-                         parseInt(level) === 2 ? "Wakil Ketua" :
-                         parseInt(level) === 3 ? "Koordinator" :
-                         parseInt(level) === 4 ? "Anggota" : "Pengurus"}
-                      </h3>
                     </div>
                     
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                      {groupedByLevel[parseInt(level)].map((pengurus) => (
-                        <Card key={pengurus.id} className="hover:shadow-lg transition-shadow bg-white">
-                          <CardHeader className="pb-4">
-                            <div className="flex items-center gap-4">
-                              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                                <User className="w-8 h-8 text-primary" />
-                              </div>
-                              <div className="flex-1">
-                                <CardTitle className="text-lg text-gray-900">{pengurus.nama_pengurus}</CardTitle>
-                                <p className="text-sm text-primary font-medium mt-1">{pengurus.jabatan}</p>
-                              </div>
-                            </div>
-                          </CardHeader>
+                    {/* Organization Chart Cards */}
+                    <div className={`flex justify-center items-start gap-4 flex-wrap ${
+                      parseInt(level) === 1 ? 'justify-center' : 
+                      parseInt(level) === 2 ? 'justify-center max-w-4xl mx-auto' :
+                      'justify-center'
+                    }`}>
+                      {groupedByLevel[parseInt(level)].map((pengurus, index) => (
+                        <div key={pengurus.id} className="relative">
+                          {/* Connecting Lines for org chart */}
+                          {parseInt(level) > 1 && (
+                            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-px h-8 bg-gray-300"></div>
+                          )}
                           
-                          <CardContent className="space-y-3">
-                            {pengurus.blok_rumah && (
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <MapPin className="w-4 h-4" />
-                                <span>Blok {pengurus.blok_rumah}</span>
+                          <Card className="hover:shadow-xl transition-all duration-300 bg-white border-2 border-gray-100 w-72">
+                            <CardHeader className="text-center pb-3 bg-gradient-to-r from-primary/5 to-primary/10">
+                              <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <User className="w-10 h-10 text-primary" />
                               </div>
-                            )}
+                              <CardTitle className="text-xl text-gray-900 font-bold">{pengurus.nama_pengurus}</CardTitle>
+                              <p className="text-primary font-semibold text-lg">{pengurus.jabatan}</p>
+                            </CardHeader>
                             
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Calendar className="w-4 h-4" />
-                              <span>Periode {pengurus.periode_mulai} - {pengurus.periode_selesai}</span>
-                            </div>
-                            
-                            {pengurus.warga && (
-                              <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                                <p className="font-medium text-gray-800">Warga:</p>
-                                <p className="text-xs">{pengurus.warga.rt_rw}</p>
+                            <CardContent className="space-y-3 text-center">
+                              {pengurus.blok_rumah && (
+                                <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                                  <MapPin className="w-4 h-4" />
+                                  <span>Blok {pengurus.blok_rumah}</span>
+                                </div>
+                              )}
+                              
+                              <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                                <Calendar className="w-4 h-4" />
+                                <span>Periode {pengurus.periode_mulai} - {pengurus.periode_selesai}</span>
                               </div>
-                            )}
-                          </CardContent>
-                        </Card>
+                              
+                              {pengurus.warga && (
+                                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                                  <p className="font-medium text-gray-800">Warga:</p>
+                                  <p className="text-xs">{pengurus.warga.rt_rw}</p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
                       ))}
                     </div>
+
+                    {/* Connecting lines between levels */}
+                    {parseInt(level) < Math.max(...Object.keys(groupedByLevel).map(k => parseInt(k))) && (
+                      <div className="flex justify-center mt-8">
+                        <div className="w-px h-8 bg-gray-300"></div>
+                      </div>
+                    )}
                   </div>
                 ))}
             </div>

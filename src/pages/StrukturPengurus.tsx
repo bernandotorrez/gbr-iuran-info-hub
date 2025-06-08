@@ -136,8 +136,8 @@ export default function StrukturPengurus() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Struktur Pengurus</h1>
-          <p className="text-muted-foreground">Kelola struktur organisasi pengurus perumahan</p>
+          <h1 className="text-3xl font-bold">Struktur Pengurus Paguyuban</h1>
+          <p className="text-muted-foreground">Kelola struktur organisasi pengurus paguyuban perumahan</p>
         </div>
         <Button onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-2" />

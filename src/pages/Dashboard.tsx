@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedTipeIuran, setSelectedTipeIuran] = useState<string>("semua");
   const [tipeIuranList, setTipeIuranList] = useState<any[]>([]);
+  const [isFiltering, setIsFiltering] = useState(false);
 
   const statusData = [
     { name: 'Sudah Bayar', value: 85, color: '#22c55e' },
@@ -45,7 +46,20 @@ export default function Dashboard() {
 
   const handleFilterChange = async () => {
     console.log('Applying filter:', { selectedMonth, selectedYear, selectedTipeIuran });
-    await fetchDashboardStats(selectedMonth, selectedYear, selectedTipeIuran !== "semua" ? selectedTipeIuran : undefined);
+    setIsFiltering(true);
+    
+    try {
+      // Pass the correct parameters to fetchDashboardStats
+      await fetchDashboardStats(
+        selectedMonth, 
+        selectedYear, 
+        selectedTipeIuran !== "semua" ? selectedTipeIuran : undefined
+      );
+    } catch (error) {
+      console.error('Error applying filter:', error);
+    } finally {
+      setIsFiltering(false);
+    }
   };
 
   const resetFilter = async () => {
@@ -55,8 +69,15 @@ export default function Dashboard() {
     setSelectedMonth(currentMonth);
     setSelectedYear(currentYear);
     setSelectedTipeIuran("semua");
+    setIsFiltering(true);
     
-    await fetchDashboardStats();
+    try {
+      await fetchDashboardStats(currentMonth, currentYear);
+    } catch (error) {
+      console.error('Error resetting filter:', error);
+    } finally {
+      setIsFiltering(false);
+    }
   };
 
   const months = [
@@ -140,17 +161,17 @@ export default function Dashboard() {
               <SelectContent>
                 <SelectItem value="semua">Semua Tipe Iuran</SelectItem>
                 {tipeIuranList.map((tipe) => (
-                  <SelectItem key={tipe.id} value={tipe.nama}>
+                  <SelectItem key={tipe.id} value={tipe.id}>
                     {tipe.nama}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={handleFilterChange} size="sm">
+            <Button onClick={handleFilterChange} size="sm" disabled={isFiltering}>
               <Filter className="h-4 w-4 mr-2" />
-              Filter
+              {isFiltering ? 'Memfilter...' : 'Filter'}
             </Button>
-            <Button onClick={resetFilter} variant="outline" size="sm">
+            <Button onClick={resetFilter} variant="outline" size="sm" disabled={isFiltering}>
               Reset
             </Button>
           </div>
