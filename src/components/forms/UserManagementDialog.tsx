@@ -69,6 +69,18 @@ export function UserManagementDialog({
   }
 
   const handleWargaChange = (wargaId: string) => {
+    if (wargaId === "none") {
+      // Reset to empty when "none" is selected
+      setFormData(prev => ({
+        ...prev,
+        warga_id: "",
+        nama: "",
+        alamat: "",
+        phone_number: ""
+      }))
+      return
+    }
+
     const selectedWarga = wargaList.find(w => w.id === wargaId)
     if (selectedWarga) {
       setFormData(prev => ({
@@ -124,14 +136,14 @@ export function UserManagementDialog({
           <div>
             <Label htmlFor="warga_id">Pilih Data Warga (Opsional)</Label>
             <Select
-              value={formData.warga_id}
+              value={formData.warga_id || "none"}
               onValueChange={handleWargaChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Pilih warga untuk auto-fill data" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tidak pilih warga</SelectItem>
+                <SelectItem value="none">Tidak pilih warga</SelectItem>
                 {wargaList.map((warga) => (
                   <SelectItem key={warga.id} value={warga.id}>
                     {getWargaDisplayName(warga)} - {warga.blok_rumah}
@@ -208,7 +220,7 @@ export function UserManagementDialog({
           <div className="bg-blue-50 p-4 rounded-lg">
             <p className="text-sm text-blue-800">
               <strong>Info:</strong> User akan dibuat dengan email: {formData.phone_number}@gbr.com dan password default: <code>warga123</code>
-              {formData.warga_id && <br />}<span className="text-green-700">Data user akan terhubung dengan data warga yang dipilih.</span>
+              {formData.warga_id && formData.warga_id !== "none" && <br />}<span className="text-green-700">Data user akan terhubung dengan data warga yang dipilih.</span>
             </p>
           </div>
           
