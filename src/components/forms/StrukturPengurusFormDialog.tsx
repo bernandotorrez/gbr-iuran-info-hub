@@ -56,7 +56,7 @@ export function StrukturPengurusFormDialog({
           jabatan: editData.jabatan || "",
           level_jabatan: editData.level_jabatan || 1,
           nama_pengurus: editData.nama_pengurus || "",
-          warga_id: editData.warga_id || "",
+          warga_id: editData.warga_id || "none",
           blok_rumah: editData.blok_rumah || "",
           periode_mulai: editData.periode_mulai || new Date().getFullYear(),
           periode_selesai: editData.periode_selesai || new Date().getFullYear() + 1,
@@ -67,7 +67,7 @@ export function StrukturPengurusFormDialog({
           jabatan: "",
           level_jabatan: 1,
           nama_pengurus: "",
-          warga_id: "",
+          warga_id: "none",
           blok_rumah: "",
           periode_mulai: new Date().getFullYear(),
           periode_selesai: new Date().getFullYear() + 1,
@@ -91,12 +91,7 @@ export function StrukturPengurusFormDialog({
     setLoading(true)
     
     try {
-      // Convert "none" back to empty string for database storage
-      const submitData = {
-        ...formData,
-        warga_id: formData.warga_id === "none" ? "" : formData.warga_id
-      }
-      await onSave(submitData)
+      await onSave(formData)
     } catch (error) {
       console.error('Error saving:', error)
     } finally {

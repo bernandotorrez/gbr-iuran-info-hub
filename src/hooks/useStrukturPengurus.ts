@@ -47,12 +47,16 @@ export const useStrukturPengurus = () => {
   };
 
   const addStrukturPengurus = async (strukturData: any) => {
+    // Convert empty string or "none" to null for warga_id
+    const processedData = {
+      ...strukturData,
+      warga_id: strukturData.warga_id === "" || strukturData.warga_id === "none" ? null : strukturData.warga_id,
+      status_aktif: true
+    };
+
     const { data, error } = await supabase
       .from('struktur_pengurus')
-      .insert([{
-        ...strukturData,
-        status_aktif: true
-      }])
+      .insert([processedData])
       .select()
       .single();
     
@@ -65,9 +69,15 @@ export const useStrukturPengurus = () => {
   };
 
   const updateStrukturPengurus = async (id: string, strukturData: any) => {
+    // Convert empty string or "none" to null for warga_id
+    const processedData = {
+      ...strukturData,
+      warga_id: strukturData.warga_id === "" || strukturData.warga_id === "none" ? null : strukturData.warga_id
+    };
+
     const { data, error } = await supabase
       .from('struktur_pengurus')
-      .update(strukturData)
+      .update(processedData)
       .eq('id', id)
       .select()
       .single();

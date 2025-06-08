@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
+import { supabase } from "@/integrations/supabase/client"
 
 interface UserManagementDialogProps {
   open: boolean
@@ -43,7 +44,7 @@ export function UserManagementDialog({
   const [wargaList, setWargaList] = useState<Warga[]>([])
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
-  const { addWarga, fetchWarga } = useSupabaseData()
+  const { fetchWarga } = useSupabaseData()
 
   // Load warga data when dialog opens
   React.useEffect(() => {
@@ -93,12 +94,37 @@ export function UserManagementDialog({
     }
   }
 
+  const addUser = async (userData: any) => {
+    try {
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: `${userData.phone_number}@gbr.com`,
+        password: 'warga123',
+        phone: userData.phone_number,
+        user_metadata: {
+          nama: userData.nama,
+          alamat: userData.alamat,
+          role: userData.role,
+          warga_id: userData.warga_id || null
+        }
+      })
+
+      if (authError) throw authError
+
+      // The trigger will automatically create the profile
+      return authData.user
+    } catch (error) {
+      console.error('Error adding user:', error)
+      throw error
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     
     try {
-      await addWarga(formData)
+      await addUser(formData)
       setFormData({
         nama: "",
         phone_number: "",
