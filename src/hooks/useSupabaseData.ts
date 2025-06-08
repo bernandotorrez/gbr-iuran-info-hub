@@ -37,7 +37,8 @@ export const useSupabaseData = () => {
       setLoading(true);
       const { data, error } = await supabase.rpc('get_dashboard_stats_filtered', {
         target_month: month || null,
-        target_year: year || null
+        target_year: year || null,
+        target_tipe_iuran_id: tipeIuran || null
       });
       
       if (error) {
