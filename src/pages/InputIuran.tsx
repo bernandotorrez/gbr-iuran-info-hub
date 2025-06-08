@@ -14,9 +14,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 
 interface Warga {
   id: string
-  nama: string
-  alamat: string
-  rt_rw: string
+  blok_rumah: string
+  nama_suami?: string
+  nama_istri?: string
+  nomor_hp_suami?: string
+  nomor_hp_istri?: string
+  status_tinggal: 'Sudah' | 'Kadang-Kadang' | 'Belum'
+  created_at: string
+  updated_at: string
 }
 
 interface TipeIuran {
@@ -184,6 +189,13 @@ export default function InputIuran() {
     }).format(amount)
   }
 
+  const getWargaDisplayName = (warga: Warga) => {
+    const names = []
+    if (warga.nama_suami) names.push(warga.nama_suami)
+    if (warga.nama_istri) names.push(warga.nama_istri)
+    return names.length > 0 ? names.join(' & ') : 'Tidak ada nama'
+  }
+
   // Calculate statistics
   const totalTransaksiFiltered = filteredIuran.length
   const totalNominalFiltered = filteredIuran.reduce((sum, item) => sum + item.nominal, 0)
@@ -240,7 +252,7 @@ export default function InputIuran() {
                         <SelectContent>
                           {wargaList.map(warga => (
                             <SelectItem key={warga.id} value={warga.id}>
-                              {warga.nama} - {warga.rt_rw}
+                              {getWargaDisplayName(warga)} - {warga.blok_rumah}
                             </SelectItem>
                           ))}
                         </SelectContent>
