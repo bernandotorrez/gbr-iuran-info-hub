@@ -132,6 +132,7 @@ export function StrukturPengurusFormDialog({
     "Wakil Ketua Paguyuban", 
     "Sekretaris",
     "Bendahara",
+    "Sie Keagamaan,
     "Sie Keamanan",
     "Sie Kebersihan",
     "Sie Sosial",
