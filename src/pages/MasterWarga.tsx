@@ -12,14 +12,14 @@ import { UserManagementDialog } from "@/components/forms/UserManagementDialog"
 
 interface Warga {
   id: string
-  nama: string
-  phone_number: string
-  alamat: string
-  rt_rw: string
-  email?: string
-  role: string
-  status_aktif: boolean
+  blok_rumah: string
+  nama_suami?: string
+  nama_istri?: string
+  nomor_hp_suami?: string
+  nomor_hp_istri?: string
+  status_tinggal: 'Sudah' | 'Kadang-Kadang' | 'Belum'
   created_at: string
+  updated_at: string
 }
 
 export default function MasterWarga() {
@@ -54,10 +54,11 @@ export default function MasterWarga() {
   }, [])
 
   const filteredWarga = wargaList.filter(warga =>
-    warga.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    warga.phone_number.includes(searchTerm) ||
-    warga.alamat.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    warga.rt_rw.toLowerCase().includes(searchTerm.toLowerCase())
+    warga.blok_rumah.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (warga.nama_suami && warga.nama_suami.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (warga.nama_istri && warga.nama_istri.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (warga.nomor_hp_suami && warga.nomor_hp_suami.includes(searchTerm)) ||
+    (warga.nomor_hp_istri && warga.nomor_hp_istri.includes(searchTerm))
   )
 
   const handleAdd = async (wargaData: any) => {
@@ -110,6 +111,19 @@ export default function MasterWarga() {
     setIsEditOpen(true)
   }
 
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'Sudah':
+        return 'default'
+      case 'Kadang-Kadang':
+        return 'secondary'
+      case 'Belum':
+        return 'outline'
+      default:
+        return 'secondary'
+    }
+  }
+
   if (loading) {
     return <div className="flex justify-center items-center h-48">Memuat data...</div>
   }
@@ -119,7 +133,7 @@ export default function MasterWarga() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Master Data Warga</h1>
-          <p className="text-muted-foreground">Kelola data warga dan pengguna sistem</p>
+          <p className="text-muted-foreground">Kelola data warga dan keluarga GBR</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setIsUserMgmtOpen(true)} variant="outline">
@@ -149,30 +163,26 @@ export default function MasterWarga() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nama</TableHead>
-              <TableHead>Telepon</TableHead>
-              <TableHead>Alamat</TableHead>
-              <TableHead>RT/RW</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Blok Rumah</TableHead>
+              <TableHead>Nama Suami</TableHead>
+              <TableHead>Nama Istri</TableHead>
+              <TableHead>No. HP Suami</TableHead>
+              <TableHead>No. HP Istri</TableHead>
+              <TableHead>Status Tinggal</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredWarga.map((warga) => (
               <TableRow key={warga.id}>
-                <TableCell className="font-medium">{warga.nama}</TableCell>
-                <TableCell>{warga.phone_number}</TableCell>
-                <TableCell className="max-w-xs truncate">{warga.alamat}</TableCell>
-                <TableCell>{warga.rt_rw}</TableCell>
+                <TableCell className="font-medium">{warga.blok_rumah}</TableCell>
+                <TableCell>{warga.nama_suami || '-'}</TableCell>
+                <TableCell>{warga.nama_istri || '-'}</TableCell>
+                <TableCell>{warga.nomor_hp_suami || '-'}</TableCell>
+                <TableCell>{warga.nomor_hp_istri || '-'}</TableCell>
                 <TableCell>
-                  <Badge variant={warga.role === 'admin' ? 'default' : 'secondary'}>
-                    {warga.role}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={warga.status_aktif ? 'default' : 'secondary'}>
-                    {warga.status_aktif ? 'Aktif' : 'Tidak Aktif'}
+                  <Badge variant={getStatusBadgeVariant(warga.status_tinggal)}>
+                    {warga.status_tinggal}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">

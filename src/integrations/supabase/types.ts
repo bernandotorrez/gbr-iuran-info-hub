@@ -376,6 +376,42 @@ export type Database = {
         }
         Relationships: []
       }
+      warga_new: {
+        Row: {
+          blok_rumah: string
+          created_at: string
+          id: string
+          nama_istri: string | null
+          nama_suami: string | null
+          nomor_hp_istri: string | null
+          nomor_hp_suami: string | null
+          status_tinggal: Database["public"]["Enums"]["residence_status"]
+          updated_at: string
+        }
+        Insert: {
+          blok_rumah: string
+          created_at?: string
+          id?: string
+          nama_istri?: string | null
+          nama_suami?: string | null
+          nomor_hp_istri?: string | null
+          nomor_hp_suami?: string | null
+          status_tinggal?: Database["public"]["Enums"]["residence_status"]
+          updated_at?: string
+        }
+        Update: {
+          blok_rumah?: string
+          created_at?: string
+          id?: string
+          nama_istri?: string | null
+          nama_suami?: string | null
+          nomor_hp_istri?: string | null
+          nomor_hp_suami?: string | null
+          status_tinggal?: Database["public"]["Enums"]["residence_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -395,7 +431,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      residence_status: "Sudah" | "Kadang-Kadang" | "Belum"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -510,6 +546,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      residence_status: ["Sudah", "Kadang-Kadang", "Belum"],
+    },
   },
 } as const

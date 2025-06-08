@@ -64,11 +64,12 @@ export const useSupabaseData = () => {
     }
   };
 
+  // New warga functions using warga_new table
   const fetchWarga = async () => {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('warga_new')
       .select('*')
-      .order('nama');
+      .order('created_at', { ascending: false });
     
     if (error) {
       console.error('Error fetching warga:', error);
@@ -79,33 +80,23 @@ export const useSupabaseData = () => {
   };
 
   const addWarga = async (wargaData: any) => {
-    // Generate UUID for the new user
-    const { data: { user }, error: signUpError } = await supabase.auth.signUp({
-      email: `${wargaData.phone_number}@gbr.com`,
-      password: 'warga123', // Default password
-      options: {
-        data: {
-          nama: wargaData.nama,
-          phone_number: wargaData.phone_number,
-          alamat: wargaData.alamat,
-          rt_rw: wargaData.rt_rw,
-          email: wargaData.email,
-          role: 'warga'
-        }
-      }
-    });
-
-    if (signUpError) {
-      console.error('Error creating user:', signUpError);
-      throw signUpError;
+    const { data, error } = await supabase
+      .from('warga_new')
+      .insert([wargaData])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error adding warga:', error);
+      throw error;
     }
-
-    return user;
+    
+    return data;
   };
 
   const updateWarga = async (id: string, wargaData: any) => {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('warga_new')
       .update(wargaData)
       .eq('id', id)
       .select()
@@ -121,7 +112,7 @@ export const useSupabaseData = () => {
 
   const deleteWarga = async (id: string) => {
     const { error } = await supabase
-      .from('profiles')
+      .from('warga_new')
       .delete()
       .eq('id', id);
     
