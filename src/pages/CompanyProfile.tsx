@@ -16,7 +16,9 @@ export default function CompanyProfile() {
     email_kontak: settings.email_kontak || "info@perumahangbr.com",
     telepon_kontak: settings.telepon_kontak || "+62 21 1234 5678",
     ketua_rt: settings.ketua_rt || "Bapak Ahmad Budiman",
-    sekretaris_rt: settings.sekretaris_rt || "Ibu Siti Nurhaliza"
+    sekretaris_rt: settings.sekretaris_rt || "Ibu Siti Nurhaliza",
+    ketua_paguyuban: settings.ketua_paguyuban || "Bapak Anto",
+    sekretaris_paguyuban: settings.sekretaris_paguyuban || "Bapak Anto",
   };
 
   return (
