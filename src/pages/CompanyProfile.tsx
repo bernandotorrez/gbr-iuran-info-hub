@@ -165,10 +165,10 @@ export default function CompanyProfile() {
               </div>
               
               <div className="mt-6 pt-6 border-t">
-                <h5 className="font-semibold text-gray-900 mb-3">Pengurus RT</h5>
+                <h5 className="font-semibold text-gray-900 mb-3">Pengurus Paguyuban</h5>
                 <div className="text-sm text-gray-600 space-y-1">
-                  <div><strong>Ketua RT:</strong> {contactInfo.ketua_rt}</div>
-                  <div><strong>Sekretaris:</strong> {contactInfo.sekretaris_rt}</div>
+                  <div><strong>Ketua Paguyuban:</strong> {contactInfo.ketua_rt}</div>
+                  <div><strong>Wakil Ketua Paguyuban:</strong> {contactInfo.sekretaris_rt}</div>
                 </div>
               </div>
 
