@@ -12,14 +12,6 @@ interface StrukturPengurus {
   periode_mulai: number
   periode_selesai: number
   status_aktif: boolean
-  warga?: {
-    blok_rumah: string
-    nama_suami?: string
-    nama_istri?: string
-    nomor_hp_suami?: string
-    nomor_hp_istri?: string
-    status_tinggal: string
-  }
 }
 
 export const useStrukturPengurus = () => {
@@ -31,10 +23,7 @@ export const useStrukturPengurus = () => {
       setLoading(true);
       let query = supabase
         .from('struktur_pengurus')
-        .select(`
-          *,
-          warga:warga_new!warga_id(blok_rumah, nama_suami, nama_istri, nomor_hp_suami, nomor_hp_istri, status_tinggal)
-        `)
+        .select('*')
         .order('level_jabatan')
         .order('nama_pengurus');
       

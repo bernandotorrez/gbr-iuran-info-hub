@@ -18,11 +18,6 @@ interface StrukturPengurus {
   periode_mulai: number
   periode_selesai: number
   status_aktif: boolean
-  warga?: {
-    nama: string
-    alamat: string
-    rt_rw: string
-  }
 }
 
 export default function PublicPengurus() {
@@ -175,13 +170,6 @@ export default function PublicPengurus() {
                                 <Calendar className="w-4 h-4" />
                                 <span>Periode {pengurus.periode_mulai} - {pengurus.periode_selesai}</span>
                               </div>
-                              
-                              {pengurus.warga && (
-                                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                                  <p className="font-medium text-gray-800">Warga:</p>
-                                  <p className="text-xs">{pengurus.warga.rt_rw}</p>
-                                </div>
-                              )}
                             </CardContent>
                           </Card>
                         </div>

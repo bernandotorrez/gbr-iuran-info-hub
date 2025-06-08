@@ -19,14 +19,6 @@ interface StrukturPengurus {
   periode_mulai: number
   periode_selesai: number
   status_aktif: boolean
-  warga?: {
-    blok_rumah: string
-    nama_suami?: string
-    nama_istri?: string
-    nomor_hp_suami?: string
-    nomor_hp_istri?: string
-    status_tinggal: string
-  }
 }
 
 export default function StrukturPengurus() {
@@ -104,14 +96,6 @@ export default function StrukturPengurus() {
         variant: "destructive",
       })
     }
-  }
-
-  const getWargaDisplayName = (warga: any) => {
-    if (!warga) return null
-    const names = []
-    if (warga.nama_suami) names.push(warga.nama_suami)
-    if (warga.nama_istri) names.push(warga.nama_istri)
-    return names.length > 0 ? names.join(' & ') : 'Tidak ada nama'
   }
 
   const filteredData = strukturList.filter(item => {
@@ -203,14 +187,6 @@ export default function StrukturPengurus() {
             </CardHeader>
             
             <CardContent className="space-y-3">
-              {item.warga && (
-                <div className="text-sm">
-                  <p className="font-medium text-muted-foreground">Data Warga:</p>
-                  <p>{getWargaDisplayName(item.warga)}</p>
-                  <p className="text-xs text-muted-foreground">{item.warga.blok_rumah}</p>
-                </div>
-              )}
-              
               {item.blok_rumah && (
                 <div className="text-sm">
                   <span className="font-medium text-muted-foreground">Blok: </span>
