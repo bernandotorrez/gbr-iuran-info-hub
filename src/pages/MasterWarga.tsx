@@ -199,16 +199,18 @@ export default function MasterWarga() {
       {/* Add Dialog */}
       <WargaFormDialog
         open={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        onSave={handleAdd}
+        onOpenChange={setIsAddOpen}
+        onSubmit={handleAdd}
+        title="Tambah Warga Baru"
       />
 
       {/* Edit Dialog */}
       <WargaFormDialog
         open={isEditOpen}
-        onClose={() => setIsEditOpen(false)}
-        onSave={handleEdit}
-        editData={selectedWarga}
+        onOpenChange={setIsEditOpen}
+        onSubmit={handleEdit}
+        initialData={selectedWarga || undefined}
+        title="Edit Data Warga"
       />
 
       {/* User Management Dialog */}
