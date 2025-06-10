@@ -20,7 +20,7 @@ export function Layout({ children }: LayoutProps) {
         {/* Footer */}
         <footer className="border-t bg-muted/30 px-4 md:px-6 py-3">
           <div className="flex flex-col sm:flex-row justify-between items-center text-xs text-muted-foreground">
-            <div>© 2024 SI Iuran GBR. All rights reserved.</div>
+            <div>© 2025 SI Iuran GBR. All rights reserved.</div>
             <div className="mt-1 sm:mt-0">
               Created by: Bernand Dayamuntari Hermawan (Blok C1-5)
             </div>

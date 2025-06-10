@@ -238,7 +238,7 @@ export function StrukturPengurusFormDialog({
                 type="number"
                 value={formData.periode_mulai}
                 onChange={(e) => setFormData(prev => ({ ...prev, periode_mulai: parseInt(e.target.value) }))}
-                placeholder="2024"
+                placeholder="2025"
                 required
               />
             </div>
@@ -249,7 +249,7 @@ export function StrukturPengurusFormDialog({
                 type="number"
                 value={formData.periode_selesai}
                 onChange={(e) => setFormData(prev => ({ ...prev, periode_selesai: parseInt(e.target.value) }))}
-                placeholder="2025"
+                placeholder="2026"
                 required
               />
             </div>

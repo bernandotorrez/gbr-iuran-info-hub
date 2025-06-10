@@ -262,7 +262,7 @@ export default function PublicArtikel() {
               </div>
             </div>
             <div className="text-sm text-gray-400">
-              © 2024 Perumahan GBR. All rights reserved.
+              © 2025 Perumahan GBR. All rights reserved.
             </div>
           </div>
         </div>

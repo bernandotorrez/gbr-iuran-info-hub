@@ -202,7 +202,7 @@ export default function CompanyProfile() {
             </div>
             <div className="text-center md:text-right">
               <div className="text-sm text-gray-400 mb-1">
-                © 2024 {contactInfo.nama_perumahan}. All rights reserved.
+                © 2025 {contactInfo.nama_perumahan}. All rights reserved.
               </div>
               <div className="text-xs text-gray-500">
                 Created by: Bernand Dayamuntari Hermawan (Blok C1-5)
