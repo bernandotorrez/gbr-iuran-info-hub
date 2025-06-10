@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react"
-import { Plus, Edit, Trash2, Search, Filter } from "lucide-react"
+import { Plus, Edit, Trash2, Search, Filter, Upload, X, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
@@ -19,6 +18,7 @@ interface StrukturPengurus {
   periode_mulai: number
   periode_selesai: number
   status_aktif: boolean
+  foto_url?: string | null
 }
 
 export default function StrukturPengurus() {
@@ -29,17 +29,138 @@ export default function StrukturPengurus() {
     fetchStrukturPengurus, 
     addStrukturPengurus, 
     updateStrukturPengurus, 
-    deleteStrukturPengurus 
+    deleteStrukturPengurus,
+    uploadImageToSupabase,
+    deleteImageFromSupabase
   } = useStrukturPengurus()
 
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedPeriode, setSelectedPeriode] = useState<string>("all")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<StrukturPengurus | null>(null)
+  
+  // Image upload states
+  const [uploadingImages, setUploadingImages] = useState<Set<string>>(new Set())
+  const [previewImages, setPreviewImages] = useState<Map<string, string>>(new Map())
 
   useEffect(() => {
     fetchStrukturPengurus()
   }, [])
+
+  // Create slug from name for file naming
+  const createSlug = (name: string): string => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim()
+  }
+
+  const handleImageUpload = async (file: File, pengurusId: string, nama: string) => {
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error",
+        description: "File harus berupa gambar",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Ukuran file maksimal 5MB",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setUploadingImages(prev => new Set(prev).add(pengurusId))
+
+    try {
+      // Create filename using slug from name
+      const slug = createSlug(nama)
+      const fileExtension = file.name.split('.').pop()
+      const fileName = `${slug}-${Date.now()}.${fileExtension}`
+
+      // Upload to Supabase
+      const imageUrl = await uploadImageToSupabase(file, fileName)
+
+      // Update database with new image URL
+      const currentItem = strukturList.find(item => item.id === pengurusId)
+      if (currentItem) {
+        // Delete old image if exists
+        if (currentItem.foto_url) {
+          const oldFileName = currentItem.foto_url.split('/').pop()
+          if (oldFileName) {
+            await deleteImageFromSupabase(oldFileName)
+          }
+        }
+
+        await updateStrukturPengurus(pengurusId, {
+          ...currentItem,
+          foto_url: imageUrl
+        })
+
+        await fetchStrukturPengurus()
+        
+        toast({
+          title: "Berhasil",
+          description: "Foto berhasil diupload",
+        })
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast({
+        title: "Error",
+        description: "Gagal mengupload foto",
+        variant: "destructive",
+      })
+    } finally {
+      setUploadingImages(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(pengurusId)
+        return newSet
+      })
+    }
+  }
+
+  const handleDeleteImage = async (pengurusId: string) => {
+    const currentItem = strukturList.find(item => item.id === pengurusId)
+    if (!currentItem?.foto_url) return
+
+    try {
+      // Delete from Supabase storage
+      const fileName = currentItem.foto_url.split('/').pop()
+      if (fileName) {
+        await deleteImageFromSupabase(fileName)
+      }
+
+      // Update database
+      await updateStrukturPengurus(pengurusId, {
+        ...currentItem,
+        foto_url: null
+      })
+
+      await fetchStrukturPengurus()
+      
+      toast({
+        title: "Berhasil",
+        description: "Foto berhasil dihapus",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal menghapus foto",
+        variant: "destructive",
+      })
+    }
+  }
 
   const handleAdd = () => {
     setEditingItem(null)
@@ -54,6 +175,15 @@ export default function StrukturPengurus() {
   const handleDelete = async (id: string, nama: string) => {
     if (window.confirm(`Apakah Anda yakin ingin menghapus pengurus "${nama}"?`)) {
       try {
+        // Delete image first if exists
+        const currentItem = strukturList.find(item => item.id === id)
+        if (currentItem?.foto_url) {
+          const fileName = currentItem.foto_url.split('/').pop()
+          if (fileName) {
+            await deleteImageFromSupabase(fileName)
+          }
+        }
+
         await deleteStrukturPengurus(id)
         await fetchStrukturPengurus()
         toast({
@@ -169,17 +299,79 @@ export default function StrukturPengurus() {
           <Card key={item.id} className="hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{item.nama_pengurus}</CardTitle>
-                  <p className="text-sm text-muted-foreground font-medium">{item.jabatan}</p>
+                <div className="flex gap-3 items-start flex-1">
+                  {/* Profile Image */}
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                      {item.foto_url ? (
+                        <img 
+                          src={item.foto_url} 
+                          alt={item.nama_pengurus}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-8 h-8 text-gray-400" />
+                      )}
+                    </div>
+                    
+                    {/* Image Upload/Delete Controls */}
+                    <div className="absolute -bottom-1 -right-1">
+                      {item.foto_url ? (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="w-6 h-6 p-0 rounded-full"
+                          onClick={() => handleDeleteImage(item.id)}
+                          disabled={uploadingImages.has(item.id)}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      ) : (
+                        <label className="cursor-pointer">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-6 h-6 p-0 rounded-full"
+                            disabled={uploadingImages.has(item.id)}
+                            asChild
+                          >
+                            <div>
+                              {uploadingImages.has(item.id) ? (
+                                <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Upload className="w-3 h-3" />
+                              )}
+                            </div>
+                          </Button>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) {
+                                handleImageUpload(file, item.id, item.nama_pengurus)
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex-1">
+                    <CardTitle className="text-lg">{item.nama_pengurus}</CardTitle>
+                    <p className="text-sm text-muted-foreground font-medium">{item.jabatan}</p>
+                  </div>
                 </div>
-                <div className="flex gap-1">
+                
+                <div className="flex flex-col gap-1">
                   <Badge 
-                    className={`${getLevelBadgeColor(item.level_jabatan)} text-white`}
+                    className={`${getLevelBadgeColor(item.level_jabatan)} text-white text-xs`}
                   >
                     Level {item.level_jabatan}
                   </Badge>
-                  <Badge variant={item.status_aktif ? "default" : "secondary"}>
+                  <Badge variant={item.status_aktif ? "default" : "secondary"} className="text-xs">
                     {item.status_aktif ? "Aktif" : "Tidak Aktif"}
                   </Badge>
                 </div>

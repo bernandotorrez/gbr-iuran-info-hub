@@ -189,6 +189,35 @@ export const useStrukturPengurus = () => {
     }
   };
 
+  // Simulated Supabase storage functions
+  const uploadImageToSupabase = async (file: File, fileName: string): Promise<string> => {
+    // Simulate upload delay
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // In real implementation, this would be:
+    const { data, error } = await supabase.storage
+      .from('article')
+      .upload(`article_images/${fileName}`, file)
+    
+    if (error) throw error
+    return supabase.storage.from('article').getPublicUrl(`article_images/${fileName}`).data.publicUrl
+    
+    // For demo, return a mock URL
+    // return `https://your-supabase-url.supabaseio.co/storage/v1/object/public/article_images/${fileName}`
+  }
+
+  const deleteImageFromSupabase = async (fileName: string): Promise<void> => {
+    // Simulate delete delay
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    // In real implementation:
+    const { error } = await supabase.storage
+      .from('article')
+      .remove([`article_images/${fileName}`])
+    
+    // if (error) throw error
+  }
+
   return {
     strukturList,
     loading,
@@ -197,6 +226,8 @@ export const useStrukturPengurus = () => {
     fetchStrukturByPeriode,
     addStrukturPengurus,
     updateStrukturPengurus,
-    deleteStrukturPengurus
+    deleteStrukturPengurus,
+    uploadImageToSupabase,
+    deleteImageFromSupabase
   };
 };
