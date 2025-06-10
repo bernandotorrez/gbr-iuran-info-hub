@@ -54,7 +54,7 @@ export type Database = {
             foreignKeyName: "artikel_berita_author_id_fkey"
             columns: ["author_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "warga_new"
             referencedColumns: ["id"]
           },
         ]
@@ -117,14 +117,14 @@ export type Database = {
             foreignKeyName: "iuran_verified_by_fkey"
             columns: ["verified_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "warga_new"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "iuran_warga_id_fkey"
             columns: ["warga_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "warga_new"
             referencedColumns: ["id"]
           },
         ]
@@ -183,14 +183,14 @@ export type Database = {
             foreignKeyName: "kas_keluar_diinput_oleh_fkey"
             columns: ["diinput_oleh"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "warga_new"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "kas_keluar_disetujui_oleh_fkey"
             columns: ["disetujui_oleh"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "warga_new"
             referencedColumns: ["id"]
           },
         ]
@@ -291,7 +291,7 @@ export type Database = {
             foreignKeyName: "settings_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "warga_new"
             referencedColumns: ["id"]
           },
         ]
@@ -341,7 +341,7 @@ export type Database = {
             foreignKeyName: "struktur_pengurus_warga_id_fkey"
             columns: ["warga_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "warga_new"
             referencedColumns: ["id"]
           },
         ]

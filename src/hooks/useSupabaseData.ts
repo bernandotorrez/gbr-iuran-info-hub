@@ -189,7 +189,7 @@ export const useSupabaseData = () => {
       .from('iuran')
       .select(`
         *,
-        warga:profiles!warga_id(nama, alamat, rt_rw),
+        warga:warga_new!warga_id(nama_suami, nama_istri, blok_rumah),
         tipe_iuran:tipe_iuran!tipe_iuran_id(nama)
       `);
 
@@ -197,6 +197,11 @@ export const useSupabaseData = () => {
       query = query
         .eq('bulan', month)
         .eq('tahun', year);
+    }
+
+    if (tipeIuran) {
+      query = query
+        .eq('tipe_iuran_id', tipeIuran);
     }
 
     const { data, error } = await query.order('tanggal_bayar', { ascending: false });
@@ -218,7 +223,7 @@ export const useSupabaseData = () => {
       }])
       .select(`
         *,
-        warga:profiles!warga_id(nama, alamat, rt_rw),
+        warga:warga_new!warga_id(nama_suami, nama_istri, blok_rumah),
         tipe_iuran:tipe_iuran!tipe_iuran_id(nama)
       `)
       .single();
@@ -236,8 +241,8 @@ export const useSupabaseData = () => {
       .from('kas_keluar')
       .select(`
         *,
-        diinput_oleh:profiles!diinput_oleh(nama),
-        disetujui_oleh:profiles!disetujui_oleh(nama)
+        diinput_oleh:warga_new!diinput_oleh(nama_suami, nama_istri),
+        disetujui_oleh:warga_new!disetujui_oleh(nama_suami, nama_istri)
       `);
 
     if (month && year) {

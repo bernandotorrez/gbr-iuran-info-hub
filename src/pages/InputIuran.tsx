@@ -32,7 +32,7 @@ interface TipeIuran {
 
 interface Iuran {
   id: string
-  warga: { nama: string; alamat: string; rt_rw: string }
+  warga: { nama_suami: string; blok_rumah: string }
   tipe_iuran: { nama: string }
   nominal: number
   tanggal_bayar: string
@@ -113,7 +113,7 @@ export default function InputIuran() {
 
     if (searchTerm) {
       filtered = filtered.filter(item =>
-        item.warga?.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.warga?.nama_suami.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.tipe_iuran?.nama.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
@@ -476,7 +476,7 @@ export default function InputIuran() {
           <TableHeader>
             <TableRow>
               <TableHead>Warga</TableHead>
-              <TableHead>Alamat</TableHead>
+              <TableHead>Blok Rumah</TableHead>
               <TableHead>Tipe Iuran</TableHead>
               <TableHead>Nominal</TableHead>
               <TableHead>Tanggal Bayar</TableHead>
@@ -487,8 +487,8 @@ export default function InputIuran() {
           <TableBody>
             {filteredIuran.map((item) => (
               <TableRow key={item.id}>
-                <TableCell className="font-medium">{item.warga?.nama}</TableCell>
-                <TableCell>{item.warga?.alamat}</TableCell>
+                <TableCell className="font-medium">{getWargaDisplayName(item.warga)}</TableCell>
+                <TableCell>{item.warga?.blok_rumah}</TableCell>
                 <TableCell>{item.tipe_iuran?.nama}</TableCell>
                 <TableCell>{formatCurrency(item.nominal)}</TableCell>
                 <TableCell>{new Date(item.tanggal_bayar).toLocaleDateString('id-ID')}</TableCell>

@@ -38,7 +38,7 @@ export default function MasterKategoriKas() {
     const fetchUserProfile = async () => {
       if (user?.id) {
         const { data, error } = await supabase
-          .from('profiles')
+          .from('warga_new')
           .select('role')
           .eq('id', user.id)
           .single()

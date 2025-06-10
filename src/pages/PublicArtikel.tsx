@@ -16,8 +16,8 @@ interface Artikel {
   kategori: string | null
   published_at: string | null
   author_id: string
-  profiles: {
-    nama: string
+  warga_new: {
+    nama_suami: string
   } | null
 }
 
@@ -33,7 +33,7 @@ export default function PublicArtikel() {
         .from('artikel_berita')
         .select(`
           *,
-          profiles:author_id(nama)
+          warga_new:author_id(nama_suami)
         `)
         .eq('status', 'published')
         .order('published_at', { ascending: false })
@@ -129,7 +129,7 @@ export default function PublicArtikel() {
               <div className="flex items-center gap-4 text-gray-600 mb-6">
                 <div className="flex items-center gap-1">
                   <User className="w-4 h-4" />
-                  <span>{selectedArtikel.profiles?.nama || 'Admin'}</span>
+                  <span>{selectedArtikel.warga_new?.nama_suami || 'Admin'}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
@@ -234,7 +234,7 @@ export default function PublicArtikel() {
                   <div className="flex items-center justify-between text-xs text-gray-500">
                     <div className="flex items-center gap-1">
                       <User className="w-3 h-3" />
-                      <span>{artikel.profiles?.nama || 'Admin'}</span>
+                      <span>{artikel.warga_new?.nama_suami || 'Admin'}</span>
                     </div>
                     <div className="flex items-center gap-1 text-blue-600 font-medium">
                       <Eye className="w-3 h-3" />

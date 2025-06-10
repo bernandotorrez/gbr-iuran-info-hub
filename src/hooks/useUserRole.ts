@@ -13,7 +13,7 @@ export const useUserRole = () => {
       if (user?.id) {
         try {
           const { data, error } = await supabase
-            .from('profiles')
+            .from('warga_new')
             .select('role')
             .eq('id', user.id)
             .single();
