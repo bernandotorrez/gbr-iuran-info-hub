@@ -196,11 +196,11 @@ export const useStrukturPengurus = () => {
     
     // In real implementation, this would be:
     const { data, error } = await supabase.storage
-      .from('pengurus')
+      .from('images')
       .upload(`pengurus_images/${fileName}`, file)
     
     if (error) throw error
-    return supabase.storage.from('pengurus').getPublicUrl(`pengurus_images/${fileName}`).data.publicUrl
+    return supabase.storage.from('images').getPublicUrl(`pengurus_images/${fileName}`).data.publicUrl
     
     // For demo, return a mock URL
     // return `https://your-supabase-url.supabaseio.co/storage/v1/object/public/pengurus_images/${fileName}`
@@ -212,7 +212,7 @@ export const useStrukturPengurus = () => {
     
     // In real implementation:
     const { error } = await supabase.storage
-      .from('pengurus')
+      .from('images')
       .remove([`pengurus_images/${fileName}`])
     
     // if (error) throw error
