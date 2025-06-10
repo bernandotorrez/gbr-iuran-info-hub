@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { User, MapPin, Calendar, ArrowLeft, Building2 } from "lucide-react"
 import { useStrukturPengurus } from "@/hooks/useStrukturPengurus"
 import { Link } from "react-router-dom"
@@ -18,17 +18,52 @@ interface StrukturPengurus {
   periode_mulai: number
   periode_selesai: number
   status_aktif: boolean
+  foto_url?: string | null
 }
 
 export default function PublicPengurus() {
-  const { strukturList, loading, fetchStrukturPengurus } = useStrukturPengurus()
+  const { strukturList, loading, fetchAvailablePeriods, fetchStrukturByPeriode } = useStrukturPengurus()
   const { settings } = useSettings()
+  const [selectedPeriode, setSelectedPeriode] = useState<string>("")
+  const [availablePeriods, setAvailablePeriods] = useState<string[]>([])
 
   const namaPerumahan = settings.nama_perumahan || "Perumahan GBR"
 
+  // Load available periods on component mount
   useEffect(() => {
-    fetchStrukturPengurus()
+    const loadPeriods = async () => {
+      const periods = await fetchAvailablePeriods()
+      setAvailablePeriods(periods)
+      
+      // Set default period based on current year
+      if (periods.length > 0) {
+        const currentYear = new Date().getFullYear()
+        
+        // Find period that includes current year
+        const currentPeriod = periods.find(period => {
+          const [startYear, endYear] = period.split('-').map(Number)
+          return currentYear >= startYear && currentYear <= endYear
+        })
+        
+        // If current year period exists, use it; otherwise use the most recent one
+        setSelectedPeriode(currentPeriod || periods[0])
+      }
+    }
+    
+    loadPeriods()
   }, [])
+
+  // Load struktur data when selected period changes
+  useEffect(() => {
+    if (selectedPeriode) {
+      fetchStrukturByPeriode(selectedPeriode)
+    }
+  }, [selectedPeriode])
+
+  // Handle period change
+  const handlePeriodeChange = (periode: string) => {
+    setSelectedPeriode(periode)
+  }
 
   const getLevelBadgeColor = (level: number) => {
     switch (level) {
@@ -109,15 +144,41 @@ export default function PublicPengurus() {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Struktur Pengurus Paguyuban {namaPerumahan}
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Bagan organisasi pengurus paguyuban {namaPerumahan} periode {new Date().getFullYear()}-{new Date().getFullYear() + 1}
+            <p className="text-gray-600 max-w-2xl mx-auto mb-8">
+              Bagan organisasi pengurus paguyuban {namaPerumahan}
             </p>
+            
+            {/* Periode Dropdown */}
+            {availablePeriods.length > 0 && (
+              <div className="flex justify-center mb-8">
+                <div className="flex items-center gap-3">
+                  <label htmlFor="periode-select" className="text-sm font-medium text-gray-700">
+                    Pilih Periode:
+                  </label>
+                  <Select value={selectedPeriode} onValueChange={handlePeriodeChange}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Pilih periode kepengurusan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availablePeriods.map(periode => (
+                        <SelectItem key={periode} value={periode}>
+                          {periode}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
           </div>
 
           {strukturList.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-gray-500 text-lg">
-                Belum ada struktur pengurus yang dipublikasikan
+                {selectedPeriode 
+                  ? `Belum ada struktur pengurus untuk periode ${selectedPeriode}`
+                  : "Belum ada struktur pengurus yang dipublikasikan"
+                }
               </div>
             </div>
           ) : (
@@ -151,8 +212,36 @@ export default function PublicPengurus() {
                           
                           <Card className="hover:shadow-xl transition-all duration-300 bg-white border-2 border-gray-100 w-72">
                             <CardHeader className="text-center pb-3 bg-gradient-to-r from-primary/5 to-primary/10">
-                              <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                                <User className="w-10 h-10 text-primary" />
+                              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 overflow-hidden border-2 border-primary/20">
+                                {pengurus.foto_url ? (
+                                  <img 
+                                    src={pengurus.foto_url}
+                                    alt={`Foto ${pengurus.nama_pengurus}`}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      // Fallback to avatar with initials if photo fails to load
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      const fallback = target.nextElementSibling as HTMLElement;
+                                      if (fallback) fallback.style.display = 'block';
+                                    }}
+                                  />
+                                ) : null}
+                                <img 
+                                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(pengurus.nama_pengurus)}&background=3b82f6&color=ffffff&size=80&bold=true`}
+                                  alt={`Avatar ${pengurus.nama_pengurus}`}
+                                  className={`w-full h-full object-cover ${pengurus.foto_url ? 'hidden' : 'block'}`}
+                                  onError={(e) => {
+                                    // Final fallback to User icon if avatar service also fails
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    const fallback = target.nextElementSibling as HTMLElement;
+                                    if (fallback) fallback.style.display = 'flex';
+                                  }}
+                                />
+                                <div className="w-full h-full hidden items-center justify-center">
+                                  <User className="w-10 h-10 text-primary" />
+                                </div>
                               </div>
                               <CardTitle className="text-xl text-gray-900 font-bold">{pengurus.nama_pengurus}</CardTitle>
                               <p className="text-primary font-semibold text-lg">{pengurus.jabatan}</p>

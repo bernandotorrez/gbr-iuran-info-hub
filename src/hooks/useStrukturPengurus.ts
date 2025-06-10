@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -12,13 +11,22 @@ interface StrukturPengurus {
   periode_mulai: number
   periode_selesai: number
   status_aktif: boolean
+  foto_url?: string | null
+}
+
+interface FetchOptions {
+  includeInactive?: boolean
+  periodeStart?: number
+  periodeEnd?: number
 }
 
 export const useStrukturPengurus = () => {
   const [strukturList, setStrukturList] = useState<StrukturPengurus[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchStrukturPengurus = async (includeInactive = false) => {
+  const fetchStrukturPengurus = async (options: FetchOptions = {}) => {
+    const { includeInactive = false, periodeStart, periodeEnd } = options;
+    
     try {
       setLoading(true);
       let query = supabase
@@ -30,11 +38,90 @@ export const useStrukturPengurus = () => {
       if (!includeInactive) {
         query = query.eq('status_aktif', true);
       }
+
+      // Add periode filters if provided
+      if (periodeStart !== undefined) {
+        query = query.eq('periode_mulai', periodeStart);
+      }
+
+      if (periodeEnd !== undefined) {
+        query = query.eq('periode_selesai', periodeEnd);
+      }
       
       const { data, error } = await query;
       
       if (error) {
         console.error('Error fetching struktur pengurus:', error);
+        return;
+      }
+      
+      setStrukturList(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // New function to get all available periods
+  const fetchAvailablePeriods = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('struktur_pengurus')
+        .select('periode_mulai, periode_selesai')
+        .eq('status_aktif', true);
+      
+      if (error) {
+        console.error('Error fetching periods:', error);
+        return [];
+      }
+
+      // Get unique periods and sort them
+      const uniquePeriods = Array.from(
+        new Set(
+          data.map(item => `${item.periode_mulai}-${item.periode_selesai}`)
+        )
+      ).sort((a, b) => {
+        const yearA = parseInt(a.split('-')[0]);
+        const yearB = parseInt(b.split('-')[0]);
+        return yearB - yearA; // Sort descending (newest first)
+      });
+
+      return uniquePeriods;
+    } catch (error) {
+      console.error('Error:', error);
+      return [];
+    }
+  };
+
+  // New function to fetch struktur by specific periode string (e.g., "2024-2025")
+  const fetchStrukturByPeriode = async (periodeString: string, includeInactive = false) => {
+    try {
+      setLoading(true);
+      
+      if (!periodeString) {
+        setStrukturList([]);
+        return;
+      }
+
+      const [periodeStart, periodeEnd] = periodeString.split('-').map(Number);
+      
+      let query = supabase
+        .from('struktur_pengurus')
+        .select('*')
+        .eq('periode_mulai', periodeStart)
+        .eq('periode_selesai', periodeEnd)
+        .order('level_jabatan')
+        .order('nama_pengurus');
+      
+      if (!includeInactive) {
+        query = query.eq('status_aktif', true);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Error fetching struktur pengurus by periode:', error);
         return;
       }
       
@@ -106,6 +193,8 @@ export const useStrukturPengurus = () => {
     strukturList,
     loading,
     fetchStrukturPengurus,
+    fetchAvailablePeriods,
+    fetchStrukturByPeriode,
     addStrukturPengurus,
     updateStrukturPengurus,
     deleteStrukturPengurus
