@@ -196,14 +196,14 @@ export const useStrukturPengurus = () => {
     
     // In real implementation, this would be:
     const { data, error } = await supabase.storage
-      .from('article')
-      .upload(`article_images/${fileName}`, file)
+      .from('pengurus')
+      .upload(`pengurus_images/${fileName}`, file)
     
     if (error) throw error
-    return supabase.storage.from('article').getPublicUrl(`article_images/${fileName}`).data.publicUrl
+    return supabase.storage.from('pengurus').getPublicUrl(`pengurus_images/${fileName}`).data.publicUrl
     
     // For demo, return a mock URL
-    // return `https://your-supabase-url.supabaseio.co/storage/v1/object/public/article_images/${fileName}`
+    // return `https://your-supabase-url.supabaseio.co/storage/v1/object/public/pengurus_images/${fileName}`
   }
 
   const deleteImageFromSupabase = async (fileName: string): Promise<void> => {
@@ -212,8 +212,8 @@ export const useStrukturPengurus = () => {
     
     // In real implementation:
     const { error } = await supabase.storage
-      .from('article')
-      .remove([`article_images/${fileName}`])
+      .from('pengurus')
+      .remove([`pengurus_images/${fileName}`])
     
     // if (error) throw error
   }
