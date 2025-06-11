@@ -32,11 +32,11 @@ interface TipeIuran {
 
 interface Iuran {
   id: string
-  warga: { nama_suami: string; blok_rumah: string }
+  warga: { nama_suami: string; nama_istri: string; blok_rumah: string }
   tipe_iuran: { nama: string }
   nominal: number
   tanggal_bayar: string
-  bulan: number
+  bulan: string,
   tahun: number
   status_verifikasi: string
 }
@@ -74,7 +74,7 @@ export default function InputIuran() {
     tipe_iuran_id: "",
     nominal: "",
     tanggal_bayar: "",
-    bulan: new Date().getMonth() + 1,
+    bulan: (new Date().getMonth() + 1).toString(),
     tahun: new Date().getFullYear(),
     keterangan: ""
   })
@@ -131,6 +131,7 @@ export default function InputIuran() {
     }
 
     setFilteredIuran(filtered)
+    
   }, [iuranList, searchTerm, filterMonth, filterYear, filterTipeIuran])
 
   const handleTipeIuranChange = (value: string) => {
@@ -166,7 +167,7 @@ export default function InputIuran() {
         tipe_iuran_id: "",
         nominal: "",
         tanggal_bayar: "",
-        bulan: new Date().getMonth() + 1,
+        bulan: data.bulan,
         tahun: new Date().getFullYear(),
         keterangan: ""
       })
@@ -278,6 +279,31 @@ export default function InputIuran() {
                           {tipeIuranList.map(tipe => (
                             <SelectItem key={tipe.id} value={tipe.id}>
                               {tipe.nama} - {formatCurrency(tipe.nominal)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="bulan"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bulan</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="-- Pilih Bulan --" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {months.map(month => (
+                            <SelectItem key={month.value} value={month.value}>
+                              {month.label}
                             </SelectItem>
                           ))}
                         </SelectContent>

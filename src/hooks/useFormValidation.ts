@@ -78,7 +78,7 @@ export const iuranFormSchema = z.object({
   tipe_iuran_id: z.string().min(1, 'Tipe iuran wajib dipilih'),
   nominal: nominalSchema,
   tanggal_bayar: dateSchema,
-  bulan: z.number().min(1).max(12),
+  bulan: z.string().min(1).max(12),
   tahun: z.number().min(2020),
   keterangan: z.string().optional(),
 });
