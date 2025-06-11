@@ -30,6 +30,10 @@ interface DashboardFilter {
   filter_year: number
   target_tipe_iuran_id: string | null
   tingkat_pembayaran: number
+  total_warga_sudah_bayar: number
+  total_warga_belum_bayar: number
+  percent_warga_sudah_bayar: number
+  percent_warga_belum_bayar: number
 }
 
 interface Warga {

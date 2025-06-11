@@ -8,6 +8,22 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
+interface DashboardFilter {
+  total_warga: number
+  total_kas_masuk: number
+  total_kas_keluar: number
+  saldo_kas: number
+  iuran_bulan_ini: number
+  filter_month: number
+  filter_year: number
+  target_tipe_iuran_id: string | null
+  tingkat_pembayaran: number
+  total_warga_sudah_bayar: number
+  total_warga_belum_bayar: number
+  percent_warga_sudah_bayar: number
+  percent_warga_belum_bayar: number
+}
+
 export default function Dashboard() {
   const { dashboardStats, loading, fetchDashboardStats, fetchTipeIuran } = useSupabaseData();
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
@@ -15,13 +31,14 @@ export default function Dashboard() {
   const [selectedTipeIuran, setSelectedTipeIuran] = useState<string>("semua");
   const [tipeIuranList, setTipeIuranList] = useState<any[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
+  const [dashboardFilter, setDashboardFilter] = useState<DashboardFilter[]>([])
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
 
   const statusData = [
-    { name: 'Sudah Bayar', value: 85, color: '#22c55e' },
-    { name: 'Belum Bayar', value: 15, color: '#ef4444' },
+    { name: 'Sudah Bayar', value: dashboardFilter.total_warga_sudah_bayar || 0, color: '#22c55e' },
+    { name: 'Belum Bayar', value: dashboardFilter.total_warga_belum_bayar || 0, color: '#ef4444' },
   ];
 
   const formatCurrency = (amount: number) => {
@@ -41,11 +58,38 @@ export default function Dashboard() {
     }
   };
 
+    // Load initial data
   useEffect(() => {
     loadTipeIuran();
     // Load initial dashboard stats
     fetchDashboardStats();
   }, []);
+
+  // Auto-refresh data when filter values change (with debounce)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const loadDashboardData = async () => {
+        setIsFiltering(true);
+        try {
+          const dashboardStats = await fetchDashboardStats(
+            selectedMonth, 
+            selectedYear, 
+            selectedTipeIuran !== "semua" ? selectedTipeIuran : undefined
+          );
+
+          setDashboardFilter(dashboardStats)
+        } catch (error) {
+          console.error('Error loading dashboard data:', error);
+        } finally {
+          setIsFiltering(false);
+        }
+      };
+
+      loadDashboardData();
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [selectedMonth, selectedYear, selectedTipeIuran]);
 
   const handleFilterChange = async () => {
     console.log('Applying filter:', { selectedMonth, selectedYear, selectedTipeIuran });
@@ -167,12 +211,8 @@ export default function Dashboard() {
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={handleFilterChange} size="sm" disabled={isFiltering}>
-              <Filter className="h-4 w-4 mr-2" />
-              {isFiltering ? 'Memfilter...' : 'Filter'}
-            </Button>
             <Button onClick={resetFilter} variant="outline" size="sm" disabled={isFiltering}>
-              Reset
+              {isFiltering ? 'Memuat...' : 'Reset'}
             </Button>
           </div>
         </div>
@@ -241,7 +281,7 @@ export default function Dashboard() {
               {formatCurrency(dashboardStats.saldo_kas)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Saldo periode yang dipilih
+              Saldo {months.find(m => m.value === dashboardStats.filter_month)?.label} {dashboardStats.filter_year}
             </p>
           </CardContent>
         </Card>
@@ -273,7 +313,10 @@ export default function Dashboard() {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip 
+                  formatter={(value, name) => [`${value} Warga`, name]}
+                  labelFormatter={() => "Status Pembayaran"}
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>

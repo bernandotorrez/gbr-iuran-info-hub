@@ -59,7 +59,11 @@ export const useSupabaseData = () => {
           iuran_bulan_ini: Number(statsData.iuran_bulan_ini) || 0,
           filter_month: Number(statsData.filter_month) || new Date().getMonth() + 1,
           filter_year: Number(statsData.filter_year) || new Date().getFullYear(),
-          tingkat_pembayaran: Number(statsData.tingkat_pembayaran) || 0
+          tingkat_pembayaran: Number(statsData.tingkat_pembayaran) || 0,
+          total_warga_sudah_bayar: Number(statsData.total_warga_sudah_bayar) || 0,
+          total_warga_belum_bayar: Number(statsData.total_warga_belum_bayar) || 0,
+          percent_warga_sudah_bayar: Number(statsData.percent_warga_sudah_bayar) || 0,
+          percent_warga_belum_bayar: Number(statsData.percent_warga_belum_bayar) || 0
         });
 
         return data || [];
