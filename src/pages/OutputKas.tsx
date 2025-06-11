@@ -27,12 +27,20 @@ interface Pengeluaran {
   bukti_transaksi_url?: string
   created_at: string
   tipe_iuran: string
-  diinput_oleh?: {
-    nama: string
-  }
-  disetujui_oleh?: {
-    nama: string
-  }
+  diinput_oleh?: Warga,
+  disetujui_oleh?: Warga
+}
+
+interface Warga {
+  id: string
+  blok_rumah: string
+  nama_suami?: string
+  nama_istri?: string
+  nomor_hp_suami?: string
+  nomor_hp_istri?: string
+  status_tinggal: 'Sudah' | 'Kadang-Kadang' | 'Belum'
+  created_at: string
+  updated_at: string
 }
 
 export default function OutputKas() {
@@ -125,6 +133,14 @@ export default function OutputKas() {
         !['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault()
     }
+  }
+
+  const getWargaDisplayName = (warga: Warga) => {
+    const names = []
+    if (!warga) return '-'
+    if (warga.nama_suami) names.push(warga.nama_suami)
+    if (warga.nama_istri) names.push(warga.nama_istri)
+    return names.length > 0 ? names.join(' & ') : 'Tidak ada nama'
   }
 
   const validateForm = () => {
@@ -532,6 +548,8 @@ export default function OutputKas() {
               <TableHead>Deskripsi</TableHead>
               <TableHead>Nominal</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Diinput Oleh</TableHead>
+              <TableHead>Disetujui Oleh</TableHead>
               {isAdmin && <TableHead className="text-right">Aksi</TableHead>}
             </TableRow>
           </TableHeader>
@@ -556,6 +574,8 @@ export default function OutputKas() {
                      item.status_persetujuan === 'pending' ? 'Pending' : 'Ditolak'}
                   </span>
                 </TableCell>
+                <TableCell>{getWargaDisplayName(item.diinput_oleh)}</TableCell>
+                <TableCell>{getWargaDisplayName(item.disetujui_oleh)}</TableCell>
                 {isAdmin && (
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-1">

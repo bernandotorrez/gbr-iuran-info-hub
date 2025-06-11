@@ -9,14 +9,39 @@ import { useSupabaseData } from "@/hooks/useSupabaseData"
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { set } from "date-fns"
 
 interface Transaction {
   id: string
-  warga: { nama: string; alamat: string; rt_rw: string }
+  warga: { nama_suami: string; nama_istri: string; blok_rumah: string }
   tipe_iuran: { nama: string }
   nominal: number
   tanggal_bayar: string
   status_verifikasi: string
+}
+
+interface DashboardFilter {
+  total_warga: number
+  total_kas_masuk: number
+  total_kas_keluar: number
+  saldo_kas: number
+  iuran_bulan_ini: number
+  filter_month: number
+  filter_year: number
+  target_tipe_iuran_id: string | null
+  tingkat_pembayaran: number
+}
+
+interface Warga {
+  id: string
+  blok_rumah: string
+  nama_suami?: string
+  nama_istri?: string
+  nomor_hp_suami?: string
+  nomor_hp_istri?: string
+  status_tinggal: 'Sudah' | 'Kadang-Kadang' | 'Belum'
+  created_at: string
+  updated_at: string
 }
 
 export default function LaporanIuran() {
@@ -25,6 +50,7 @@ export default function LaporanIuran() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [kasKeluarData, setKasKeluarData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [dashboardFilter, setDashboardFilter] = useState<DashboardFilter[]>([])
   const { toast } = useToast()
   const { fetchIuran, fetchKasKeluar, fetchDashboardStats, dashboardStats } = useSupabaseData()
 
@@ -38,13 +64,13 @@ export default function LaporanIuran() {
       const month = parseInt(filterMonth)
       const year = parseInt(filterPeriod)
       
-      const [iuranData, kasKeluarTransactions] = await Promise.all([
+      const [iuranData, kasKeluarTransactions, dashboardStats] = await Promise.all([
         fetchIuran(month, year),
-        fetchKasKeluar(month, year)
+        fetchKasKeluar(month, year),
+        fetchDashboardStats(month, year)
       ])
       
-      await fetchDashboardStats(month, year)
-      
+      setDashboardFilter(dashboardStats)
       setTransactions(iuranData)
       setKasKeluarData(kasKeluarTransactions)
     } catch (error) {
@@ -56,6 +82,14 @@ export default function LaporanIuran() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const getWargaDisplayName = (warga: Warga) => {
+    const names = []
+    if (!warga) return '-'
+    if (warga.nama_suami) names.push(warga.nama_suami)
+    if (warga.nama_istri) names.push(warga.nama_istri)
+    return names.length > 0 ? names.join(' & ') : 'Tidak ada nama'
   }
 
   const handleExportPDF = () => {
@@ -149,10 +183,10 @@ export default function LaporanIuran() {
   const years = Array.from({ length: 10 }, (_, i) => (new Date().getFullYear() - 5 + i).toString())
 
   // Calculate stats from real data
-  const totalPemasukan = transactions.reduce((sum, t) => sum + t.nominal, 0)
-  const totalPengeluaran = kasKeluarData.filter(k => k.status_persetujuan === 'approved').reduce((sum, k) => sum + k.nominal, 0)
-  const saldoKas = totalPemasukan - totalPengeluaran
-  const tingkatPembayaran = Math.round((transactions.length / Math.max(dashboardStats.total_warga, 1)) * 100)
+  const totalPemasukan = dashboardFilter.total_kas_masuk
+  const totalPengeluaran = dashboardFilter.total_kas_keluar
+  const saldoKas = dashboardFilter.saldo_kas
+  const tingkatPembayaran = dashboardFilter.tingkat_pembayaran
 
   // Create chart data from real transactions
   const monthlyData = [
@@ -355,7 +389,7 @@ export default function LaporanIuran() {
           <TableHeader>
             <TableRow>
               <TableHead>Warga</TableHead>
-              <TableHead>Alamat</TableHead>
+              <TableHead>Blok</TableHead>
               <TableHead>Jenis Iuran</TableHead>
               <TableHead>Nominal</TableHead>
               <TableHead>Tanggal</TableHead>
@@ -366,8 +400,8 @@ export default function LaporanIuran() {
             {transactions.length > 0 ? (
               transactions.map((transaction) => (
                 <TableRow key={transaction.id}>
-                  <TableCell className="font-medium">{transaction.warga?.nama}</TableCell>
-                  <TableCell>{transaction.warga?.alamat}</TableCell>
+                  <TableCell className="font-medium">{getWargaDisplayName(transaction.warga)}</TableCell>
+                  <TableCell>{transaction.warga?.blok_rumah}</TableCell>
                   <TableCell>{transaction.tipe_iuran?.nama}</TableCell>
                   <TableCell>{formatCurrency(transaction.nominal)}</TableCell>
                   <TableCell>{new Date(transaction.tanggal_bayar).toLocaleDateString('id-ID')}</TableCell>

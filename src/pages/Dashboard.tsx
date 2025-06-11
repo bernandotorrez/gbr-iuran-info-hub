@@ -16,6 +16,9 @@ export default function Dashboard() {
   const [tipeIuranList, setTipeIuranList] = useState<any[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
 
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+
   const statusData = [
     { name: 'Sudah Bayar', value: 85, color: '#22c55e' },
     { name: 'Belum Bayar', value: 15, color: '#ef4444' },
@@ -63,9 +66,6 @@ export default function Dashboard() {
   };
 
   const resetFilter = async () => {
-    const currentMonth = new Date().getMonth() + 1;
-    const currentYear = new Date().getFullYear();
-    
     setSelectedMonth(currentMonth);
     setSelectedYear(currentYear);
     setSelectedTipeIuran("semua");

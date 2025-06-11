@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react"
-import { Plus, Search, Calendar, Users, CreditCard, TrendingUp, Filter } from "lucide-react"
+import { Plus, Search, Calendar, Users, CreditCard, TrendingUp, Filter, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
 import { useFormValidation, iuranFormSchema } from "@/hooks/useFormValidation"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { useUserRole } from "@/hooks/useUserRole"
 
 interface Warga {
   id: string
@@ -67,7 +68,8 @@ export default function InputIuran() {
   const [filterYear, setFilterYear] = useState("")
   const [filterTipeIuran, setFilterTipeIuran] = useState("")
   const { toast } = useToast()
-  const { fetchWarga, fetchTipeIuran, fetchIuran, addIuran } = useSupabaseData()
+  const { fetchWarga, fetchTipeIuran, fetchIuran, addIuran, deleteIuran } = useSupabaseData()
+  const { isAdmin } = useUserRole()
 
   const form = useFormValidation(iuranFormSchema, {
     warga_id: "",
@@ -147,6 +149,20 @@ export default function InputIuran() {
     if (!/[0-9]/.test(e.key) && 
         !['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault()
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteIuran(id)
+      await loadData()
+      toast({ title: "Berhasil", description: "Iuran berhasil dihapus" })
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Gagal menghapus Iuran",
+        variant: "destructive" 
+      })
     }
   }
 
@@ -508,6 +524,7 @@ export default function InputIuran() {
               <TableHead>Tanggal Bayar</TableHead>
               <TableHead>Periode</TableHead>
               <TableHead>Status</TableHead>
+              {isAdmin && <TableHead className="text-right">Aksi</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -528,6 +545,20 @@ export default function InputIuran() {
                     {item.status_verifikasi === 'verified' ? 'Terverifikasi' : 'Pending'}
                   </span>
                 </TableCell>
+                {isAdmin && (
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleDelete(item.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

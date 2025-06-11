@@ -26,6 +26,9 @@ export const useSupabaseData = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+
   useEffect(() => {
     if (session) {
       fetchDashboardStats();
@@ -36,8 +39,8 @@ export const useSupabaseData = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase.rpc('get_dashboard_stats_filtered', {
-        target_month: month || null,
-        target_year: year || null,
+        target_month: month || currentMonth,
+        target_year: year || currentYear,
         target_tipe_iuran_id: tipeIuran || null
       });
       
@@ -55,8 +58,11 @@ export const useSupabaseData = () => {
           saldo_kas: Number(statsData.saldo_kas) || 0,
           iuran_bulan_ini: Number(statsData.iuran_bulan_ini) || 0,
           filter_month: Number(statsData.filter_month) || new Date().getMonth() + 1,
-          filter_year: Number(statsData.filter_year) || new Date().getFullYear()
+          filter_year: Number(statsData.filter_year) || new Date().getFullYear(),
+          tingkat_pembayaran: Number(statsData.tingkat_pembayaran) || 0
         });
+
+        return data || [];
       }
     } catch (error) {
       console.error('Error:', error);
@@ -236,6 +242,18 @@ export const useSupabaseData = () => {
     return data;
   };
 
+  const deleteIuran = async (id: string) => {
+    const { error } = await supabase
+      .from('iuran')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting Iuran:', error);
+      throw error;
+    }
+  };
+
   const fetchKasKeluar = async (month?: number, year?: number) => {
     let query = supabase
       .from('kas_keluar')
@@ -404,6 +422,7 @@ export const useSupabaseData = () => {
     // Iuran functions
     fetchIuran,
     addIuran,
+    deleteIuran,
     // Kas Keluar functions
     fetchKasKeluar,
     addKasKeluar,
