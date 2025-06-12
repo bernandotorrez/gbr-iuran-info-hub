@@ -248,7 +248,7 @@ export default function LaporanIuran() {
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">Total Pemasukan</p>
               <p className="text-2xl font-bold">{formatCurrency(totalPemasukan)}</p>
-              <p className="text-xs text-green-600">Periode ini</p>
+              <p className="text-xs text-green-600">Periode {months.find(m => m.value === filterMonth)?.label} {dashboardFilter.filter_year}</p>
             </div>
           </div>
         </div>
@@ -259,7 +259,7 @@ export default function LaporanIuran() {
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">Total Pengeluaran</p>
               <p className="text-2xl font-bold">{formatCurrency(totalPengeluaran)}</p>
-              <p className="text-xs text-red-600">Periode ini</p>
+              <p className="text-xs text-red-600">Periode {months.find(m => m.value === filterMonth)?.label} {dashboardFilter.filter_year}</p>
             </div>
           </div>
         </div>
@@ -270,7 +270,7 @@ export default function LaporanIuran() {
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">Saldo Kas</p>
               <p className="text-2xl font-bold">{formatCurrency(saldoKas)}</p>
-              <p className="text-xs text-blue-600">Saldo periode</p>
+              <p className="text-xs text-blue-600">Saldo periode {months.find(m => m.value === filterMonth)?.label} {dashboardFilter.filter_year}</p>
             </div>
           </div>
         </div>

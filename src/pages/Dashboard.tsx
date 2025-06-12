@@ -333,7 +333,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-center p-3 md:p-4 border rounded-lg">
               <div>
                 <p className="font-medium text-sm md:text-base">Total Kas Masuk</p>
-                <p className="text-xs md:text-sm text-muted-foreground">Periode yang dipilih</p>
+                <p className="text-xs md:text-sm text-muted-foreground">Periode {months.find(m => m.value === dashboardStats.filter_month)?.label} {dashboardStats.filter_year}</p>
               </div>
               <div className="text-right">
                 <p className="font-medium text-primary text-sm md:text-base">
@@ -345,7 +345,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-center p-3 md:p-4 border rounded-lg">
               <div>
                 <p className="font-medium text-sm md:text-base">Total Kas Keluar</p>
-                <p className="text-xs md:text-sm text-muted-foreground">Periode yang dipilih</p>
+                <p className="text-xs md:text-sm text-muted-foreground">Periode {months.find(m => m.value === dashboardStats.filter_month)?.label} {dashboardStats.filter_year}</p>
               </div>
               <div className="text-right">
                 <p className="font-medium text-destructive text-sm md:text-base">

@@ -118,7 +118,7 @@ export default function MasterWarga() {
       case 'Kadang-Kadang':
         return 'secondary'
       case 'Belum':
-        return 'outline'
+        return 'destructive'
       default:
         return 'secondary'
     }
