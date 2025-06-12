@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react"
-import { Plus, Search, Edit2, Trash2, Eye, Calendar, User } from "lucide-react"
+import { Plus, Search, Edit2, Trash2, Eye, Calendar, User, Upload, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
 import { ArtikelFormDialog } from "@/components/forms/ArtikelFormDialog"
@@ -41,8 +41,9 @@ export default function ArtikelBerita() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isViewOpen, setIsViewOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
   const { toast } = useToast()
-  const { fetchArtikel, addArtikel, updateArtikel, deleteArtikel } = useSupabaseData()
+  const { fetchArtikel, addArtikel, updateArtikel, deleteArtikel, uploadImageArtikel, deleteImageArtikel } = useSupabaseData()
 
   const loadArtikel = async () => {
     try {
@@ -80,9 +81,49 @@ export default function ArtikelBerita() {
     artikel.kategori.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  const handleImageUpload = async (file: File): Promise<string | null> => {
+    try {
+      setUploading(true)
+      const fileName = `artikel_${Date.now()}_${file.name}`
+      const imageUrl = await uploadImageArtikel(file, fileName)
+      return imageUrl
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal mengupload gambar",
+        variant: "destructive"
+      })
+      return null
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleDeleteImage = async (imageUrl: string) => {
+    try {
+      // Extract filename from URL for deletion
+      const urlParts = imageUrl.split('/')
+      const fileName = urlParts[urlParts.length - 1]
+      await deleteImageArtikel(fileName)
+    } catch (error) {
+      console.error('Error deleting image:', error)
+    }
+  }
+
   const handleAdd = async (formData: any) => {
     try {
-      await addArtikel(formData)
+      let finalFormData = { ...formData }
+      
+      // Handle image upload if file is provided
+      if (formData.imageFile) {
+        const imageUrl = await handleImageUpload(formData.imageFile)
+        if (imageUrl) {
+          finalFormData.gambar_url = imageUrl
+        }
+        delete finalFormData.imageFile // Remove file object from form data
+      }
+
+      await addArtikel(finalFormData)
       setIsAddOpen(false)
       await loadArtikel()
       toast({ title: "Berhasil", description: "Artikel berhasil ditambahkan" })
@@ -98,7 +139,31 @@ export default function ArtikelBerita() {
   const handleEdit = async (formData: any) => {
     if (!selectedArtikel) return
     try {
-      await updateArtikel(selectedArtikel.id, formData)
+      let finalFormData = { ...formData }
+      
+      // Handle image upload if new file is provided
+      if (formData.imageFile) {
+        // Delete old image if exists
+        if (selectedArtikel.gambar_url) {
+          await handleDeleteImage(selectedArtikel.gambar_url)
+        }
+        
+        const imageUrl = await handleImageUpload(formData.imageFile)
+        if (imageUrl) {
+          finalFormData.gambar_url = imageUrl
+        }
+      }
+
+      const updateData = {
+        excerpt: finalFormData.excerpt,
+        gambar_url: finalFormData.gambar_url,
+        judul: finalFormData.judul,
+        kategori: finalFormData.kategori,
+        konten: finalFormData.konten,
+        status: finalFormData.status
+      }
+
+      await updateArtikel(selectedArtikel.id, updateData)
       setIsEditOpen(false)
       setSelectedArtikel(null)
       await loadArtikel()
@@ -114,6 +179,14 @@ export default function ArtikelBerita() {
 
   const handleDelete = async (id: string) => {
     try {
+      // Find the artikel to get the image URL
+      const artikel = artikelList.find(a => a.id === id)
+      
+      // Delete associated image if exists
+      if (artikel?.gambar_url) {
+        await handleDeleteImage(artikel.gambar_url)
+      }
+      
       await deleteArtikel(id)
       await loadArtikel()
       toast({ title: "Berhasil", description: "Artikel berhasil dihapus" })
@@ -215,6 +288,7 @@ export default function ArtikelBerita() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Gambar</TableHead>
               <TableHead>Judul</TableHead>
               <TableHead>Kategori</TableHead>
               <TableHead>Status</TableHead>
@@ -225,6 +299,19 @@ export default function ArtikelBerita() {
           <TableBody>
             {filteredArtikel.map((artikel) => (
               <TableRow key={artikel.id}>
+                <TableCell>
+                  {artikel.gambar_url ? (
+                    <img 
+                      src={artikel.gambar_url} 
+                      alt={artikel.judul}
+                      className="w-12 h-12 object-cover rounded-md"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
+                      <Eye className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  )}
+                </TableCell>
                 <TableCell className="font-medium max-w-xs truncate">{artikel.judul}</TableCell>
                 <TableCell>{artikel.kategori}</TableCell>
                 <TableCell>
@@ -268,6 +355,7 @@ export default function ArtikelBerita() {
         open={isAddOpen}
         onClose={() => setIsAddOpen(false)}
         onSave={handleAdd}
+        uploading={uploading}
       />
 
       {/* Edit Dialog */}
@@ -276,16 +364,26 @@ export default function ArtikelBerita() {
         onClose={() => setIsEditOpen(false)}
         onSave={handleEdit}
         editData={selectedArtikel}
+        uploading={uploading}
       />
 
       {/* View Dialog */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="max-w-2xl bg-card text-card-foreground">
+        <DialogContent className="max-w-4xl bg-card text-card-foreground">
           <DialogHeader>
             <DialogTitle>Preview Artikel</DialogTitle>
           </DialogHeader>
           {selectedArtikel && (
             <div className="space-y-4">
+              {selectedArtikel.gambar_url && (
+                <div className="w-full">
+                  <img 
+                    src={selectedArtikel.gambar_url} 
+                    alt={selectedArtikel.judul}
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                </div>
+              )}
               <div>
                 <h2 className="text-2xl font-bold">{selectedArtikel.judul}</h2>
                 <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-2">

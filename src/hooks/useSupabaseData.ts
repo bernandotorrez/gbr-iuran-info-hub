@@ -409,6 +409,44 @@ export const useSupabaseData = () => {
     }
   };
 
+  const uploadImageArtikel = async (file: File, fileName: string): Promise<string> => {
+    try {
+      // Upload file to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('images')
+        .upload(`artikel_images/${fileName}`, file)
+
+      if (error) {
+        throw error
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('images')
+        .getPublicUrl(`artikel_images/${fileName}`)
+
+      return publicUrl
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      throw error
+    }
+  }
+
+  const deleteImageArtikel = async (fileName: string): Promise<void> => {
+    try {
+      const { error } = await supabase.storage
+        .from('images')
+        .remove([fileName])
+
+      if (error) {
+        throw error
+      }
+    } catch (error) {
+      console.error('Error deleting image:', error)
+      throw error
+    }
+  }
+
   return {
     dashboardStats,
     loading,
@@ -435,6 +473,8 @@ export const useSupabaseData = () => {
     fetchArtikel,
     addArtikel,
     updateArtikel,
-    deleteArtikel
+    deleteArtikel,
+    uploadImageArtikel,
+    deleteImageArtikel
   };
 };
