@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 import CompanyProfile from "./pages/CompanyProfile";
 import StrukturPengurus from "./pages/StrukturPengurus";
 import PublicPengurus from "./pages/PublicPengurus";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
       <AuthProvider>
         <Toaster />
         <Sonner />
+        <SpeedInsights />
         <Routes>
           <Route path="/" element={<CompanyProfile />} />
           <Route path="/cms/login" element={<LoginPage />} />
