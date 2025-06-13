@@ -22,7 +22,6 @@ import NotFound from "./pages/NotFound";
 import CompanyProfile from "./pages/CompanyProfile";
 import StrukturPengurus from "./pages/StrukturPengurus";
 import PublicPengurus from "./pages/PublicPengurus";
-import { Analytics } from '@vercel/analytics/next';
 
 const queryClient = new QueryClient();
 
@@ -58,7 +57,6 @@ const App = () => (
             </ProtectedRoute>
           } />
           <Route path="*" element={<NotFound />} />
-          <Analytics />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
