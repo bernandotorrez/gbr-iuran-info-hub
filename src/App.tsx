@@ -58,9 +58,9 @@ const App = () => (
             </ProtectedRoute>
           } />
           <Route path="*" element={<NotFound />} />
+          <Analytics />
         </Routes>
       </AuthProvider>
-      <Analytics />
     </BrowserRouter>
   </QueryClientProvider>
 );
