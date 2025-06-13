@@ -22,12 +22,14 @@ import NotFound from "./pages/NotFound";
 import CompanyProfile from "./pages/CompanyProfile";
 import StrukturPengurus from "./pages/StrukturPengurus";
 import PublicPengurus from "./pages/PublicPengurus";
+import { Analytics } from '@vercel/analytics/next';
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
+      <Analytics />
       <AuthProvider>
         <Toaster />
         <Sonner />
