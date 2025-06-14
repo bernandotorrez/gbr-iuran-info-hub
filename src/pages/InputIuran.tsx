@@ -37,7 +37,7 @@ interface Iuran {
   tipe_iuran: { nama: string }
   nominal: number
   tanggal_bayar: string
-  bulan: string,
+  bulan: string | number,
   tahun: number
   status_verifikasi: string
 }
@@ -206,10 +206,10 @@ export default function InputIuran() {
     }).format(amount)
   }
 
-  const getWargaDisplayName = (warga: Warga) => {
+  const getWargaDisplayName = (nama_suami: string, nama_istri: string) => {
     const names = []
-    if (warga.nama_suami) names.push(warga.nama_suami)
-    if (warga.nama_istri) names.push(warga.nama_istri)
+    if (nama_suami) names.push(nama_suami)
+    if (nama_istri) names.push(nama_istri)
     return names.length > 0 ? names.join(' & ') : 'Tidak ada nama'
   }
 
@@ -269,7 +269,7 @@ export default function InputIuran() {
                         <SelectContent>
                           {wargaList.map(warga => (
                             <SelectItem key={warga.id} value={warga.id}>
-                              {getWargaDisplayName(warga)} - {warga.blok_rumah}
+                              {getWargaDisplayName(warga.nama_suami, warga.nama_istri)} - {warga.blok_rumah}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -530,7 +530,7 @@ export default function InputIuran() {
           <TableBody>
             {filteredIuran.map((item) => (
               <TableRow key={item.id}>
-                <TableCell className="font-medium">{getWargaDisplayName(item.warga)}</TableCell>
+                <TableCell className="font-medium">{getWargaDisplayName(item.warga?.nama_suami, item.warga?.nama_istri)}</TableCell>
                 <TableCell>{item.warga?.blok_rumah}</TableCell>
                 <TableCell>{item.tipe_iuran?.nama}</TableCell>
                 <TableCell>{formatCurrency(item.nominal)}</TableCell>

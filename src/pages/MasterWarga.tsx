@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
 import { WargaFormDialog } from "@/components/forms/WargaFormDialog"
 import { UserManagementDialog } from "@/components/forms/UserManagementDialog"
+import { useUserRole } from "@/hooks/useUserRole"
 
 interface Warga {
   id: string
@@ -32,6 +33,7 @@ export default function MasterWarga() {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const { fetchWarga, addWarga, updateWarga, deleteWarga } = useSupabaseData()
+  const { isAdmin } = useUserRole()
 
   const loadWarga = async () => {
     try {
@@ -135,7 +137,8 @@ export default function MasterWarga() {
           <h1 className="text-3xl font-bold">Master Data Warga</h1>
           <p className="text-muted-foreground">Kelola data warga dan keluarga GBR</p>
         </div>
-        <div className="flex gap-2">
+        {isAdmin && (
+          <div className="flex gap-2">
           <Button onClick={() => setIsUserMgmtOpen(true)} variant="outline">
             <UserPlus className="w-4 h-4 mr-2" />
             Tambah User Login
@@ -145,6 +148,8 @@ export default function MasterWarga() {
             Tambah Warga
           </Button>
         </div>
+        )}
+        
       </div>
 
       <div className="flex items-center space-x-2">
@@ -169,7 +174,7 @@ export default function MasterWarga() {
               <TableHead>No. HP Suami</TableHead>
               <TableHead>No. HP Istri</TableHead>
               <TableHead>Status Tinggal</TableHead>
-              <TableHead className="text-right">Aksi</TableHead>
+              {isAdmin && <TableHead className="text-right">Aksi</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -185,7 +190,8 @@ export default function MasterWarga() {
                     {warga.status_tinggal}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
+                {isAdmin && (
+                  <TableCell className="text-right">
                   <div className="flex justify-end space-x-2">
                     <Button variant="ghost" size="sm" onClick={() => openEdit(warga)}>
                       <Edit2 className="w-4 h-4" />
@@ -200,6 +206,7 @@ export default function MasterWarga() {
                     </Button>
                   </div>
                 </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

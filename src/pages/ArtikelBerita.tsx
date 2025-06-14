@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
 import { ArtikelFormDialog } from "@/components/forms/ArtikelFormDialog"
+import { useUserRole } from "@/hooks/useUserRole"
 
 interface Artikel {
   id: string
@@ -44,6 +45,7 @@ export default function ArtikelBerita() {
   const [uploading, setUploading] = useState(false)
   const { toast } = useToast()
   const { fetchArtikel, addArtikel, updateArtikel, deleteArtikel, uploadImageArtikel, deleteImageArtikel } = useSupabaseData()
+  const { isAdmin } = useUserRole()
 
   const loadArtikel = async () => {
     try {
@@ -293,7 +295,7 @@ export default function ArtikelBerita() {
               <TableHead>Kategori</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Tanggal Buat</TableHead>
-              <TableHead className="text-right">Aksi</TableHead>
+              {isAdmin && <TableHead className="text-right">Aksi</TableHead> }
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -326,24 +328,27 @@ export default function ArtikelBerita() {
                   </span>
                 </TableCell>
                 <TableCell>{new Date(artikel.created_at).toLocaleDateString('id-ID')}</TableCell>
+                {isAdmin && (
                 <TableCell className="text-right">
                   <div className="flex justify-end space-x-2">
                     <Button variant="ghost" size="sm" onClick={() => openView(artikel)}>
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(artikel)}>
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleDelete(artikel.id)}
-                      className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(artikel)}>
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleDelete(artikel.id)}
+                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                   </div>
                 </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

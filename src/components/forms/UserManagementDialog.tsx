@@ -98,14 +98,17 @@ export function UserManagementDialog({
     try {
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        id: userData.warga_id,
         email: `${userData.phone_number}@gbr.com`,
         password: 'warga123',
-        phone: userData.phone_number,
+        phone: userData.phone_number.slice(1),
+        email_confirm: true,
         user_metadata: {
-          nama: userData.nama,
+          nama_suami: userData.nama, // Treat input as nama_suami
+          nomor_hp_suami: userData.phone_number,
           alamat: userData.alamat,
           role: userData.role,
-          warga_id: userData.warga_id || null
+          warga_id: userData.warga_id || null,
         }
       })
 
