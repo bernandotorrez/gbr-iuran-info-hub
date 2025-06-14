@@ -241,7 +241,8 @@ export default function InputIuran() {
           <h1 className="text-3xl font-bold">Input Iuran</h1>
           <p className="text-muted-foreground">Kelola pembayaran iuran warga</p>
         </div>
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+        {isAdmin && (
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary/90">
               <Plus className="w-4 h-4 mr-2" />
@@ -389,6 +390,7 @@ export default function InputIuran() {
             </Form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       {/* Filter Controls */}

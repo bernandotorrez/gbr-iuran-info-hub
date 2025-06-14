@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useStrukturPengurus } from "@/hooks/useStrukturPengurus"
 import { StrukturPengurusFormDialog } from "@/components/forms/StrukturPengurusFormDialog"
+import { useUserRole } from "@/hooks/useUserRole"
 
 interface StrukturPengurus {
   id: string
@@ -42,6 +43,8 @@ export default function StrukturPengurus() {
   // Image upload states
   const [uploadingImages, setUploadingImages] = useState<Set<string>>(new Set())
   const [previewImages, setPreviewImages] = useState<Map<string, string>>(new Map())
+
+  const { isAdmin } = useUserRole()
 
   useEffect(() => {
     fetchStrukturPengurus()
@@ -264,10 +267,13 @@ export default function StrukturPengurus() {
           <h1 className="text-3xl font-bold">Struktur Pengurus Paguyuban</h1>
           <p className="text-muted-foreground">Kelola struktur organisasi pengurus paguyuban perumahan GBR</p>
         </div>
-        <Button onClick={handleAdd}>
-          <Plus className="w-4 h-4 mr-2" />
-          Tambah Pengurus
-        </Button>
+        {isAdmin && (
+          <Button onClick={handleAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            Tambah Pengurus
+          </Button>
+        )}
+        
       </div>
 
       <div className="flex gap-4 mb-6">
@@ -314,8 +320,8 @@ export default function StrukturPengurus() {
                       )}
                     </div>
                     
-                    {/* Image Upload/Delete Controls */}
-                    <div className="absolute -bottom-1 -right-1">
+                    {isAdmin && (
+                      <div className="absolute -bottom-1 -right-1">
                       {item.foto_url ? (
                         <Button
                           size="sm"
@@ -357,6 +363,9 @@ export default function StrukturPengurus() {
                         </label>
                       )}
                     </div>
+                    )}
+                    
+                    
                   </div>
 
                   <div className="flex-1">
@@ -390,26 +399,28 @@ export default function StrukturPengurus() {
                 <span className="font-medium text-muted-foreground">Periode: </span>
                 <span>{item.periode_mulai} - {item.periode_selesai}</span>
               </div>
+              {isAdmin && (
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleEdit(item)}
+                    className="flex-1"
+                  >
+                    <Edit className="w-3 h-3 mr-1" />
+                    Edit
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleDelete(item.id, item.nama_pengurus)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              )}
               
-              <div className="flex gap-2 pt-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handleEdit(item)}
-                  className="flex-1"
-                >
-                  <Edit className="w-3 h-3 mr-1" />
-                  Edit
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handleDelete(item.id, item.nama_pengurus)}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              </div>
             </CardContent>
           </Card>
         ))}

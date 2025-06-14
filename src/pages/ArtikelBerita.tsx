@@ -236,10 +236,13 @@ export default function ArtikelBerita() {
           <h1 className="text-3xl font-bold">Artikel & Berita</h1>
           <p className="text-muted-foreground">Kelola artikel dan pengumuman untuk warga</p>
         </div>
-        <Button onClick={() => setIsAddOpen(true)} className="bg-primary hover:bg-primary/90">
-          <Plus className="w-4 h-4 mr-2" />
-          Tulis Artikel
-        </Button>
+        {isAdmin && (
+          <Button onClick={() => setIsAddOpen(true)} className="bg-primary hover:bg-primary/90">
+            <Plus className="w-4 h-4 mr-2" />
+            Tulis Artikel
+          </Button>
+        )}
+        
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
