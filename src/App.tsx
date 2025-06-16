@@ -1,9 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ThemeProvider } from "./components/ThemeProvider"; // Add this import
 import { Layout } from "./components/Layout";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import LoginPage from "./components/auth/LoginPage";
@@ -30,36 +30,38 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <SpeedInsights />
-        <Routes>
-          <Route path="/" element={<CompanyProfile />} />
-          <Route path="/cms/login" element={<LoginPage />} />
-          <Route path="/cms/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/public/artikel" element={<PublicArtikel />} />
-          <Route path="/public/pengurus" element={<PublicPengurus />} />
-          <Route path="/cms/*" element={
-            <ProtectedRoute>
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/warga" element={<MasterWarga />} />
-                  <Route path="/tipe-iuran" element={<MasterTipeIuran />} />
-                  <Route path="/master-kategori-kas" element={<MasterKategoriKas />} />
-                  <Route path="/input-iuran" element={<InputIuran />} />
-                  <Route path="/output-kas" element={<OutputKas />} />
-                  <Route path="/laporan" element={<LaporanIuran />} />
-                  <Route path="/artikel" element={<ArtikelBerita />} />
-                  <Route path="/struktur-pengurus" element={<StrukturPengurus />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+          <Toaster />
+          <Sonner />
+          <SpeedInsights />
+          <Routes>
+            <Route path="/" element={<CompanyProfile />} />
+            <Route path="/cms/login" element={<LoginPage />} />
+            <Route path="/cms/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/public/artikel" element={<PublicArtikel />} />
+            <Route path="/public/pengurus" element={<PublicPengurus />} />
+            <Route path="/cms/*" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/warga" element={<MasterWarga />} />
+                    <Route path="/tipe-iuran" element={<MasterTipeIuran />} />
+                    <Route path="/master-kategori-kas" element={<MasterKategoriKas />} />
+                    <Route path="/input-iuran" element={<InputIuran />} />
+                    <Route path="/output-kas" element={<OutputKas />} />
+                    <Route path="/laporan" element={<LaporanIuran />} />
+                    <Route path="/artikel" element={<ArtikelBerita />} />
+                    <Route path="/struktur-pengurus" element={<StrukturPengurus />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>
