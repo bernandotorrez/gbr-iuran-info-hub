@@ -57,14 +57,9 @@ const LoginPage = () => {
     setLoading(false);
   };
 
-  const fillDemoCredentials = (type: 'admin' | 'warga') => {
-    if (type === 'admin') {
-      form.setValue('email', 'admin@gbr.com');
-      form.setValue('password', 'admin123');
-    } else {
-      form.setValue('email', 'warga@gbr.com');
-      form.setValue('password', 'warga123');
-    }
+  const fillDemoCredentials = (type: 'warga') => {
+    form.setValue('email', 'warga@gbr.com');
+    form.setValue('password', 'warga123');
     form.clearErrors();
   };
 
@@ -166,25 +161,15 @@ const LoginPage = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => fillDemoCredentials('admin')}
-                  className="text-xs"
-                  type="button"
-                >
-                  Demo Admin
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
                   onClick={() => fillDemoCredentials('warga')}
                   className="text-xs"
                   type="button"
                 >
-                  Demo Warga
+                  Login Warga
                 </Button>
               </div>
               
               <div className="text-center text-xs text-gray-500 mt-2">
-                <p>Admin: admin@gbr.com / admin123</p>
                 <p>Warga: warga@gbr.com / warga123</p>
                 <p className="text-orange-600 mt-1">Note: Jika belum ada akun, silakan hubungi admin untuk pendaftaran</p>
               </div>
