@@ -139,7 +139,7 @@ export default function CompanyProfile() {
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-4 bg-white rounded-lg">
-                  <div className="text-2xl font-bold text-primary">150+</div>
+                  <div className="text-2xl font-bold text-primary">50+</div>
                   <div className="text-sm text-gray-600">Unit Rumah</div>
                 </div>
                 <div className="text-center p-4 bg-white rounded-lg">
@@ -197,14 +197,14 @@ export default function CompanyProfile() {
               </div>
               <div>
                 <div className="font-bold">{contactInfo.nama_perumahan}</div>
-                <div className="text-sm text-gray-400">Hunian Nyaman dan Asri</div>
+                <div className="text-base text-gray-400">Hunian Nyaman dan Asri</div>
               </div>
             </div>
             <div className="text-center md:text-right">
-              <div className="text-sm text-gray-400 mb-1">
+              <div className="text-base mb-1">
                 © 2025 {contactInfo.nama_perumahan}. All rights reserved.
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-base text-green-600">
                 Created by: Bernand Dayamuntari Hermawan (Blok C1-5)
               </div>
             </div>
