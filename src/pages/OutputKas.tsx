@@ -157,7 +157,7 @@ export default function OutputKas() {
       const filePath = `bukti_transfer_output_kas/${fileName}`
 
       const { data, error } = await supabase.storage
-        .from('images_private')
+        .from('images-private')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true
@@ -168,7 +168,7 @@ export default function OutputKas() {
       }
 
       const { data: { publicUrl } } = supabase.storage
-        .from('images_private')
+        .from('images-private')
         .getPublicUrl(filePath)
 
       return publicUrl
