@@ -129,6 +129,18 @@ export type Database = {
           },
         ]
       }
+      iuran_bulan_ini: {
+        Row: {
+          count: number | null
+        }
+        Insert: {
+          count?: number | null
+        }
+        Update: {
+          count?: number | null
+        }
+        Relationships: []
+      }
       kas_keluar: {
         Row: {
           bukti_transaksi_url: string | null
@@ -291,7 +303,7 @@ export type Database = {
             foreignKeyName: "settings_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
-            referencedRelation: "warga_new"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -300,6 +312,7 @@ export type Database = {
         Row: {
           blok_rumah: string | null
           created_at: string
+          foto_url: string | null
           id: string
           jabatan: string
           level_jabatan: number
@@ -313,6 +326,7 @@ export type Database = {
         Insert: {
           blok_rumah?: string | null
           created_at?: string
+          foto_url?: string | null
           id?: string
           jabatan: string
           level_jabatan?: number
@@ -326,6 +340,7 @@ export type Database = {
         Update: {
           blok_rumah?: string | null
           created_at?: string
+          foto_url?: string | null
           id?: string
           jabatan?: string
           level_jabatan?: number
@@ -385,6 +400,8 @@ export type Database = {
           nama_suami: string | null
           nomor_hp_istri: string | null
           nomor_hp_suami: string | null
+          role: string | null
+          status_aktif: boolean | null
           status_tinggal: Database["public"]["Enums"]["residence_status"]
           updated_at: string
         }
@@ -396,6 +413,8 @@ export type Database = {
           nama_suami?: string | null
           nomor_hp_istri?: string | null
           nomor_hp_suami?: string | null
+          role?: string | null
+          status_aktif?: boolean | null
           status_tinggal?: Database["public"]["Enums"]["residence_status"]
           updated_at?: string
         }
@@ -407,6 +426,8 @@ export type Database = {
           nama_suami?: string | null
           nomor_hp_istri?: string | null
           nomor_hp_suami?: string | null
+          role?: string | null
+          status_aktif?: boolean | null
           status_tinggal?: Database["public"]["Enums"]["residence_status"]
           updated_at?: string
         }
@@ -426,6 +447,14 @@ export type Database = {
         Returns: Json
       }
       get_dashboard_stats_filtered: {
+        Args: {
+          target_month?: number
+          target_year?: number
+          target_tipe_iuran_id?: string
+        }
+        Returns: Json
+      }
+      get_dashboard_stats_filtered_backup: {
         Args: { target_month?: number; target_year?: number }
         Returns: Json
       }

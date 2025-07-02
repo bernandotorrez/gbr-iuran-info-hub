@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react"
-import { Plus, Search, TrendingDown, Calendar, FileText, Download, Filter } from "lucide-react"
+import { Plus, Search, TrendingDown, Calendar, FileText, Download, Filter, Upload, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
@@ -12,6 +12,7 @@ import { useSupabaseData } from "@/hooks/useSupabaseData"
 import { useAuth } from "@/contexts/AuthContext"
 import { useKategoriKas } from "@/hooks/useKategoriKas"
 import { useUserRole } from "@/hooks/useUserRole"
+import { supabase } from "@/integrations/supabase/client"
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -50,6 +51,7 @@ export default function OutputKas() {
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [tipeIuranFilter, setTipeIuranFilter] = useState<string>("semua")
+  const [uploadingFile, setUploadingFile] = useState(false)
   const { toast } = useToast()
   const { session } = useAuth()
   const { fetchKasKeluar, addKasKeluar, updateKasKeluarStatus, dashboardStats, fetchDashboardStats, fetchTipeIuran } = useSupabaseData()
@@ -128,6 +130,48 @@ export default function OutputKas() {
     setFilteredPengeluaran(filtered)
   }, [pengeluaranList, searchTerm, tipeIuranFilter])
 
+  const handleFileUpload = async (file: File) => {
+    if (!file || !formData.tipe_iuran) return ""
+
+    try {
+      setUploadingFile(true)
+      const currentDate = new Date()
+      const month = currentDate.getMonth() + 1
+      const year = currentDate.getFullYear()
+      
+      const fileExtension = file.name.split('.').pop()
+      const fileName = `bukti_transfer_${formData.tipe_iuran}_${month}_${year}.${fileExtension}`
+      const filePath = `bukti_transfer_output_kas/${fileName}`
+
+      const { data, error } = await supabase.storage
+        .from('images_private')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (error) {
+        throw error
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('images_private')
+        .getPublicUrl(filePath)
+
+      return publicUrl
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      toast({
+        title: "Error",
+        description: "Gagal mengupload file bukti transfer",
+        variant: "destructive"
+      })
+      return ""
+    } finally {
+      setUploadingFile(false)
+    }
+  }
+
   const handleNominalKeyDown = (e: React.KeyboardEvent) => {
     if (!/[0-9]/.test(e.key) && 
         !['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
@@ -190,17 +234,6 @@ export default function OutputKas() {
     if (nominalValue > dashboardStats.saldo_kas) {
       errors.nominal = "Saldo Kas Tidak Mencukupi"
       isValid = false
-    }
-
-    if (formData.bukti_transaksi_url) {
-      const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.pdf']
-      const hasValidExtension = validExtensions.some(ext => 
-        formData.bukti_transaksi_url.toLowerCase().endsWith(ext)
-      )
-      if (!hasValidExtension) {
-        errors.bukti_transaksi_url = "File harus berupa gambar (.jpg, .jpeg, .png, .gif) atau PDF (.pdf)"
-        isValid = false
-      }
     }
 
     setFormErrors(errors)
@@ -359,118 +392,162 @@ export default function OutputKas() {
                   Tambah Pengeluaran
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-md max-h-[80vh]">
                 <DialogHeader>
                   <DialogTitle>Tambah Pengeluaran Kas</DialogTitle>
                   <p className="text-sm text-muted-foreground">
                     Saldo Kas Tersedia: {formatCurrency(dashboardStats.saldo_kas)}
                   </p>
                 </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="tanggal">Tanggal *</Label>
-                    <Input
-                      id="tanggal"
-                      type="date"
-                      value={formData.tanggal_keluar}
-                      onChange={(e) => setFormData({...formData, tanggal_keluar: e.target.value})}
-                      className={formErrors.tanggal_keluar ? "border-red-500" : ""}
-                    />
-                    {formErrors.tanggal_keluar && (
-                      <p className="text-sm text-red-500 mt-1">{formErrors.tanggal_keluar}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="tipe_iuran">Tipe Iuran *</Label>
-                    <Select value={formData.tipe_iuran} onValueChange={(value) => setFormData({...formData, tipe_iuran: value})}>
-                      <SelectTrigger className={formErrors.tipe_iuran ? "border-red-500" : ""}>
-                        <SelectValue placeholder="-- Pilih Tipe Iuran --" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tipeIuranList.map(tipe => (
-                          <SelectItem key={tipe.id} value={tipe.nama}>{tipe.nama}</SelectItem>
+                <ScrollArea className="max-h-[60vh] pr-4">
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="tanggal">Tanggal *</Label>
+                      <Input
+                        id="tanggal"
+                        type="date"
+                        value={formData.tanggal_keluar}
+                        onChange={(e) => setFormData({...formData, tanggal_keluar: e.target.value})}
+                        className={formErrors.tanggal_keluar ? "border-red-500" : ""}
+                      />
+                      {formErrors.tanggal_keluar && (
+                        <p className="text-sm text-red-500 mt-1">{formErrors.tanggal_keluar}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="tipe_iuran">Tipe Iuran *</Label>
+                      <Select value={formData.tipe_iuran} onValueChange={(value) => setFormData({...formData, tipe_iuran: value})}>
+                        <SelectTrigger className={formErrors.tipe_iuran ? "border-red-500" : ""}>
+                          <SelectValue placeholder="-- Pilih Tipe Iuran --" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {tipeIuranList.map(tipe => (
+                            <SelectItem key={tipe.id} value={tipe.nama}>{tipe.nama}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {formErrors.tipe_iuran && (
+                        <p className="text-sm text-red-500 mt-1">{formErrors.tipe_iuran}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="kategori">Kategori *</Label>
+                      <select
+                        id="kategori"
+                        value={formData.kategori}
+                        onChange={(e) => setFormData({...formData, kategori: e.target.value})}
+                        className={`w-full p-2 border rounded-md ${formErrors.kategori ? "border-red-500" : ""}`}
+                        disabled={kategoriLoading}
+                      >
+                        <option value="">-- Pilih Kategori --</option>
+                        {kategoriList.map(kategori => (
+                          <option key={kategori.id} value={kategori.nama}>{kategori.nama}</option>
                         ))}
-                      </SelectContent>
-                    </Select>
-                    {formErrors.tipe_iuran && (
-                      <p className="text-sm text-red-500 mt-1">{formErrors.tipe_iuran}</p>
-                    )}
+                      </select>
+                      {formErrors.kategori && (
+                        <p className="text-sm text-red-500 mt-1">{formErrors.kategori}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="judul">Judul *</Label>
+                      <Input
+                        id="judul"
+                        value={formData.judul}
+                        onChange={(e) => setFormData({...formData, judul: e.target.value})}
+                        placeholder="Judul pengeluaran"
+                        className={formErrors.judul ? "border-red-500" : ""}
+                      />
+                      {formErrors.judul && (
+                        <p className="text-sm text-red-500 mt-1">{formErrors.judul}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="deskripsi">Deskripsi *</Label>
+                      <Input
+                        id="deskripsi"
+                        value={formData.deskripsi}
+                        onChange={(e) => setFormData({...formData, deskripsi: e.target.value})}
+                        placeholder="Deskripsi pengeluaran"
+                        className={formErrors.deskripsi ? "border-red-500" : ""}
+                      />
+                      {formErrors.deskripsi && (
+                        <p className="text-sm text-red-500 mt-1">{formErrors.deskripsi}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="nominal">Nominal (Rp) *</Label>
+                      <Input
+                        id="nominal"
+                        type="text"
+                        value={formData.nominal}
+                        onChange={(e) => setFormData({...formData, nominal: e.target.value})}
+                        onKeyDown={handleNominalKeyDown}
+                        placeholder="150000"
+                        className={formErrors.nominal ? "border-red-500" : ""}
+                      />
+                      {formErrors.nominal && (
+                        <p className="text-sm text-red-500 mt-1">{formErrors.nominal}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="bukti_upload">Upload Bukti Transfer</Label>
+                      <div className="mt-2">
+                        <Input
+                          id="bukti_upload"
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              const uploadedUrl = await handleFileUpload(file)
+                              if (uploadedUrl) {
+                                setFormData({...formData, bukti_transaksi_url: uploadedUrl})
+                              }
+                            }
+                          }}
+                          disabled={uploadingFile || !formData.tipe_iuran}
+                          className="cursor-pointer"
+                        />
+                        {uploadingFile && (
+                          <div className="flex items-center mt-2 text-sm text-blue-600">
+                            <Upload className="w-4 h-4 mr-2 animate-spin" />
+                            Mengupload file...
+                          </div>
+                        )}
+                        {formData.bukti_transaksi_url && (
+                          <div className="flex items-center justify-between mt-2 p-2 bg-green-50 rounded border">
+                            <span className="text-sm text-green-700">File berhasil diupload</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setFormData({...formData, bukti_transaksi_url: ""})}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">Format: .jpg, .jpeg, .png, .gif, .pdf (Max 5MB)</p>
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="bukti">Bukti (URL)</Label>
+                      <Input
+                        id="bukti"
+                        value={formData.bukti_transaksi_url}
+                        onChange={(e) => setFormData({...formData, bukti_transaksi_url: e.target.value})}
+                        placeholder="https://example.com/nota.jpg atau upload file di atas"
+                        className={formErrors.bukti_transaksi_url ? "border-red-500" : ""}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Format: .jpg, .jpeg, .png, .gif, .pdf</p>
+                      {formErrors.bukti_transaksi_url && (
+                        <p className="text-sm text-red-500 mt-1">{formErrors.bukti_transaksi_url}</p>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="kategori">Kategori *</Label>
-                    <select
-                      id="kategori"
-                      value={formData.kategori}
-                      onChange={(e) => setFormData({...formData, kategori: e.target.value})}
-                      className={`w-full p-2 border rounded-md ${formErrors.kategori ? "border-red-500" : ""}`}
-                      disabled={kategoriLoading}
-                    >
-                      <option value="">-- Pilih Kategori --</option>
-                      {kategoriList.map(kategori => (
-                        <option key={kategori.id} value={kategori.nama}>{kategori.nama}</option>
-                      ))}
-                    </select>
-                    {formErrors.kategori && (
-                      <p className="text-sm text-red-500 mt-1">{formErrors.kategori}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="judul">Judul *</Label>
-                    <Input
-                      id="judul"
-                      value={formData.judul}
-                      onChange={(e) => setFormData({...formData, judul: e.target.value})}
-                      placeholder="Judul pengeluaran"
-                      className={formErrors.judul ? "border-red-500" : ""}
-                    />
-                    {formErrors.judul && (
-                      <p className="text-sm text-red-500 mt-1">{formErrors.judul}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="deskripsi">Deskripsi *</Label>
-                    <Input
-                      id="deskripsi"
-                      value={formData.deskripsi}
-                      onChange={(e) => setFormData({...formData, deskripsi: e.target.value})}
-                      placeholder="Deskripsi pengeluaran"
-                      className={formErrors.deskripsi ? "border-red-500" : ""}
-                    />
-                    {formErrors.deskripsi && (
-                      <p className="text-sm text-red-500 mt-1">{formErrors.deskripsi}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="nominal">Nominal (Rp) *</Label>
-                    <Input
-                      id="nominal"
-                      type="text"
-                      value={formData.nominal}
-                      onChange={(e) => setFormData({...formData, nominal: e.target.value})}
-                      onKeyDown={handleNominalKeyDown}
-                      placeholder="150000"
-                      className={formErrors.nominal ? "border-red-500" : ""}
-                    />
-                    {formErrors.nominal && (
-                      <p className="text-sm text-red-500 mt-1">{formErrors.nominal}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="bukti">Bukti (URL)</Label>
-                    <Input
-                      id="bukti"
-                      value={formData.bukti_transaksi_url}
-                      onChange={(e) => setFormData({...formData, bukti_transaksi_url: e.target.value})}
-                      placeholder="https://example.com/nota.jpg"
-                      className={formErrors.bukti_transaksi_url ? "border-red-500" : ""}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Format: .jpg, .jpeg, .png, .gif, .pdf</p>
-                    {formErrors.bukti_transaksi_url && (
-                      <p className="text-sm text-red-500 mt-1">{formErrors.bukti_transaksi_url}</p>
-                    )}
-                  </div>
-                  <Button onClick={handleAdd} className="w-full">
-                    Simpan Pengeluaran
+                </ScrollArea>
+                <div className="mt-4">
+                  <Button onClick={handleAdd} className="w-full" disabled={uploadingFile}>
+                    {uploadingFile ? "Mengupload..." : "Simpan Pengeluaran"}
                   </Button>
                 </div>
               </DialogContent>

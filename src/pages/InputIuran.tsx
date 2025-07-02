@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react"
-import { Plus, Search, Calendar, Users, CreditCard, TrendingUp, Filter, Trash2 } from "lucide-react"
+import { Plus, Search, Calendar, Users, CreditCard, TrendingUp, Filter, Trash2, Upload, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
@@ -12,6 +12,7 @@ import { useSupabaseData } from "@/hooks/useSupabaseData"
 import { useFormValidation, iuranFormSchema } from "@/hooks/useFormValidation"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { useUserRole } from "@/hooks/useUserRole"
+import { supabase } from "@/integrations/supabase/client"
 
 interface Warga {
   id: string
@@ -67,6 +68,8 @@ export default function InputIuran() {
   const [filterMonth, setFilterMonth] = useState("")
   const [filterYear, setFilterYear] = useState("")
   const [filterTipeIuran, setFilterTipeIuran] = useState("")
+  const [uploadingFile, setUploadingFile] = useState(false)
+  const [buktiTransferUrl, setBuktiTransferUrl] = useState("")
   const { toast } = useToast()
   const { fetchWarga, fetchTipeIuran, fetchIuran, addIuran, deleteIuran } = useSupabaseData()
   const { isAdmin } = useUserRole()
@@ -136,6 +139,49 @@ export default function InputIuran() {
     
   }, [iuranList, searchTerm, filterMonth, filterYear, filterTipeIuran])
 
+  const handleFileUpload = async (file: File) => {
+    if (!file) return ""
+
+    try {
+      setUploadingFile(true)
+      const selectedTipeIuran = tipeIuranList.find(t => t.id === form.getValues("tipe_iuran_id"))
+      const tipeIuranName = selectedTipeIuran?.nama || "unknown"
+      const month = form.getValues("bulan")
+      const year = form.getValues("tahun")
+      
+      const fileExtension = file.name.split('.').pop()
+      const fileName = `bukti_transfer_${tipeIuranName}_${month}_${year}.${fileExtension}`
+      const filePath = `bukti_transfer_input_kas/${fileName}`
+
+      const { data, error } = await supabase.storage
+        .from('images_private')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (error) {
+        throw error
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('images_private')
+        .getPublicUrl(filePath)
+
+      return publicUrl
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      toast({
+        title: "Error",
+        description: "Gagal mengupload file bukti transfer",
+        variant: "destructive"
+      })
+      return ""
+    } finally {
+      setUploadingFile(false)
+    }
+  }
+
   const handleTipeIuranChange = (value: string) => {
     form.setValue("tipe_iuran_id", value)
     const selectedTipe = tipeIuranList.find(t => t.id === value)
@@ -187,6 +233,7 @@ export default function InputIuran() {
         tahun: new Date().getFullYear(),
         keterangan: ""
       })
+      setBuktiTransferUrl("")
       setIsAddOpen(false)
       await loadData()
       toast({ title: "Berhasil", description: "Iuran berhasil dicatat" })
@@ -249,145 +296,194 @@ export default function InputIuran() {
               Tambah Iuran
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md max-h-[80vh]">
             <DialogHeader>
               <DialogTitle>Tambah Pembayaran Iuran</DialogTitle>
             </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="warga_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Warga</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
+            <ScrollArea className="max-h-[60vh] pr-4">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="warga_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Warga</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="-- Pilih Warga --" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {wargaList.map(warga => (
+                              <SelectItem key={warga.id} value={warga.id}>
+                                {getWargaDisplayName(warga.nama_suami, warga.nama_istri)} - {warga.blok_rumah}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="tipe_iuran_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipe Iuran</FormLabel>
+                        <Select value={field.value} onValueChange={handleTipeIuranChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="-- Pilih Tipe Iuran --" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {tipeIuranList.map(tipe => (
+                              <SelectItem key={tipe.id} value={tipe.id}>
+                                {tipe.nama} - {formatCurrency(tipe.nominal)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="bulan"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bulan</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="-- Pilih Bulan --" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {months.map(month => (
+                              <SelectItem key={month.value} value={month.value}>
+                                {month.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="nominal"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nominal (Rp)</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="-- Pilih Warga --" />
-                          </SelectTrigger>
+                          <Input
+                            {...field}
+                            type="text"
+                            onKeyDown={handleNominalKeyDown}
+                            placeholder="150000"
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {wargaList.map(warga => (
-                            <SelectItem key={warga.id} value={warga.id}>
-                              {getWargaDisplayName(warga.nama_suami, warga.nama_istri)} - {warga.blok_rumah}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="tipe_iuran_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipe Iuran</FormLabel>
-                      <Select value={field.value} onValueChange={handleTipeIuranChange}>
+                  <FormField
+                    control={form.control}
+                    name="tanggal_bayar"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tanggal Bayar</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="-- Pilih Tipe Iuran --" />
-                          </SelectTrigger>
+                          <Input
+                            {...field}
+                            type="date"
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {tipeIuranList.map(tipe => (
-                            <SelectItem key={tipe.id} value={tipe.id}>
-                              {tipe.nama} - {formatCurrency(tipe.nominal)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="bulan"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Bulan</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
+                  <div>
+                    <Label htmlFor="bukti_upload">Upload Bukti Transfer</Label>
+                    <div className="mt-2">
+                      <Input
+                        id="bukti_upload"
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            const uploadedUrl = await handleFileUpload(file)
+                            if (uploadedUrl) {
+                              setBuktiTransferUrl(uploadedUrl)
+                            }
+                          }
+                        }}
+                        disabled={uploadingFile || !form.getValues("tipe_iuran_id")}
+                        className="cursor-pointer"
+                      />
+                      {uploadingFile && (
+                        <div className="flex items-center mt-2 text-sm text-blue-600">
+                          <Upload className="w-4 h-4 mr-2 animate-spin" />
+                          Mengupload file...
+                        </div>
+                      )}
+                      {buktiTransferUrl && (
+                        <div className="flex items-center justify-between mt-2 p-2 bg-green-50 rounded border">
+                          <span className="text-sm text-green-700">File berhasil diupload</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setBuktiTransferUrl("")}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500 mt-1">Format: .jpg, .jpeg, .png, .gif, .pdf (Max 5MB)</p>
+                    </div>
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="keterangan"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Keterangan</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="-- Pilih Bulan --" />
-                          </SelectTrigger>
+                          <Input
+                            {...field}
+                            placeholder="Keterangan tambahan (opsional)"
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {months.map(month => (
-                            <SelectItem key={month.value} value={month.value}>
-                              {month.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="nominal"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nominal (Rp)</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="text"
-                          onKeyDown={handleNominalKeyDown}
-                          placeholder="150000"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="tanggal_bayar"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tanggal Bayar</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="date"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="keterangan"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Keterangan</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="Keterangan tambahan (opsional)"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button type="submit" className="w-full">
-                  Simpan Iuran
-                </Button>
-              </form>
-            </Form>
+                </form>
+              </Form>
+            </ScrollArea>
+            <div className="mt-4">
+              <Button 
+                onClick={form.handleSubmit(onSubmit)} 
+                className="w-full" 
+                disabled={uploadingFile}
+              >
+                {uploadingFile ? "Mengupload..." : "Simpan Iuran"}
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
         )}
