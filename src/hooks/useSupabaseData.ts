@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,9 +13,25 @@ const validateArticleStatus = (status: string | null | undefined): ArticleStatus
   return "draft"; // Default to draft for any invalid status
 }
 
+// Define the dashboard stats type
+export interface DashboardStats {
+  total_warga: number;
+  total_kas_masuk: number;
+  total_kas_keluar: number;
+  saldo_kas: number;
+  iuran_bulan_ini: number;
+  filter_month: number;
+  filter_year: number;
+  tingkat_pembayaran: number;
+  total_warga_sudah_bayar: number;
+  total_warga_belum_bayar: number;
+  percent_warga_sudah_bayar: number;
+  percent_warga_belum_bayar: number;
+}
+
 export const useSupabaseData = () => {
   const { session } = useAuth();
-  const [dashboardStats, setDashboardStats] = useState({
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     total_warga: 0,
     total_kas_masuk: 0,
     total_kas_keluar: 0,
@@ -41,7 +56,7 @@ export const useSupabaseData = () => {
     }
   }, [session]);
 
-  const fetchDashboardStats = async (month?: number, year?: number, tipeIuran?: string) => {
+  const fetchDashboardStats = async (month?: number, year?: number, tipeIuran?: string): Promise<DashboardStats | null> => {
     try {
       setLoading(true);
       const { data, error } = await supabase.rpc('get_dashboard_stats_filtered', {
@@ -52,12 +67,12 @@ export const useSupabaseData = () => {
       
       if (error) {
         console.error('Error fetching dashboard stats:', error);
-        return;
+        return null;
       }
       
       if (data && typeof data === 'object' && !Array.isArray(data)) {
         const statsData = data as any;
-        setDashboardStats({
+        const newStats: DashboardStats = {
           total_warga: Number(statsData.total_warga) || 0,
           total_kas_masuk: Number(statsData.total_kas_masuk) || 0,
           total_kas_keluar: Number(statsData.total_kas_keluar) || 0,
@@ -70,15 +85,17 @@ export const useSupabaseData = () => {
           total_warga_belum_bayar: Number(statsData.total_warga_belum_bayar) || 0,
           percent_warga_sudah_bayar: Number(statsData.percent_warga_sudah_bayar) || 0,
           percent_warga_belum_bayar: Number(statsData.percent_warga_belum_bayar) || 0
-        });
+        };
 
-        return data || [];
+        setDashboardStats(newStats);
+        return newStats;
       }
     } catch (error) {
       console.error('Error:', error);
     } finally {
       setLoading(false);
     }
+    return null;
   };
 
   // New warga functions using warga_new table

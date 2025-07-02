@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { Calendar, TrendingUp, Users, CreditCard, Download, Filter } from "lucide-react"
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
-import { useSupabaseData } from "@/hooks/useSupabaseData"
+import { useSupabaseData, DashboardStats } from "@/hooks/useSupabaseData"
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -19,22 +18,6 @@ interface Transaction {
   nominal: number
   tanggal_bayar: string
   status_verifikasi: string
-}
-
-interface DashboardFilter {
-  total_warga: number
-  total_kas_masuk: number
-  total_kas_keluar: number
-  saldo_kas: number
-  iuran_bulan_ini: number
-  filter_month: number
-  filter_year: number
-  target_tipe_iuran_id: string | null
-  tingkat_pembayaran: number
-  total_warga_sudah_bayar: number
-  total_warga_belum_bayar: number
-  percent_warga_sudah_bayar: number
-  percent_warga_belum_bayar: number
 }
 
 interface Warga {
@@ -55,7 +38,7 @@ export default function LaporanIuran() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [kasKeluarData, setKasKeluarData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [dashboardFilter, setDashboardFilter] = useState<DashboardFilter>({
+  const [dashboardFilter, setDashboardFilter] = useState<DashboardStats>({
     total_warga: 0,
     total_kas_masuk: 0,
     total_kas_keluar: 0,
@@ -63,7 +46,6 @@ export default function LaporanIuran() {
     iuran_bulan_ini: 0,
     filter_month: new Date().getMonth() + 1,
     filter_year: new Date().getFullYear(),
-    target_tipe_iuran_id: null,
     tingkat_pembayaran: 0,
     total_warga_sudah_bayar: 0,
     total_warga_belum_bayar: 0,
@@ -89,8 +71,8 @@ export default function LaporanIuran() {
         fetchDashboardStats(month, year)
       ])
       
-      if (dashboardStatsResult && typeof dashboardStatsResult === 'object') {
-        setDashboardFilter(dashboardStatsResult as DashboardFilter)
+      if (dashboardStatsResult) {
+        setDashboardFilter(dashboardStatsResult)
       }
       setTransactions(iuranData)
       setKasKeluarData(kasKeluarTransactions)

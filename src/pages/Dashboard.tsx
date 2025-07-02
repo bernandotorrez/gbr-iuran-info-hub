@@ -1,27 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { TrendingUp, Users, CreditCard, AlertCircle, Wallet, Calendar, Filter } from "lucide-react"
-import { useSupabaseData } from "@/hooks/useSupabaseData"
+import { useSupabaseData, DashboardStats } from "@/hooks/useSupabaseData"
 import { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
-interface DashboardFilter {
-  total_warga: number
-  total_kas_masuk: number
-  total_kas_keluar: number
-  saldo_kas: number
-  iuran_bulan_ini: number
-  filter_month: number
-  filter_year: number
-  target_tipe_iuran_id: string | null
-  tingkat_pembayaran: number
-  total_warga_sudah_bayar: number
-  total_warga_belum_bayar: number
-  percent_warga_sudah_bayar: number
-  percent_warga_belum_bayar: number
-}
 
 export default function Dashboard() {
   const { dashboardStats, loading, fetchDashboardStats, fetchTipeIuran } = useSupabaseData();
@@ -30,7 +14,7 @@ export default function Dashboard() {
   const [selectedTipeIuran, setSelectedTipeIuran] = useState<string>("semua");
   const [tipeIuranList, setTipeIuranList] = useState<any[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
-  const [dashboardFilter, setDashboardFilter] = useState<DashboardFilter>({
+  const [dashboardFilter, setDashboardFilter] = useState<DashboardStats>({
     total_warga: 0,
     total_kas_masuk: 0,
     total_kas_keluar: 0,
@@ -38,7 +22,6 @@ export default function Dashboard() {
     iuran_bulan_ini: 0,
     filter_month: new Date().getMonth() + 1,
     filter_year: new Date().getFullYear(),
-    target_tipe_iuran_id: null,
     tingkat_pembayaran: 0,
     total_warga_sudah_bayar: 0,
     total_warga_belum_bayar: 0,
@@ -90,8 +73,8 @@ export default function Dashboard() {
             selectedTipeIuran !== "semua" ? selectedTipeIuran : undefined
           );
 
-          if (dashboardStatsResult && typeof dashboardStatsResult === 'object') {
-            setDashboardFilter(dashboardStatsResult as DashboardFilter)
+          if (dashboardStatsResult) {
+            setDashboardFilter(dashboardStatsResult)
           }
         } catch (error) {
           console.error('Error loading dashboard data:', error);
