@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react"
-import { Plus, Search, Calendar, Users, CreditCard, TrendingUp, Filter, Trash2, Upload, X } from "lucide-react"
+import { Plus, Search, Calendar, Users, CreditCard, TrendingUp, Filter, Trash2, Upload, X, CalendarIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -13,6 +15,8 @@ import { useFormValidation, iuranFormSchema } from "@/hooks/useFormValidation"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { useUserRole } from "@/hooks/useUserRole"
 import { supabase } from "@/integrations/supabase/client"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
 
 interface Warga {
   id: string
@@ -70,6 +74,7 @@ export default function InputIuran() {
   const [filterTipeIuran, setFilterTipeIuran] = useState("")
   const [uploadingFile, setUploadingFile] = useState(false)
   const [buktiTransferUrl, setBuktiTransferUrl] = useState("")
+  const [selectedDate, setSelectedDate] = useState<Date>()
   const { toast } = useToast()
   const { fetchWarga, fetchTipeIuran, fetchIuran, addIuran, deleteIuran } = useSupabaseData()
   const { isAdmin } = useUserRole()
@@ -234,6 +239,7 @@ export default function InputIuran() {
         keterangan: ""
       })
       setBuktiTransferUrl("")
+      setSelectedDate(undefined)
       setIsAddOpen(false)
       await loadData()
       toast({ title: "Berhasil", description: "Iuran berhasil dicatat" })
@@ -401,14 +407,45 @@ export default function InputIuran() {
                     control={form.control}
                     name="tanggal_bayar"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="flex flex-col">
                         <FormLabel>Tanggal Bayar</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="date"
-                          />
-                        </FormControl>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !selectedDate && "text-muted-foreground"
+                                )}
+                              >
+                                {selectedDate ? (
+                                  format(selectedDate, "PPP")
+                                ) : (
+                                  <span>Pilih tanggal</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={selectedDate}
+                              onSelect={(date) => {
+                                setSelectedDate(date)
+                                if (date) {
+                                  field.onChange(format(date, "yyyy-MM-dd"))
+                                }
+                              }}
+                              disabled={(date) =>
+                                date > new Date() || date < new Date("1900-01-01")
+                              }
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -423,14 +460,26 @@ export default function InputIuran() {
                         accept="image/*,.pdf"
                         onChange={async (e) => {
                           const file = e.target.files?.[0]
-                          if (file) {
+                          if (file && selectedDate && form.getValues("tipe_iuran_id")) {
                             const uploadedUrl = await handleFileUpload(file)
                             if (uploadedUrl) {
                               setBuktiTransferUrl(uploadedUrl)
                             }
+                          } else if (!selectedDate) {
+                            toast({
+                              title: "Peringatan",
+                              description: "Pilih tanggal bayar terlebih dahulu",
+                              variant: "destructive"
+                            })
+                          } else if (!form.getValues("tipe_iuran_id")) {
+                            toast({
+                              title: "Peringatan", 
+                              description: "Pilih tipe iuran terlebih dahulu",
+                              variant: "destructive"
+                            })
                           }
                         }}
-                        disabled={uploadingFile || !form.getValues("tipe_iuran_id")}
+                        disabled={uploadingFile || !selectedDate || !form.getValues("tipe_iuran_id")}
                         className="cursor-pointer"
                       />
                       {uploadingFile && (
@@ -452,6 +501,9 @@ export default function InputIuran() {
                         </div>
                       )}
                       <p className="text-xs text-gray-500 mt-1">Format: .jpg, .jpeg, .png, .gif, .pdf (Max 5MB)</p>
+                      {!selectedDate && (
+                        <p className="text-xs text-orange-600 mt-1">Pilih tanggal bayar terlebih dahulu untuk mengaktifkan upload</p>
+                      )}
                     </div>
                   </div>
 

@@ -32,10 +32,14 @@ export const useUserRole = () => {
   }, [user]);
 
   const isAdmin = userProfile?.role === 'admin';
+  const isSecurity = userProfile?.role === 'security';
+  const hasSecurityAccess = isAdmin || isSecurity;
 
   return {
     userProfile,
     loading,
-    isAdmin
+    isAdmin,
+    isSecurity,
+    hasSecurityAccess
   };
 };

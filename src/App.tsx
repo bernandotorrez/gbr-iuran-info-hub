@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -6,6 +7,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./components/ThemeProvider"; // Add this import
 import { Layout } from "./components/Layout";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import SecurityRoute from "./components/auth/SecurityRoute";
 import LoginPage from "./components/auth/LoginPage";
 import ForgotPasswordPage from "./components/auth/ForgotPasswordPage";
 import Dashboard from "./pages/Dashboard";
@@ -22,6 +24,7 @@ import NotFound from "./pages/NotFound";
 import CompanyProfile from "./pages/CompanyProfile";
 import StrukturPengurus from "./pages/StrukturPengurus";
 import PublicPengurus from "./pages/PublicPengurus";
+import BukuTamu from "./pages/BukuTamu";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
 const queryClient = new QueryClient();
@@ -52,6 +55,11 @@ const App = () => (
                     <Route path="/output-kas" element={<OutputKas />} />
                     <Route path="/laporan" element={<LaporanIuran />} />
                     <Route path="/artikel" element={<ArtikelBerita />} />
+                    <Route path="/buku-tamu" element={
+                      <SecurityRoute>
+                        <BukuTamu />
+                      </SecurityRoute>
+                    } />
                     <Route path="/struktur-pengurus" element={<StrukturPengurus />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="*" element={<NotFound />} />
