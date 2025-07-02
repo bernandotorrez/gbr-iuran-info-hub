@@ -488,10 +488,10 @@ export const useSupabaseData = () => {
     }
   }
 
-  // Buku Tamu functions
+  // Buku Tamu functions - Fixed query
   const fetchBukuTamu = async () => {
     const { data, error } = await supabase
-      .from('buku_tamu' as any)
+      .from('buku_tamu')
       .select('*')
       .order('created_at', { ascending: false });
     
@@ -505,7 +505,7 @@ export const useSupabaseData = () => {
 
   const addBukuTamu = async (bukuTamuData: any) => {
     const { data, error } = await supabase
-      .from('buku_tamu' as any)
+      .from('buku_tamu')
       .insert([bukuTamuData])
       .select()
       .single();
@@ -520,7 +520,7 @@ export const useSupabaseData = () => {
 
   const updateBukuTamu = async (id: string, bukuTamuData: any) => {
     const { data, error } = await supabase
-      .from('buku_tamu' as any)
+      .from('buku_tamu')
       .update(bukuTamuData)
       .eq('id', id)
       .select()

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { Plus, Search, Users, Clock, Upload, X, Eye, CheckCircle, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -12,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useUserRole } from "@/hooks/useUserRole"
-import { useSupabaseData, BukuTamu } from "@/hooks/useSupabaseData"
+import { useSupabaseData, type BukuTamu } from "@/hooks/useSupabaseData"
 
 export default function BukuTamu() {
   const [bukuTamuList, setBukuTamuList] = useState<BukuTamu[]>([])
@@ -76,106 +75,6 @@ export default function BukuTamu() {
 
     setFilteredBukuTamu(filtered)
   }, [bukuTamuList, searchTerm, statusFilter])
-
-  const handleFileUpload = async (file: File) => {
-    if (!file) return ""
-
-    try {
-      setUploadingFile(true)
-      
-      // Generate unique filename
-      const timestamp = new Date().getTime()
-      const fileExtension = file.name.split('.').pop()
-      const fileName = `ktp_${timestamp}.${fileExtension}`
-      const filePath = `buku_tamu/${fileName}`
-
-      const { data, error } = await supabase.storage
-        .from('images_private')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
-
-      if (error) {
-        throw error
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('images_private')
-        .getPublicUrl(filePath)
-
-      return publicUrl
-    } catch (error) {
-      console.error('Error uploading file:', error)
-      toast({
-        title: "Error",
-        description: "Gagal mengupload file KTP",
-        variant: "destructive"
-      })
-      return ""
-    } finally {
-      setUploadingFile(false)
-    }
-  }
-
-  const handleSubmit = async () => {
-    if (!formData.nama_pengunjung.trim() || !formData.keperluan.trim()) {
-      toast({
-        title: "Error",
-        description: "Nama pengunjung dan keperluan harus diisi",
-        variant: "destructive"
-      })
-      return
-    }
-
-    try {
-      await addBukuTamu({
-        ...formData,
-        ktp_file_url: ktpFileUrl || null
-      })
-
-      setFormData({
-        nama_pengunjung: "",
-        instansi: "",
-        keperluan: "",
-        nomor_hp: "",
-        email: "",
-        catatan: ""
-      })
-      setKtpFileUrl("")
-      setIsAddOpen(false)
-      await loadData()
-      toast({ title: "Berhasil", description: "Data pengunjung berhasil dicatat" })
-    } catch (error) {
-      toast({ 
-        title: "Error", 
-        description: "Gagal mencatat data pengunjung",
-        variant: "destructive" 
-      })
-    }
-  }
-
-  const handleCheckOut = async (id: string) => {
-    try {
-      await updateBukuTamu(id, {
-        status: 'keluar',
-        waktu_keluar: new Date().toISOString()
-      })
-
-      await loadData()
-      toast({ title: "Berhasil", description: "Pengunjung berhasil checkout" })
-    } catch (error) {
-      toast({ 
-        title: "Error", 
-        description: "Gagal melakukan checkout",
-        variant: "destructive" 
-      })
-    }
-  }
-
-  const formatDateTime = (dateTime: string) => {
-    return new Date(dateTime).toLocaleString('id-ID')
-  }
 
   if (loading) {
     return <div className="flex justify-center items-center h-48">Memuat data...</div>
@@ -454,4 +353,104 @@ export default function BukuTamu() {
       </div>
     </div>
   )
+
+  async function handleFileUpload(file: File) {
+    if (!file) return ""
+
+    try {
+      setUploadingFile(true)
+      
+      // Generate unique filename
+      const timestamp = new Date().getTime()
+      const fileExtension = file.name.split('.').pop()
+      const fileName = `ktp_${timestamp}.${fileExtension}`
+      const filePath = `buku_tamu/${fileName}`
+
+      const { data, error } = await supabase.storage
+        .from('images_private')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) {
+        throw error
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('images_private')
+        .getPublicUrl(filePath)
+
+      return publicUrl
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      toast({
+        title: "Error",
+        description: "Gagal mengupload file KTP",
+        variant: "destructive"
+      })
+      return ""
+    } finally {
+      setUploadingFile(false)
+    }
+  }
+
+  async function handleSubmit() {
+    if (!formData.nama_pengunjung.trim() || !formData.keperluan.trim()) {
+      toast({
+        title: "Error",
+        description: "Nama pengunjung dan keperluan harus diisi",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      await addBukuTamu({
+        ...formData,
+        ktp_file_url: ktpFileUrl || null
+      })
+
+      setFormData({
+        nama_pengunjung: "",
+        instansi: "",
+        keperluan: "",
+        nomor_hp: "",
+        email: "",
+        catatan: ""
+      })
+      setKtpFileUrl("")
+      setIsAddOpen(false)
+      await loadData()
+      toast({ title: "Berhasil", description: "Data pengunjung berhasil dicatat" })
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Gagal mencatat data pengunjung",
+        variant: "destructive" 
+      })
+    }
+  }
+
+  async function handleCheckOut(id: string) {
+    try {
+      await updateBukuTamu(id, {
+        status: 'keluar',
+        waktu_keluar: new Date().toISOString()
+      })
+
+      await loadData()
+      toast({ title: "Berhasil", description: "Pengunjung berhasil checkout" })
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Gagal melakukan checkout",
+        variant: "destructive" 
+      })
+    }
+  }
+
+  function formatDateTime(dateTime: string) {
+    return new Date(dateTime).toLocaleString('id-ID')
+  }
 }
