@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react"
-import { Plus, Search, Users, Clock, Upload, X, Eye, CheckCircle, XCircle } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { Plus, Search, Users, Clock, Upload, X, Eye, CheckCircle, Loader2, CircleCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -25,6 +25,8 @@ export default function BukuTamu() {
   const { toast } = useToast()
   const { isAdmin } = useUserRole()
   const { fetchBukuTamu, addBukuTamu, updateBukuTamu } = useSupabaseData()
+  const [imageUrls, setImageUrls] = useState({});
+  const [loadingImages, setLoadingImages] = useState({});
 
   // Form state
   const [formData, setFormData] = useState({
@@ -43,10 +45,10 @@ export default function BukuTamu() {
       setBukuTamuList(data)
       setFilteredBukuTamu(data)
     } catch (error) {
-      toast({ 
-        title: "Error", 
+      toast({
+        title: "Error",
         description: "Gagal memuat data buku tamu",
-        variant: "destructive" 
+        variant: "destructive"
       })
     } finally {
       setLoading(false)
@@ -56,6 +58,34 @@ export default function BukuTamu() {
   useEffect(() => {
     loadData()
   }, [])
+
+  const getSignedUrl = useCallback(async (itemId, fileName) => {
+    if (imageUrls[itemId] || !fileName) return imageUrls[itemId];
+
+    setLoadingImages(prev => ({ ...prev, [itemId]: true }));
+
+    try {
+      // Path lengkap dengan folder
+      const filePath = `buku_tamu/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('images-private')
+        .createSignedUrl(filePath, 3600); // expired 1 jam
+
+      if (!error && data) {
+        setImageUrls(prev => ({ ...prev, [itemId]: data.signedUrl }));
+        return data.signedUrl;
+      } else {
+        console.error('Error creating signed URL:', error);
+      }
+    } catch (error) {
+      console.error('Error getting signed URL:', error);
+    } finally {
+      setLoadingImages(prev => ({ ...prev, [itemId]: false }));
+    }
+
+    return null;
+  }, [imageUrls]);
 
   // Apply filters
   useEffect(() => {
@@ -206,9 +236,9 @@ export default function BukuTamu() {
               </div>
             </ScrollArea>
             <div className="mt-4">
-              <Button 
-                onClick={handleSubmit} 
-                className="w-full" 
+              <Button
+                onClick={handleSubmit}
+                className="w-full"
                 disabled={uploadingFile}
               >
                 {uploadingFile ? "Mengupload..." : "Simpan Data Pengunjung"}
@@ -243,14 +273,14 @@ export default function BukuTamu() {
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">Total Pengunjung Hari Ini</p>
               <p className="text-2xl font-bold">
-                {bukuTamuList.filter(item => 
+                {bukuTamuList.filter(item =>
                   new Date(item.created_at).toDateString() === new Date().toDateString()
                 ).length}
               </p>
             </div>
           </div>
         </div>
-        
+
         <div className="bg-card p-6 rounded-lg border">
           <div className="flex items-center">
             <Clock className="h-8 w-8 text-green-600" />
@@ -293,7 +323,8 @@ export default function BukuTamu() {
               <TableHead>Nama Pengunjung</TableHead>
               <TableHead>Instansi</TableHead>
               <TableHead>Keperluan</TableHead>
-              <TableHead>Kontak</TableHead>
+              <TableHead>HP</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Waktu Masuk</TableHead>
               <TableHead>Waktu Keluar</TableHead>
               <TableHead>Status</TableHead>
@@ -306,42 +337,58 @@ export default function BukuTamu() {
                 <TableCell className="font-medium">{item.nama_pengunjung}</TableCell>
                 <TableCell>{item.instansi || '-'}</TableCell>
                 <TableCell>{item.keperluan}</TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    {item.nomor_hp && <div>{item.nomor_hp}</div>}
-                    {item.email && <div>{item.email}</div>}
-                  </div>
-                </TableCell>
+                <TableCell>{item.nomor_hp || '-'}</TableCell>
+                <TableCell>{item.email || '-'}</TableCell>
                 <TableCell>{formatDateTime(item.waktu_masuk)}</TableCell>
                 <TableCell>{item.waktu_keluar ? formatDateTime(item.waktu_keluar) : '-'}</TableCell>
                 <TableCell>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    item.status === 'masuk' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span className={`px-2 py-1 rounded-full text-xs ${item.status === 'masuk'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-800'
+                    }`}>
                     {item.status === 'masuk' ? 'Sedang Berkunjung' : 'Sudah Keluar'}
                   </span>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end space-x-2">
                     {item.ktp_file_url && (
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
-                        onClick={() => window.open(item.ktp_file_url, '_blank')}
+                        onClick={async () => {
+                          if (imageUrls[item.id]) {
+                            // Jika URL sudah ada, langsung buka
+                            window.open(imageUrls[item.id], '_blank')
+                          } else {
+                            const signedUrl = await getSignedUrl(item.id, item.ktp_file_url)
+                            if (signedUrl) {
+                              window.open(signedUrl, '_blank')
+                            } else {
+                              toast({
+                                title: "Gagal membuka gambar",
+                                description: "Tidak bisa membuat signed URL",
+                                variant: "destructive"
+                              })
+                            }
+                          }
+                        }}
+                        disabled={loadingImages[item.id]}
                       >
-                        <Eye className="w-4 h-4" />
+                        {loadingImages[item.id] ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
                       </Button>
                     )}
                     {item.status === 'masuk' && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleCheckOut(item.id)}
-                        className="text-orange-600 hover:text-orange-700"
+                        className="text-green-600 hover:text-green-700"
                       >
-                        <XCircle className="w-4 h-4" />
+                        <CircleCheck className="w-4 h-4" />
                       </Button>
                     )}
                   </div>
@@ -359,7 +406,7 @@ export default function BukuTamu() {
 
     try {
       setUploadingFile(true)
-      
+
       // Generate unique filename
       const timestamp = new Date().getTime()
       const fileExtension = file.name.split('.').pop()
@@ -377,11 +424,7 @@ export default function BukuTamu() {
         throw error
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('images-private')
-        .getPublicUrl(filePath)
-
-      return publicUrl
+      return fileName
     } catch (error) {
       console.error('Error uploading file:', error)
       toast({
@@ -424,10 +467,10 @@ export default function BukuTamu() {
       await loadData()
       toast({ title: "Berhasil", description: "Data pengunjung berhasil dicatat" })
     } catch (error) {
-      toast({ 
-        title: "Error", 
+      toast({
+        title: "Error",
         description: "Gagal mencatat data pengunjung",
-        variant: "destructive" 
+        variant: "destructive"
       })
     }
   }
@@ -442,10 +485,10 @@ export default function BukuTamu() {
       await loadData()
       toast({ title: "Berhasil", description: "Pengunjung berhasil checkout" })
     } catch (error) {
-      toast({ 
-        title: "Error", 
+      toast({
+        title: "Error",
         description: "Gagal melakukan checkout",
-        variant: "destructive" 
+        variant: "destructive"
       })
     }
   }
