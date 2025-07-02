@@ -12,6 +12,7 @@ import {
   Newspaper,
   ArrowUpDown,
   UserCheck,
+  BookOpen,
 } from "lucide-react"
 import {
   Sidebar,
@@ -27,6 +28,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Link, useLocation } from "react-router-dom"
 import { useAuth } from "@/contexts/AuthContext"
+import { useUserRole } from "@/hooks/useUserRole"
 import { toast } from "sonner"
 
 const menuItems = [
@@ -34,57 +36,79 @@ const menuItems = [
     title: "Dashboard",
     url: "/cms",
     icon: Home,
+    roles: ['admin', 'warga', 'security']
   },
   {
     title: "Master Data Warga",
     url: "/cms/warga",
     icon: Users,
+    roles: ['admin', 'warga', 'security']
   },
   {
     title: "Master Tipe Iuran",
     url: "/cms/tipe-iuran",
     icon: CreditCard,
+    roles: ['admin', 'warga', 'security']
   },
   {
     title: "Master Kategori Kas",
     url: "/cms/master-kategori-kas",
     icon: Settings,
+    roles: ['admin', 'warga', 'security']
   },
   {
     title: "Input Iuran",
     url: "/cms/input-iuran",
     icon: TrendingUp,
+    roles: ['admin', 'warga', 'security']
   },
   {
     title: "Output Kas",
     url: "/cms/output-kas",
     icon: ArrowUpDown,
+    roles: ['admin', 'warga', 'security']
   },
   {
     title: "Laporan Iuran",
     url: "/cms/laporan",
     icon: BarChart3,
+    roles: ['admin', 'warga', 'security']
   },
   {
     title: "Artikel Berita",
     url: "/cms/artikel",
     icon: Newspaper,
+    roles: ['admin', 'warga', 'security']
+  },
+  {
+    title: "Buku Tamu",
+    url: "/cms/buku-tamu",
+    icon: BookOpen,
+    roles: ['admin', 'security']
   },
   {
     title: "Struktur Pengurus",
     url: "/cms/struktur-pengurus",
     icon: UserCheck,
+    roles: ['admin', 'warga', 'security']
   },
 ]
 
 export function AppSidebar() {
   const location = useLocation();
   const { signOut } = useAuth();
+  const { userProfile } = useUserRole();
 
   const handleLogout = async () => {
     await signOut();
     toast.success('Berhasil logout');
   };
+
+  // Filter menu items based on user role
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!userProfile?.role) return true; // Show all if role not loaded yet
+    return item.roles.includes(userProfile.role);
+  });
 
   return (
     <Sidebar className="border-r border-sidebar-border bg-sidebar">
@@ -110,7 +134,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 

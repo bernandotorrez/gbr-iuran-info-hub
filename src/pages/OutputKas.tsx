@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useKategoriKas } from "@/hooks/useKategoriKas"
 import { useUserRole } from "@/hooks/useUserRole"
 import { supabase } from "@/integrations/supabase/client"
+import { ImageZoom } from "@/components/ui/image-zoom"
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -83,7 +84,6 @@ export default function OutputKas() {
     try {
       setLoading(true)
       const data = await fetchKasKeluar()
-      // Type cast the data to match Pengeluaran interface
       const processedData: Pengeluaran[] = data.map((item: any) => ({
         id: item.id,
         tanggal_keluar: item.tanggal_keluar,
@@ -128,7 +128,6 @@ export default function OutputKas() {
   useEffect(() => {
     let filtered = pengeluaranList
 
-    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(item =>
         item.deskripsi.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -137,7 +136,6 @@ export default function OutputKas() {
       )
     }
 
-    // Filter by tipe iuran
     if (tipeIuranFilter !== "semua") {
       filtered = filtered.filter(item => item.tipe_iuran === tipeIuranFilter)
     }
@@ -639,6 +637,7 @@ export default function OutputKas() {
               <TableHead>Judul</TableHead>
               <TableHead>Deskripsi</TableHead>
               <TableHead>Nominal</TableHead>
+              <TableHead>Bukti Transfer</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Diinput Oleh</TableHead>
               <TableHead>Disetujui Oleh</TableHead>
@@ -654,6 +653,17 @@ export default function OutputKas() {
                 <TableCell className="font-medium">{item.judul}</TableCell>
                 <TableCell>{item.deskripsi}</TableCell>
                 <TableCell>{formatCurrency(item.nominal)}</TableCell>
+                <TableCell>
+                  {item.bukti_transaksi_url ? (
+                    <ImageZoom 
+                      src={item.bukti_transaksi_url} 
+                      alt="Bukti Transfer"
+                      thumbnailClassName="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-80 border"
+                    />
+                  ) : (
+                    <span className="text-gray-400 text-sm">Tidak ada bukti</span>
+                  )}
+                </TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${
                     item.status_persetujuan === 'approved' 
