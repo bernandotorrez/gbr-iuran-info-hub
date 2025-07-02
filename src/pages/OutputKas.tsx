@@ -13,7 +13,6 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useKategoriKas } from "@/hooks/useKategoriKas"
 import { useUserRole } from "@/hooks/useUserRole"
 import { supabase } from "@/integrations/supabase/client"
-import { ImageZoom } from "@/components/ui/image-zoom"
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -29,8 +28,8 @@ interface Pengeluaran {
   bukti_transaksi_url?: string
   created_at: string
   tipe_iuran: string
-  diinput_oleh?: { nama_suami?: string; nama_istri?: string; blok_rumah: string },
-  disetujui_oleh?: { nama_suami?: string; nama_istri?: string; blok_rumah: string }
+  diinput_oleh?: Warga,
+  disetujui_oleh?: Warga
 }
 
 interface Warga {
@@ -84,21 +83,7 @@ export default function OutputKas() {
     try {
       setLoading(true)
       const data = await fetchKasKeluar()
-      const processedData: Pengeluaran[] = data.map((item: any) => ({
-        id: item.id,
-        tanggal_keluar: item.tanggal_keluar,
-        kategori: item.kategori,
-        deskripsi: item.deskripsi,
-        judul: item.judul,
-        nominal: item.nominal,
-        status_persetujuan: item.status_persetujuan,
-        bukti_transaksi_url: item.bukti_transaksi_url,
-        created_at: item.created_at,
-        tipe_iuran: item.tipe_iuran || 'Tidak Ditentukan',
-        diinput_oleh: item.diinput_oleh,
-        disetujui_oleh: item.disetujui_oleh
-      }))
-      setPengeluaranList(processedData)
+      setPengeluaranList(data)
       await fetchDashboardStats()
     } catch (error) {
       toast({ 
@@ -128,6 +113,7 @@ export default function OutputKas() {
   useEffect(() => {
     let filtered = pengeluaranList
 
+    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(item =>
         item.deskripsi.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -136,6 +122,7 @@ export default function OutputKas() {
       )
     }
 
+    // Filter by tipe iuran
     if (tipeIuranFilter !== "semua") {
       filtered = filtered.filter(item => item.tipe_iuran === tipeIuranFilter)
     }
@@ -157,7 +144,7 @@ export default function OutputKas() {
       const filePath = `bukti_transfer_output_kas/${fileName}`
 
       const { data, error } = await supabase.storage
-        .from('images-private')
+        .from('images_private')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true
@@ -168,7 +155,7 @@ export default function OutputKas() {
       }
 
       const { data: { publicUrl } } = supabase.storage
-        .from('images-private')
+        .from('images_private')
         .getPublicUrl(filePath)
 
       return publicUrl
@@ -192,7 +179,7 @@ export default function OutputKas() {
     }
   }
 
-  const getWargaDisplayName = (warga?: { nama_suami?: string; nama_istri?: string; blok_rumah: string }) => {
+  const getWargaDisplayName = (warga: Warga) => {
     const names = []
     if (!warga) return '-'
     if (warga.nama_suami) names.push(warga.nama_suami)
@@ -637,7 +624,6 @@ export default function OutputKas() {
               <TableHead>Judul</TableHead>
               <TableHead>Deskripsi</TableHead>
               <TableHead>Nominal</TableHead>
-              <TableHead>Bukti Transfer</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Diinput Oleh</TableHead>
               <TableHead>Disetujui Oleh</TableHead>
@@ -653,17 +639,6 @@ export default function OutputKas() {
                 <TableCell className="font-medium">{item.judul}</TableCell>
                 <TableCell>{item.deskripsi}</TableCell>
                 <TableCell>{formatCurrency(item.nominal)}</TableCell>
-                <TableCell>
-                  {item.bukti_transaksi_url ? (
-                    <ImageZoom 
-                      src={item.bukti_transaksi_url} 
-                      alt="Bukti Transfer"
-                      thumbnailClassName="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-80 border"
-                    />
-                  ) : (
-                    <span className="text-gray-400 text-sm">Tidak ada bukti</span>
-                  )}
-                </TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${
                     item.status_persetujuan === 'approved' 
