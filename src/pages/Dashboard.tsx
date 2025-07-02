@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { TrendingUp, Users, CreditCard, AlertCircle, Wallet, Calendar, Filter } from "lucide-react"
@@ -31,14 +30,28 @@ export default function Dashboard() {
   const [selectedTipeIuran, setSelectedTipeIuran] = useState<string>("semua");
   const [tipeIuranList, setTipeIuranList] = useState<any[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
-  const [dashboardFilter, setDashboardFilter] = useState<DashboardFilter[]>([])
+  const [dashboardFilter, setDashboardFilter] = useState<DashboardFilter>({
+    total_warga: 0,
+    total_kas_masuk: 0,
+    total_kas_keluar: 0,
+    saldo_kas: 0,
+    iuran_bulan_ini: 0,
+    filter_month: new Date().getMonth() + 1,
+    filter_year: new Date().getFullYear(),
+    target_tipe_iuran_id: null,
+    tingkat_pembayaran: 0,
+    total_warga_sudah_bayar: 0,
+    total_warga_belum_bayar: 0,
+    percent_warga_sudah_bayar: 0,
+    percent_warga_belum_bayar: 0
+  })
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
 
   const statusData = [
-    { name: 'Sudah Bayar', value: dashboardFilter.total_warga_sudah_bayar || 0, color: '#22c55e' },
-    { name: 'Belum Bayar', value: dashboardFilter.total_warga_belum_bayar || 0, color: '#ef4444' },
+    { name: 'Sudah Bayar', value: dashboardStats.total_warga_sudah_bayar || 0, color: '#22c55e' },
+    { name: 'Belum Bayar', value: dashboardStats.total_warga_belum_bayar || 0, color: '#ef4444' },
   ];
 
   const formatCurrency = (amount: number) => {
@@ -58,7 +71,7 @@ export default function Dashboard() {
     }
   };
 
-    // Load initial data
+  // Load initial data
   useEffect(() => {
     loadTipeIuran();
     // Load initial dashboard stats
@@ -71,13 +84,15 @@ export default function Dashboard() {
       const loadDashboardData = async () => {
         setIsFiltering(true);
         try {
-          const dashboardStats = await fetchDashboardStats(
+          const dashboardStatsResult = await fetchDashboardStats(
             selectedMonth, 
             selectedYear, 
             selectedTipeIuran !== "semua" ? selectedTipeIuran : undefined
           );
 
-          setDashboardFilter(dashboardStats)
+          if (dashboardStatsResult && typeof dashboardStatsResult === 'object') {
+            setDashboardFilter(dashboardStatsResult as DashboardFilter)
+          }
         } catch (error) {
           console.error('Error loading dashboard data:', error);
         } finally {

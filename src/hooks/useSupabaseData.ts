@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,7 +23,12 @@ export const useSupabaseData = () => {
     saldo_kas: 0,
     iuran_bulan_ini: 0,
     filter_month: new Date().getMonth() + 1,
-    filter_year: new Date().getFullYear()
+    filter_year: new Date().getFullYear(),
+    tingkat_pembayaran: 0,
+    total_warga_sudah_bayar: 0,
+    total_warga_belum_bayar: 0,
+    percent_warga_sudah_bayar: 0,
+    percent_warga_belum_bayar: 0
   });
   const [loading, setLoading] = useState(true);
 

@@ -28,8 +28,8 @@ interface Pengeluaran {
   bukti_transaksi_url?: string
   created_at: string
   tipe_iuran: string
-  diinput_oleh?: Warga,
-  disetujui_oleh?: Warga
+  diinput_oleh?: { nama_suami?: string; nama_istri?: string; blok_rumah: string },
+  disetujui_oleh?: { nama_suami?: string; nama_istri?: string; blok_rumah: string }
 }
 
 interface Warga {
@@ -83,7 +83,22 @@ export default function OutputKas() {
     try {
       setLoading(true)
       const data = await fetchKasKeluar()
-      setPengeluaranList(data)
+      // Type cast the data to match Pengeluaran interface
+      const processedData: Pengeluaran[] = data.map((item: any) => ({
+        id: item.id,
+        tanggal_keluar: item.tanggal_keluar,
+        kategori: item.kategori,
+        deskripsi: item.deskripsi,
+        judul: item.judul,
+        nominal: item.nominal,
+        status_persetujuan: item.status_persetujuan,
+        bukti_transaksi_url: item.bukti_transaksi_url,
+        created_at: item.created_at,
+        tipe_iuran: item.tipe_iuran || 'Tidak Ditentukan',
+        diinput_oleh: item.diinput_oleh,
+        disetujui_oleh: item.disetujui_oleh
+      }))
+      setPengeluaranList(processedData)
       await fetchDashboardStats()
     } catch (error) {
       toast({ 
@@ -179,7 +194,7 @@ export default function OutputKas() {
     }
   }
 
-  const getWargaDisplayName = (warga: Warga) => {
+  const getWargaDisplayName = (warga?: { nama_suami?: string; nama_istri?: string; blok_rumah: string }) => {
     const names = []
     if (!warga) return '-'
     if (warga.nama_suami) names.push(warga.nama_suami)

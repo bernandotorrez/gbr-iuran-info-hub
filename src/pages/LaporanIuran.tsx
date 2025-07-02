@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { Calendar, TrendingUp, Users, CreditCard, Download, Filter } from "lucide-react"
@@ -54,7 +55,21 @@ export default function LaporanIuran() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [kasKeluarData, setKasKeluarData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [dashboardFilter, setDashboardFilter] = useState<DashboardFilter[]>([])
+  const [dashboardFilter, setDashboardFilter] = useState<DashboardFilter>({
+    total_warga: 0,
+    total_kas_masuk: 0,
+    total_kas_keluar: 0,
+    saldo_kas: 0,
+    iuran_bulan_ini: 0,
+    filter_month: new Date().getMonth() + 1,
+    filter_year: new Date().getFullYear(),
+    target_tipe_iuran_id: null,
+    tingkat_pembayaran: 0,
+    total_warga_sudah_bayar: 0,
+    total_warga_belum_bayar: 0,
+    percent_warga_sudah_bayar: 0,
+    percent_warga_belum_bayar: 0
+  })
   const { toast } = useToast()
   const { fetchIuran, fetchKasKeluar, fetchDashboardStats, dashboardStats } = useSupabaseData()
 
@@ -68,13 +83,15 @@ export default function LaporanIuran() {
       const month = parseInt(filterMonth)
       const year = parseInt(filterPeriod)
       
-      const [iuranData, kasKeluarTransactions, dashboardStats] = await Promise.all([
+      const [iuranData, kasKeluarTransactions, dashboardStatsResult] = await Promise.all([
         fetchIuran(month, year),
         fetchKasKeluar(month, year),
         fetchDashboardStats(month, year)
       ])
       
-      setDashboardFilter(dashboardStats)
+      if (dashboardStatsResult && typeof dashboardStatsResult === 'object') {
+        setDashboardFilter(dashboardStatsResult as DashboardFilter)
+      }
       setTransactions(iuranData)
       setKasKeluarData(kasKeluarTransactions)
     } catch (error) {
@@ -88,7 +105,7 @@ export default function LaporanIuran() {
     }
   }
 
-  const getWargaDisplayName = (warga: Warga) => {
+  const getWargaDisplayName = (warga: { nama_suami?: string; nama_istri?: string; blok_rumah: string }) => {
     const names = []
     if (!warga) return '-'
     if (warga.nama_suami) names.push(warga.nama_suami)
@@ -115,8 +132,8 @@ export default function LaporanIuran() {
     
     // Table data
     const tableData = transactions.map(transaction => [
-      transaction.warga?.nama || '',
-      transaction.warga?.alamat || '',
+      getWargaDisplayName(transaction.warga),
+      transaction.warga?.blok_rumah || '',
       transaction.tipe_iuran?.nama || '',
       formatCurrency(transaction.nominal),
       new Date(transaction.tanggal_bayar).toLocaleDateString('id-ID'),
@@ -146,8 +163,8 @@ export default function LaporanIuran() {
 
     // Transaction data
     const transactionData = transactions.map(transaction => ({
-      Warga: transaction.warga?.nama,
-      Alamat: transaction.warga?.alamat,
+      Warga: getWargaDisplayName(transaction.warga),
+      Alamat: transaction.warga?.blok_rumah || '',
       'Jenis Iuran': transaction.tipe_iuran?.nama,
       Nominal: transaction.nominal,
       Tanggal: new Date(transaction.tanggal_bayar).toLocaleDateString('id-ID'),
