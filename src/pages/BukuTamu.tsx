@@ -367,7 +367,7 @@ export default function BukuTamu() {
       const filePath = `buku_tamu/${fileName}`
 
       const { data, error } = await supabase.storage
-        .from('images_private')
+        .from('images-private')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -378,7 +378,7 @@ export default function BukuTamu() {
       }
 
       const { data: { publicUrl } } = supabase.storage
-        .from('images_private')
+        .from('images-private')
         .getPublicUrl(filePath)
 
       return publicUrl
