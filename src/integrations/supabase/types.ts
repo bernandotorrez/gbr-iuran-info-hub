@@ -59,6 +59,57 @@ export type Database = {
           },
         ]
       }
+      buku_tamu: {
+        Row: {
+          catatan: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          instansi: string | null
+          keperluan: string
+          ktp_file_url: string | null
+          nama_pengunjung: string
+          nomor_hp: string | null
+          status: string | null
+          tanggal_kunjungan: string
+          updated_at: string | null
+          waktu_keluar: string | null
+          waktu_masuk: string | null
+        }
+        Insert: {
+          catatan?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          instansi?: string | null
+          keperluan: string
+          ktp_file_url?: string | null
+          nama_pengunjung: string
+          nomor_hp?: string | null
+          status?: string | null
+          tanggal_kunjungan?: string
+          updated_at?: string | null
+          waktu_keluar?: string | null
+          waktu_masuk?: string | null
+        }
+        Update: {
+          catatan?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          instansi?: string | null
+          keperluan?: string
+          ktp_file_url?: string | null
+          nama_pengunjung?: string
+          nomor_hp?: string | null
+          status?: string | null
+          tanggal_kunjungan?: string
+          updated_at?: string | null
+          waktu_keluar?: string | null
+          waktu_masuk?: string | null
+        }
+        Relationships: []
+      }
       iuran: {
         Row: {
           bulan: number

@@ -12,22 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useUserRole } from "@/hooks/useUserRole"
-
-interface BukuTamu {
-  id: string
-  nama_pengunjung: string
-  instansi?: string
-  keperluan: string
-  nomor_hp?: string
-  email?: string
-  ktp_file_url?: string
-  tanggal_kunjungan: string
-  waktu_masuk: string
-  waktu_keluar?: string
-  catatan?: string
-  status: string
-  created_at: string
-}
+import { useSupabaseData, BukuTamu } from "@/hooks/useSupabaseData"
 
 export default function BukuTamu() {
   const [bukuTamuList, setBukuTamuList] = useState<BukuTamu[]>([])
@@ -40,6 +25,7 @@ export default function BukuTamu() {
   const [statusFilter, setStatusFilter] = useState("semua")
   const { toast } = useToast()
   const { isAdmin } = useUserRole()
+  const { fetchBukuTamu, addBukuTamu, updateBukuTamu } = useSupabaseData()
 
   // Form state
   const [formData, setFormData] = useState({
@@ -54,17 +40,9 @@ export default function BukuTamu() {
   const loadData = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
-        .from('buku_tamu')
-        .select('*')
-        .order('created_at', { ascending: false })
-      
-      if (error) {
-        throw error
-      }
-      
-      setBukuTamuList(data || [])
-      setFilteredBukuTamu(data || [])
+      const data = await fetchBukuTamu()
+      setBukuTamuList(data)
+      setFilteredBukuTamu(data)
     } catch (error) {
       toast({ 
         title: "Error", 
@@ -151,18 +129,10 @@ export default function BukuTamu() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('buku_tamu')
-        .insert([{
-          ...formData,
-          ktp_file_url: ktpFileUrl || null
-        }])
-        .select()
-        .single()
-
-      if (error) {
-        throw error
-      }
+      await addBukuTamu({
+        ...formData,
+        ktp_file_url: ktpFileUrl || null
+      })
 
       setFormData({
         nama_pengunjung: "",
@@ -187,17 +157,10 @@ export default function BukuTamu() {
 
   const handleCheckOut = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('buku_tamu')
-        .update({ 
-          status: 'keluar',
-          waktu_keluar: new Date().toISOString()
-        })
-        .eq('id', id)
-
-      if (error) {
-        throw error
-      }
+      await updateBukuTamu(id, {
+        status: 'keluar',
+        waktu_keluar: new Date().toISOString()
+      })
 
       await loadData()
       toast({ title: "Berhasil", description: "Pengunjung berhasil checkout" })

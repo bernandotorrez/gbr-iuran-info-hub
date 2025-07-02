@@ -29,6 +29,24 @@ export interface DashboardStats {
   percent_warga_belum_bayar: number;
 }
 
+// Define BukuTamu interface
+export interface BukuTamu {
+  id: string;
+  nama_pengunjung: string;
+  instansi?: string;
+  keperluan: string;
+  nomor_hp?: string;
+  email?: string;
+  ktp_file_url?: string;
+  tanggal_kunjungan: string;
+  waktu_masuk: string;
+  waktu_keluar?: string;
+  catatan?: string;
+  status: string;
+  created_at: string;
+  updated_at?: string;
+}
+
 export const useSupabaseData = () => {
   const { session } = useAuth();
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
@@ -470,6 +488,52 @@ export const useSupabaseData = () => {
     }
   }
 
+  // Buku Tamu functions
+  const fetchBukuTamu = async () => {
+    const { data, error } = await supabase
+      .from('buku_tamu' as any)
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching buku tamu:', error);
+      return [];
+    }
+    
+    return data || [];
+  };
+
+  const addBukuTamu = async (bukuTamuData: any) => {
+    const { data, error } = await supabase
+      .from('buku_tamu' as any)
+      .insert([bukuTamuData])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error adding buku tamu:', error);
+      throw error;
+    }
+    
+    return data;
+  };
+
+  const updateBukuTamu = async (id: string, bukuTamuData: any) => {
+    const { data, error } = await supabase
+      .from('buku_tamu' as any)
+      .update(bukuTamuData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating buku tamu:', error);
+      throw error;
+    }
+    
+    return data;
+  };
+
   return {
     dashboardStats,
     loading,
@@ -498,6 +562,10 @@ export const useSupabaseData = () => {
     updateArtikel,
     deleteArtikel,
     uploadImageArtikel,
-    deleteImageArtikel
+    deleteImageArtikel,
+    // Buku Tamu functions
+    fetchBukuTamu,
+    addBukuTamu,
+    updateBukuTamu
   };
 };
