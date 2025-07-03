@@ -121,7 +121,7 @@ export const useSupabaseData = () => {
     const { data, error } = await supabase
       .from('warga_new')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('blok_rumah', { ascending: true });
     
     if (error) {
       console.error('Error fetching warga:', error);
