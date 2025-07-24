@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Plus, Search, Calendar, Users, CreditCard, TrendingUp, Filter, Trash2, Upload, X } from "lucide-react"
+import { Plus, Search, Calendar, Users, CreditCard, TrendingUp, Filter, Trash2, Upload, X, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -13,6 +13,7 @@ import { useFormValidation, iuranFormSchema } from "@/hooks/useFormValidation"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { useUserRole } from "@/hooks/useUserRole"
 import { supabase } from "@/integrations/supabase/client"
+import { ImageZoom } from "@/components/ui/image-zoom"
 
 interface Warga {
   id: string
@@ -41,6 +42,7 @@ interface Iuran {
   bulan: string | number,
   tahun: number
   status_verifikasi: string
+  bukti_transfer_url?: string
 }
 
 const months = [
@@ -154,7 +156,7 @@ export default function InputIuran() {
       const filePath = `bukti_transfer_input_kas/${fileName}`
 
       const { data, error } = await supabase.storage
-        .from('images_private')
+        .from('images-private')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true
@@ -165,7 +167,7 @@ export default function InputIuran() {
       }
 
       const { data: { publicUrl } } = supabase.storage
-        .from('images_private')
+        .from('images-private')
         .getPublicUrl(filePath)
 
       return publicUrl
@@ -221,7 +223,8 @@ export default function InputIuran() {
         tanggal_bayar: data.tanggal_bayar,
         bulan: data.bulan,
         tahun: data.tahun,
-        keterangan: data.keterangan
+        keterangan: data.keterangan,
+        bukti_transfer_url: buktiTransferUrl
       })
 
       form.reset({
@@ -622,6 +625,7 @@ export default function InputIuran() {
               <TableHead>Tanggal Bayar</TableHead>
               <TableHead>Periode</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Bukti Transfer</TableHead>
               {isAdmin && <TableHead className="text-right">Aksi</TableHead>}
             </TableRow>
           </TableHeader>
@@ -642,6 +646,17 @@ export default function InputIuran() {
                   }`}>
                     {item.status_verifikasi === 'verified' ? 'Terverifikasi' : 'Pending'}
                   </span>
+                </TableCell>
+                <TableCell>
+                  {item.bukti_transfer_url ? (
+                    <ImageZoom 
+                      src={item.bukti_transfer_url} 
+                      alt="Bukti Transfer"
+                      thumbnailClassName="w-12 h-12 object-cover rounded cursor-pointer hover:opacity-80"
+                    />
+                  ) : (
+                    <span className="text-gray-400 text-sm">Tidak ada</span>
+                  )}
                 </TableCell>
                 {isAdmin && (
                   <TableCell className="text-right">

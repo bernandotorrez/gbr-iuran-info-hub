@@ -27,9 +27,10 @@ interface Pengeluaran {
   status_persetujuan: string
   bukti_transaksi_url?: string
   created_at: string
+  updated_at?: string
   tipe_iuran: string
-  diinput_oleh?: Warga,
-  disetujui_oleh?: Warga
+  diinput_oleh?: any,
+  disetujui_oleh?: any
 }
 
 interface Warga {
