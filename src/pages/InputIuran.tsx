@@ -76,6 +76,8 @@ export default function InputIuran() {
   const [filterTipeIuran, setFilterTipeIuran] = useState("")
   const [uploadingFile, setUploadingFile] = useState(false)
   const [buktiTransferUrl, setBuktiTransferUrl] = useState("")
+  const [processedIuranList, setProcessedIuranList] = useState<Iuran[]>([])
+  const [processedFilteredIuran, setProcessedFilteredIuran] = useState<Iuran[]>([])
   const { toast } = useToast()
   const { fetchWarga, fetchTipeIuran, fetchIuran, addIuran, deleteIuran } = useSupabaseData()
   const { isAdmin } = useUserRole()
@@ -90,6 +92,34 @@ export default function InputIuran() {
     keterangan: ""
   })
 
+  // Function to generate signed URLs for private bucket images
+  const generateSignedUrl = async (filePath: string): Promise<string> => {
+    if (!filePath) return ""
+    
+    try {
+      // Extract path from full URL if needed
+      const pathOnly = filePath.includes('bukti_transfer_input_kas/') 
+        ? filePath.split('bukti_transfer_input_kas/')[1] 
+          ? `bukti_transfer_input_kas/${filePath.split('bukti_transfer_input_kas/')[1]}`
+          : filePath
+        : filePath
+
+      const { data, error } = await supabase.storage
+        .from('images-private')
+        .createSignedUrl(pathOnly, 3600) // 1 hour expiry
+
+      if (error) {
+        console.error('Error generating signed URL:', error)
+        return ""
+      }
+
+      return data.signedUrl
+    } catch (error) {
+      console.error('Error generating signed URL:', error)
+      return ""
+    }
+  }
+
   const loadData = async () => {
     try {
       setLoading(true)
@@ -101,8 +131,27 @@ export default function InputIuran() {
       
       setWargaList(wargaData)
       setTipeIuranList(tipeIuranData)
-      setIuranList(iuranData)
-      setFilteredIuran(iuranData)
+      
+      // Process iuran data to generate signed URLs for private images
+      const processedData = await Promise.all(
+        iuranData.map(async (item: any) => {
+          if (item.bukti_transfer_url && item.bukti_transfer_url.includes('images-private')) {
+            // Extract the file path from the URL
+            const urlParts = item.bukti_transfer_url.split('bukti_transfer_input_kas/')
+            if (urlParts.length > 1) {
+              const fileName = urlParts[1].split('?')[0] // Remove any query parameters
+              const signedUrl = await generateSignedUrl(`bukti_transfer_input_kas/${fileName}`)
+              return { ...item, bukti_transfer_url: signedUrl }
+            }
+          }
+          return item
+        })
+      )
+      
+      setIuranList(processedData)
+      setProcessedIuranList(processedData)
+      setFilteredIuran(processedData)
+      setProcessedFilteredIuran(processedData)
     } catch (error) {
       toast({ 
         title: "Error", 
@@ -118,9 +167,9 @@ export default function InputIuran() {
     loadData()
   }, [])
 
-  // Apply filters
+  // Apply filters with processed data
   useEffect(() => {
-    let filtered = iuranList
+    let filtered = processedIuranList
 
     if (searchTerm) {
       filtered = filtered.filter(item =>
@@ -141,9 +190,9 @@ export default function InputIuran() {
       filtered = filtered.filter(item => item.tipe_iuran?.nama === filterTipeIuran)
     }
 
-    setFilteredIuran(filtered)
+    setProcessedFilteredIuran(filtered)
     
-  }, [iuranList, searchTerm, filterMonth, filterYear, filterTipeIuran])
+  }, [processedIuranList, searchTerm, filterMonth, filterYear, filterTipeIuran])
 
   const handleFileUpload = async (file: File) => {
     if (!file) return ""
@@ -170,11 +219,16 @@ export default function InputIuran() {
         throw error
       }
 
-      const { data: { publicUrl } } = supabase.storage
+      // Generate signed URL for private bucket (expires in 1 hour)
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('images-private')
-        .getPublicUrl(filePath)
+        .createSignedUrl(filePath, 3600) // 1 hour expiry
 
-      return publicUrl
+      if (signedUrlError) {
+        throw signedUrlError
+      }
+
+      return signedUrlData.signedUrl
     } catch (error) {
       console.error('Error uploading file:', error)
       toast({
@@ -267,22 +321,22 @@ export default function InputIuran() {
     return names.length > 0 ? names.join(' & ') : 'Tidak ada nama'
   }
 
-  // Calculate statistics
-  const totalTransaksiFiltered = filteredIuran.length
-  const totalNominalFiltered = filteredIuran.reduce((sum, item) => sum + item.nominal, 0)
+  // Calculate statistics using processed data
+  const totalTransaksiFiltered = processedFilteredIuran.length
+  const totalNominalFiltered = processedFilteredIuran.reduce((sum, item) => sum + item.nominal, 0)
   
   const selectedTipeIuranName = filterTipeIuran && filterTipeIuran !== "all" ? filterTipeIuran : "Semua Jenis"
   const selectedMonthName = filterMonth && filterMonth !== "all" ? months.find(m => m.value === filterMonth)?.label : "Semua Bulan"
   const selectedYearName = filterYear && filterYear !== "all" ? filterYear : "Semua Tahun"
 
-  // Calculate totals for selected type across all periods
+  // Calculate totals for selected type across all periods using processed data
   const totalTransaksiTipe = filterTipeIuran && filterTipeIuran !== "all"
-    ? iuranList.filter(item => item.tipe_iuran?.nama === filterTipeIuran).length
-    : iuranList.length
+    ? processedIuranList.filter(item => item.tipe_iuran?.nama === filterTipeIuran).length
+    : processedIuranList.length
   
   const totalNominalTipe = filterTipeIuran && filterTipeIuran !== "all"
-    ? iuranList.filter(item => item.tipe_iuran?.nama === filterTipeIuran).reduce((sum, item) => sum + item.nominal, 0)
-    : iuranList.reduce((sum, item) => sum + item.nominal, 0)
+    ? processedIuranList.filter(item => item.tipe_iuran?.nama === filterTipeIuran).reduce((sum, item) => sum + item.nominal, 0)
+    : processedIuranList.reduce((sum, item) => sum + item.nominal, 0)
 
   if (loading) {
     return <div className="flex justify-center items-center h-48">Memuat data...</div>
@@ -658,7 +712,7 @@ export default function InputIuran() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredIuran.map((item) => (
+            {processedFilteredIuran.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="font-medium">{getWargaDisplayName(item.warga?.nama_suami, item.warga?.nama_istri)}</TableCell>
                 <TableCell>{item.warga?.blok_rumah}</TableCell>
