@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Plus, Search, TrendingDown, Calendar, FileText, Download, Filter, Upload, X } from "lucide-react"
+import { Plus, Search, TrendingDown, Calendar, FileText, Download, Filter, Upload, X, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useKategoriKas } from "@/hooks/useKategoriKas"
 import { useUserRole } from "@/hooks/useUserRole"
 import { supabase } from "@/integrations/supabase/client"
+import { ImageZoom } from "@/components/ui/image-zoom"
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -26,6 +27,7 @@ interface Pengeluaran {
   nominal: number
   status_persetujuan: string
   bukti_transaksi_url?: string
+  bukti_transfer_url?: string
   created_at: string
   updated_at?: string
   tipe_iuran: string
@@ -53,6 +55,8 @@ export default function OutputKas() {
   const [loading, setLoading] = useState(true)
   const [tipeIuranFilter, setTipeIuranFilter] = useState<string>("semua")
   const [uploadingFile, setUploadingFile] = useState(false)
+  const [buktiTransferUrl, setBuktiTransferUrl] = useState("")
+  const [processedPengeluaranList, setProcessedPengeluaranList] = useState<Pengeluaran[]>([])
   const { toast } = useToast()
   const { session } = useAuth()
   const { fetchKasKeluar, addKasKeluar, updateKasKeluarStatus, dashboardStats, fetchDashboardStats, fetchTipeIuran } = useSupabaseData()
@@ -67,6 +71,7 @@ export default function OutputKas() {
     deskripsi: "",
     nominal: "",
     bukti_transaksi_url: "",
+    bukti_transfer_url: "",
     tipe_iuran: ""
   })
 
@@ -77,14 +82,61 @@ export default function OutputKas() {
     deskripsi: "",
     nominal: "",
     bukti_transaksi_url: "",
+    bukti_transfer_url: "",
     tipe_iuran: ""
   })
+
+  // Function to generate signed URLs for private bucket images
+  const generateSignedUrl = async (filePath: string): Promise<string> => {
+    if (!filePath) return ""
+    
+    try {
+      // Extract path from full URL if needed
+      const pathOnly = filePath.includes('bukti_transfer_output_kas/') 
+        ? filePath.split('bukti_transfer_output_kas/')[1] 
+          ? `bukti_transfer_output_kas/${filePath.split('bukti_transfer_output_kas/')[1]}`
+          : filePath
+        : filePath
+
+      const { data, error } = await supabase.storage
+        .from('images-private')
+        .createSignedUrl(pathOnly, 3600) // 1 hour expiry
+
+      if (error) {
+        console.error('Error generating signed URL:', error)
+        return ""
+      }
+
+      return data.signedUrl
+    } catch (error) {
+      console.error('Error generating signed URL:', error)
+      return ""
+    }
+  }
 
   const loadKasKeluar = async () => {
     try {
       setLoading(true)
       const data = await fetchKasKeluar()
-      setPengeluaranList(data)
+      
+      // Process data to generate signed URLs for private images
+      const processedData = await Promise.all(
+        data.map(async (item: any) => {
+          if (item.bukti_transfer_url && item.bukti_transfer_url.includes('images-private')) {
+            // Extract the file path from the URL
+            const urlParts = item.bukti_transfer_url.split('bukti_transfer_output_kas/')
+            if (urlParts.length > 1) {
+              const fileName = urlParts[1].split('?')[0] // Remove any query parameters
+              const signedUrl = await generateSignedUrl(`bukti_transfer_output_kas/${fileName}`)
+              return { ...item, bukti_transfer_url: signedUrl }
+            }
+          }
+          return item
+        })
+      )
+      
+      setPengeluaranList(processedData)
+      setProcessedPengeluaranList(processedData)
       await fetchDashboardStats()
     } catch (error) {
       toast({ 
@@ -112,7 +164,7 @@ export default function OutputKas() {
   }, [])
 
   useEffect(() => {
-    let filtered = pengeluaranList
+    let filtered = processedPengeluaranList
 
     // Filter by search term
     if (searchTerm) {
@@ -129,23 +181,24 @@ export default function OutputKas() {
     }
 
     setFilteredPengeluaran(filtered)
-  }, [pengeluaranList, searchTerm, tipeIuranFilter])
+  }, [processedPengeluaranList, searchTerm, tipeIuranFilter])
 
   const handleFileUpload = async (file: File) => {
-    if (!file || !formData.tipe_iuran) return ""
+    if (!file) return ""
 
     try {
       setUploadingFile(true)
+      const selectedTipeIuran = formData.tipe_iuran || "unknown"
       const currentDate = new Date()
       const month = currentDate.getMonth() + 1
       const year = currentDate.getFullYear()
       
       const fileExtension = file.name.split('.').pop()
-      const fileName = `bukti_transfer_${formData.tipe_iuran}_${month}_${year}.${fileExtension}`
+      const fileName = `bukti_transfer_${selectedTipeIuran}_${month}_${year}_output.${fileExtension}`
       const filePath = `bukti_transfer_output_kas/${fileName}`
 
       const { data, error } = await supabase.storage
-        .from('images_private')
+        .from('images-private')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true
@@ -155,11 +208,16 @@ export default function OutputKas() {
         throw error
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('images_private')
-        .getPublicUrl(filePath)
+      // Generate signed URL for private bucket (expires in 1 hour)
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('images-private')
+        .createSignedUrl(filePath, 3600) // 1 hour expiry
 
-      return publicUrl
+      if (signedUrlError) {
+        throw signedUrlError
+      }
+
+      return signedUrlData.signedUrl
     } catch (error) {
       console.error('Error uploading file:', error)
       toast({
@@ -196,6 +254,7 @@ export default function OutputKas() {
       deskripsi: "",
       nominal: "",
       bukti_transaksi_url: "",
+      bukti_transfer_url: "",
       tipe_iuran: ""
     }
 
@@ -259,6 +318,7 @@ export default function OutputKas() {
         deskripsi: formData.deskripsi,
         nominal: parseInt(formData.nominal),
         bukti_transaksi_url: formData.bukti_transaksi_url,
+        bukti_transfer_url: buktiTransferUrl,
         tipe_iuran: formData.tipe_iuran
       })
 
@@ -269,6 +329,7 @@ export default function OutputKas() {
         deskripsi: "", 
         nominal: "", 
         bukti_transaksi_url: "",
+        bukti_transfer_url: "",
         tipe_iuran: ""
       })
       setFormErrors({
@@ -278,8 +339,10 @@ export default function OutputKas() {
         deskripsi: "",
         nominal: "",
         bukti_transaksi_url: "",
+        bukti_transfer_url: "",
         tipe_iuran: ""
       })
+      setBuktiTransferUrl("")
       setIsAddOpen(false)
       await loadKasKeluar()
       toast({ title: "Berhasil", description: "Pengeluaran berhasil dicatat" })
@@ -490,46 +553,46 @@ export default function OutputKas() {
                         <p className="text-sm text-red-500 mt-1">{formErrors.nominal}</p>
                       )}
                     </div>
-                    <div>
-                      <Label htmlFor="bukti_upload">Upload Bukti Transfer</Label>
-                      <div className="mt-2">
-                        <Input
-                          id="bukti_upload"
-                          type="file"
-                          accept="image/*,.pdf"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0]
-                            if (file) {
-                              const uploadedUrl = await handleFileUpload(file)
-                              if (uploadedUrl) {
-                                setFormData({...formData, bukti_transaksi_url: uploadedUrl})
-                              }
-                            }
-                          }}
-                          disabled={uploadingFile || !formData.tipe_iuran}
-                          className="cursor-pointer"
-                        />
-                        {uploadingFile && (
-                          <div className="flex items-center mt-2 text-sm text-blue-600">
-                            <Upload className="w-4 h-4 mr-2 animate-spin" />
-                            Mengupload file...
-                          </div>
-                        )}
-                        {formData.bukti_transaksi_url && (
-                          <div className="flex items-center justify-between mt-2 p-2 bg-green-50 rounded border">
-                            <span className="text-sm text-green-700">File berhasil diupload</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setFormData({...formData, bukti_transaksi_url: ""})}
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        )}
-                        <p className="text-xs text-gray-500 mt-1">Format: .jpg, .jpeg, .png, .gif, .pdf (Max 5MB)</p>
-                      </div>
-                    </div>
+                     <div>
+                       <Label htmlFor="bukti_upload">Upload Bukti Transfer</Label>
+                       <div className="mt-2">
+                         <Input
+                           id="bukti_upload"
+                           type="file"
+                           accept="image/*,.pdf"
+                           onChange={async (e) => {
+                             const file = e.target.files?.[0]
+                             if (file) {
+                               const uploadedUrl = await handleFileUpload(file)
+                               if (uploadedUrl) {
+                                 setBuktiTransferUrl(uploadedUrl)
+                               }
+                             }
+                           }}
+                           disabled={uploadingFile || !formData.tipe_iuran}
+                           className="cursor-pointer"
+                         />
+                         {uploadingFile && (
+                           <div className="flex items-center mt-2 text-sm text-blue-600">
+                             <Upload className="w-4 h-4 mr-2 animate-spin" />
+                             Mengupload file...
+                           </div>
+                         )}
+                         {buktiTransferUrl && (
+                           <div className="flex items-center justify-between mt-2 p-2 bg-green-50 rounded border">
+                             <span className="text-sm text-green-700">File berhasil diupload</span>
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               onClick={() => setBuktiTransferUrl("")}
+                             >
+                               <X className="w-4 h-4" />
+                             </Button>
+                           </div>
+                         )}
+                         <p className="text-xs text-gray-500 mt-1">Pilih tipe iuran terlebih dahulu. Format: .jpg, .jpeg, .png, .gif, .pdf (Max 5MB)</p>
+                       </div>
+                     </div>
                     <div>
                       <Label htmlFor="bukti">Bukti (URL)</Label>
                       <Input
@@ -625,6 +688,7 @@ export default function OutputKas() {
               <TableHead>Judul</TableHead>
               <TableHead>Deskripsi</TableHead>
               <TableHead>Nominal</TableHead>
+              <TableHead>Bukti Transfer</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Diinput Oleh</TableHead>
               <TableHead>Disetujui Oleh</TableHead>
@@ -640,6 +704,17 @@ export default function OutputKas() {
                 <TableCell className="font-medium">{item.judul}</TableCell>
                 <TableCell>{item.deskripsi}</TableCell>
                 <TableCell>{formatCurrency(item.nominal)}</TableCell>
+                <TableCell>
+                  {item.bukti_transfer_url ? (
+                    <ImageZoom 
+                      src={item.bukti_transfer_url} 
+                      alt="Bukti Transfer"
+                      thumbnailClassName="w-12 h-12 object-cover rounded cursor-pointer hover:opacity-80"
+                    />
+                  ) : (
+                    <span className="text-muted-foreground text-sm">Tidak ada</span>
+                  )}
+                </TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${
                     item.status_persetujuan === 'approved' 

@@ -203,6 +203,7 @@ export type Database = {
       kas_keluar: {
         Row: {
           bukti_transaksi_url: string | null
+          bukti_transfer_url: string | null
           created_at: string | null
           deskripsi: string | null
           diinput_oleh: string
@@ -219,6 +220,7 @@ export type Database = {
         }
         Insert: {
           bukti_transaksi_url?: string | null
+          bukti_transfer_url?: string | null
           created_at?: string | null
           deskripsi?: string | null
           diinput_oleh: string
@@ -235,6 +237,7 @@ export type Database = {
         }
         Update: {
           bukti_transaksi_url?: string | null
+          bukti_transfer_url?: string | null
           created_at?: string | null
           deskripsi?: string | null
           diinput_oleh?: string
