@@ -204,9 +204,13 @@ export default function InputIuran() {
       const month = form.getValues("bulan")
       const year = form.getValues("tahun")
       const wargaId = form.getValues("warga_id")
+      const selectedWarga = wargaList.find(w => w.id === wargaId)
+      const namaSuami = selectedWarga?.nama_suami || ""
+      const namaIstri = selectedWarga?.nama_istri || ""
+      const wargaName = [namaSuami, namaIstri].filter(Boolean).join("_") || "unknown"
       
       const fileExtension = file.name.split('.').pop()
-      const fileName = `bukti_transfer_${tipeIuranName}_${wargaId}_${month}_${year}.${fileExtension}`
+      const fileName = `bukti_transfer_${tipeIuranName}_${wargaName}_${month}_${year}.${fileExtension}`
       const filePath = `bukti_transfer_input_kas/${fileName}`
 
       const { data, error } = await supabase.storage
