@@ -60,7 +60,7 @@ export function PWAInstallPrompt() {
               <Download className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-sm">Install Portal GBR</h3>
+              <h3 className="font-semibold text-sm">Install Portal Info GBR</h3>
               <p className="text-xs text-muted-foreground">
                 Install aplikasi untuk akses yang lebih cepat
               </p>

@@ -1,7 +1,7 @@
 {
-  "name": "Portal Warga GBR",
-  "short_name": "Portal GBR",
-  "description": "Sistem Informasi Portal Warga GBR",
+  "name": "Portal Informasi Warga GBR",
+  "short_name": "Portal Info GBR",
+  "description": "Portal Informasi Warga GBR - Sistem Informasi Portal Warga GBR",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
