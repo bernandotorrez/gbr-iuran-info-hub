@@ -192,9 +192,10 @@ export default function OutputKas() {
       const currentDate = new Date()
       const month = currentDate.getMonth() + 1
       const year = currentDate.getFullYear()
+      const judul = generateSlugWithUnderscore(formData.judul || "_")
       
       const fileExtension = file.name.split('.').pop()
-      const fileName = `bukti_transfer_${selectedTipeIuran}_${month}_${year}_output.${fileExtension}`
+      const fileName = `bukti_transfer_${selectedTipeIuran}_${judul}_${month}_${year}_output.${fileExtension}`
       const filePath = `bukti_transfer_output_kas/${fileName}`
 
       const { data, error } = await supabase.storage
@@ -244,6 +245,15 @@ export default function OutputKas() {
     if (warga.nama_suami) names.push(warga.nama_suami)
     if (warga.nama_istri) names.push(warga.nama_istri)
     return names.length > 0 ? names.join(' & ') : 'Tidak ada nama'
+  }
+
+  const generateSlugWithUnderscore = (title: string) => {
+    return title
+      .toString()
+      .toLowerCase()                      // ubah ke huruf kecil
+      .trim()                             // hapus spasi di awal/akhir
+      .replace(/[^a-z0-9\s-]/g, '')       // hapus karakter non-alfanumerik (kecuali spasi dan dash)
+      .replace(/\s+/g, '_');   
   }
 
   const validateForm = () => {
