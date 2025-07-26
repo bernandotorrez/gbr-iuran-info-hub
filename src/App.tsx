@@ -26,6 +26,7 @@ import StrukturPengurus from "./pages/StrukturPengurus";
 import PublicPengurus from "./pages/PublicPengurus";
 import BukuTamu from "./pages/BukuTamu";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <SpeedInsights />
+          <PWAInstallPrompt />
           <Routes>
             <Route path="/" element={<CompanyProfile />} />
             <Route path="/cms/login" element={<LoginPage />} />
