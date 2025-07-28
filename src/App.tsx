@@ -45,27 +45,84 @@ const App = () => (
             <Route path="/cms/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/public/artikel" element={<PublicArtikel />} />
             <Route path="/public/pengurus" element={<PublicPengurus />} />
-            <Route path="/cms/*" element={
+            
+            {/* Protected Routes with Layout */}
+            <Route path="/cms" element={
               <ProtectedRoute>
                 <Layout>
-                  <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/warga" element={<MasterWarga />} />
-                    <Route path="/tipe-iuran" element={<MasterTipeIuran />} />
-                    <Route path="/master-kategori-kas" element={<MasterKategoriKas />} />
-                    <Route path="/input-iuran" element={<InputIuran />} />
-                    <Route path="/output-kas" element={<OutputKas />} />
-                    <Route path="/laporan" element={<LaporanIuran />} />
-                    <Route path="/artikel" element={<ArtikelBerita />} />
-                    <Route path="/buku-tamu" element={
-                      <SecurityRoute>
-                        <BukuTamu />
-                      </SecurityRoute>
-                    } />
-                    <Route path="/struktur-pengurus" element={<StrukturPengurus />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
+                  <Dashboard />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/cms/warga" element={
+              <ProtectedRoute>
+                <Layout>
+                  <MasterWarga />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/cms/tipe-iuran" element={
+              <ProtectedRoute>
+                <Layout>
+                  <MasterTipeIuran />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/cms/master-kategori-kas" element={
+              <ProtectedRoute>
+                <Layout>
+                  <MasterKategoriKas />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/cms/input-iuran" element={
+              <ProtectedRoute>
+                <Layout>
+                  <InputIuran />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/cms/output-kas" element={
+              <ProtectedRoute>
+                <Layout>
+                  <OutputKas />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/cms/laporan" element={
+              <ProtectedRoute>
+                <Layout>
+                  <LaporanIuran />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/cms/artikel" element={
+              <ProtectedRoute>
+                <Layout>
+                  <ArtikelBerita />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/cms/buku-tamu" element={
+              <ProtectedRoute>
+                <Layout>
+                  <SecurityRoute>
+                    <BukuTamu />
+                  </SecurityRoute>
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/cms/struktur-pengurus" element={
+              <ProtectedRoute>
+                <Layout>
+                  <StrukturPengurus />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/cms/settings" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Settings />
                 </Layout>
               </ProtectedRoute>
             } />
