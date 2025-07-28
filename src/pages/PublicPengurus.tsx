@@ -109,31 +109,33 @@ export default function PublicPengurus() {
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-white" />
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                  <Building2 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg sm:text-xl font-bold text-gray-900">{namaPerumahan}</h1>
+                  <p className="text-xs sm:text-sm text-gray-600">Struktur Pengurus Paguyuban</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">{namaPerumahan}</h1>
-                <p className="text-sm text-gray-600">Struktur Pengurus Paguyuban</p>
+              <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 sm:gap-2">
+                <Link to="/" className="w-full sm:w-auto">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Kembali ke Beranda
+                  </Button>
+                </Link>
+                <Link to="/public/artikel" className="w-full sm:w-auto">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm">
+                    Artikel & Berita
+                  </Button>
+                </Link>
+                <Link to="/cms/login" className="w-full sm:w-auto">
+                  <Button size="sm" className="w-full sm:w-auto text-xs sm:text-sm">Login Sistem</Button>
+                </Link>
               </div>
             </div>
-            <div className="flex space-x-2">
-              <Link to="/">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Kembali ke Beranda
-                </Button>
-              </Link>
-              <Link to="/public/artikel">
-                <Button variant="outline">Artikel & Berita</Button>
-              </Link>
-              <Link to="/cms/login">
-                <Button>Login Sistem</Button>
-              </Link>
-            </div>
-          </div>
         </div>
       </header>
 

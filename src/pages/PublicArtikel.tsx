@@ -79,29 +79,31 @@ export default function PublicArtikel() {
         {/* Header */}
         <header className="bg-white shadow-sm">
           <div className="container mx-auto px-4 py-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-white" />
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                    <Building2 className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-lg sm:text-xl font-bold text-gray-900">Perumahan GBR</h1>
+                    <p className="text-xs sm:text-sm text-gray-600">Hunian Nyaman dan Asri</p>
+                  </div>
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">Perumahan GBR</h1>
-                  <p className="text-sm text-gray-600">Hunian Nyaman dan Asri</p>
+                <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 sm:gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto text-xs sm:text-sm"
+                    onClick={() => setSelectedArtikel(null)}
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Kembali
+                  </Button>
+                  <Link to="/" className="w-full sm:w-auto">
+                    <Button size="sm" className="w-full sm:w-auto text-xs sm:text-sm">Beranda</Button>
+                  </Link>
                 </div>
               </div>
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedArtikel(null)}
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Kembali
-                </Button>
-                <Link to="/">
-                  <Button>Beranda</Button>
-                </Link>
-              </div>
-            </div>
           </div>
         </header>
         
@@ -155,25 +157,27 @@ export default function PublicArtikel() {
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-white" />
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                  <Building2 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg sm:text-xl font-bold text-gray-900">Perumahan GBR</h1>
+                  <p className="text-xs sm:text-sm text-gray-600">Hunian Nyaman dan Asri</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Perumahan GBR</h1>
-                <p className="text-sm text-gray-600">Hunian Nyaman dan Asri</p>
+              <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 sm:gap-2">
+                <Link to="/public/pengurus" className="w-full sm:w-auto">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm">
+                    Struktur Pengurus
+                  </Button>
+                </Link>
+                <Link to="/" className="w-full sm:w-auto">
+                  <Button size="sm" className="w-full sm:w-auto text-xs sm:text-sm">Beranda</Button>
+                </Link>
               </div>
             </div>
-            <div className="flex space-x-2">
-              <Link to="/public/pengurus">
-                <Button variant="outline">Struktur Pengurus</Button>
-              </Link>
-              <Link to="/">
-                <Button>Beranda</Button>
-              </Link>
-            </div>
-          </div>
         </div>
       </header>
 
