@@ -144,11 +144,11 @@ export default function PaymentStatusTable() {
           <CardTitle>Filter Status Pembayaran</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="flex flex-col space-y-2">
               <label className="text-sm font-medium">Bulan</label>
               <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -164,7 +164,7 @@ export default function PaymentStatusTable() {
             <div className="flex flex-col space-y-2">
               <label className="text-sm font-medium">Tahun</label>
               <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -180,7 +180,7 @@ export default function PaymentStatusTable() {
             <div className="flex flex-col space-y-2">
               <label className="text-sm font-medium">Tipe Iuran</label>
               <Select value={selectedTipeIuran} onValueChange={setSelectedTipeIuran}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -236,32 +236,26 @@ export default function PaymentStatusTable() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>No</TableHead>
-                <TableHead>Nama Warga</TableHead>
-                <TableHead>Blok Rumah</TableHead>
-                <TableHead>Status Pembayaran</TableHead>
-                <TableHead>Tipe Iuran Dibayar</TableHead>
-                <TableHead>Total Dibayar</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paymentStatuses.map((status, index) => (
-                <TableRow key={status.warga.id}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell className="font-medium">
-                    {getWargaDisplayName(status.warga.nama_suami, status.warga.nama_istri)}
-                  </TableCell>
-                  <TableCell>{status.warga.blok_rumah}</TableCell>
-                  <TableCell>
-                    <Badge variant={status.hasPaid ? "default" : "destructive"}>
+          {/* Mobile Card Layout */}
+          <div className="block md:hidden space-y-4">
+            {paymentStatuses.map((status, index) => (
+              <Card key={status.warga.id} className="p-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-medium text-sm">
+                        {getWargaDisplayName(status.warga.nama_suami, status.warga.nama_istri)}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">{status.warga.blok_rumah}</p>
+                    </div>
+                    <Badge variant={status.hasPaid ? "default" : "destructive"} className="text-xs">
                       {status.hasPaid ? "Sudah Bayar" : "Belum Bayar"}
                     </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {status.tipeIuranPaid.length > 0 ? (
+                  </div>
+                  
+                  {status.tipeIuranPaid.length > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Tipe Iuran:</p>
                       <div className="flex flex-wrap gap-1">
                         {status.tipeIuranPaid.map((tipe, idx) => (
                           <Badge key={idx} variant="outline" className="text-xs">
@@ -269,17 +263,66 @@ export default function PaymentStatusTable() {
                           </Badge>
                         ))}
                       </div>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {status.totalPaid > 0 ? formatCurrency(status.totalPaid) : "-"}
-                  </TableCell>
+                    </div>
+                  )}
+                  
+                  {status.totalPaid > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total: {formatCurrency(status.totalPaid)}</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop Table Layout */}
+          <div className="hidden md:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>No</TableHead>
+                  <TableHead>Nama Warga</TableHead>
+                  <TableHead>Blok Rumah</TableHead>
+                  <TableHead>Status Pembayaran</TableHead>
+                  <TableHead>Tipe Iuran Dibayar</TableHead>
+                  <TableHead>Total Dibayar</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {paymentStatuses.map((status, index) => (
+                  <TableRow key={status.warga.id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell className="font-medium">
+                      {getWargaDisplayName(status.warga.nama_suami, status.warga.nama_istri)}
+                    </TableCell>
+                    <TableCell>{status.warga.blok_rumah}</TableCell>
+                    <TableCell>
+                      <Badge variant={status.hasPaid ? "default" : "destructive"}>
+                        {status.hasPaid ? "Sudah Bayar" : "Belum Bayar"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {status.tipeIuranPaid.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {status.tipeIuranPaid.map((tipe, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {tipe}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {status.totalPaid > 0 ? formatCurrency(status.totalPaid) : "-"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

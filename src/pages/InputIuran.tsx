@@ -590,49 +590,56 @@ export default function InputIuran() {
         
         <TabsContent value="payments" className="space-y-6">
           {/* Filter Controls */}
-          <div className="flex items-center space-x-4 p-4 bg-card rounded-lg border">
-            <Filter className="h-5 w-5 text-muted-foreground" />
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium">Bulan:</label>
-              <Select value={filterMonth} onValueChange={setFilterMonth}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Semua Bulan" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Bulan</SelectItem>
-                  {months.map(month => (
-                    <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="p-4 bg-card rounded-lg border space-y-4">
+            <div className="flex items-center gap-2">
+              <Filter className="h-5 w-5 text-muted-foreground" />
+              <span className="text-sm font-medium">Filter Pembayaran</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium">Tahun:</label>
-              <Select value={filterYear} onValueChange={setFilterYear}>
-                <SelectTrigger className="w-[100px]">
-                  <SelectValue placeholder="Semua Tahun" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Tahun</SelectItem>
-                  {years.map(year => (
-                    <SelectItem key={year.value} value={year.value}>{year.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium">Jenis Iuran:</label>
-              <Select value={filterTipeIuran} onValueChange={setFilterTipeIuran}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Semua Jenis" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Jenis</SelectItem>
-                  {Array.from(new Set(tipeIuranList.map(t => t.nama))).map(nama => (
-                    <SelectItem key={nama} value={nama}>{nama}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="flex flex-col space-y-2">
+                <label className="text-sm font-medium">Bulan</label>
+                <Select value={filterMonth} onValueChange={setFilterMonth}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Semua Bulan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Bulan</SelectItem>
+                    {months.map(month => (
+                      <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex flex-col space-y-2">
+                <label className="text-sm font-medium">Tahun</label>
+                <Select value={filterYear} onValueChange={setFilterYear}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Semua Tahun" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Tahun</SelectItem>
+                    {years.map(year => (
+                      <SelectItem key={year.value} value={year.value}>{year.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex flex-col space-y-2">
+                <label className="text-sm font-medium">Jenis Iuran</label>
+                <Select value={filterTipeIuran} onValueChange={setFilterTipeIuran}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Semua Jenis" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Jenis</SelectItem>
+                    {Array.from(new Set(tipeIuranList.map(t => t.nama))).map(nama => (
+                      <SelectItem key={nama} value={nama}>{nama}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -711,7 +718,77 @@ export default function InputIuran() {
             </div>
           </div>
 
-          <div className="rounded-md border">
+          {/* Mobile Card Layout */}
+          <div className="block md:hidden space-y-4">
+            {processedFilteredIuran.map((item) => (
+              <div key={item.id} className="bg-card p-4 rounded-lg border space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium text-sm">
+                      {getWargaDisplayName(item.warga?.nama_suami, item.warga?.nama_istri)}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">{item.warga?.blok_rumah}</p>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    item.status_verifikasi === 'verified' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {item.status_verifikasi === 'verified' ? 'Terverifikasi' : 'Pending'}
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Tipe: </span>
+                    <span className="font-medium">{item.tipe_iuran?.nama}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Nominal: </span>
+                    <span className="font-medium">{formatCurrency(item.nominal)}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Tanggal: </span>
+                    <span>{new Date(item.tanggal_bayar).toLocaleDateString('id-ID')}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Periode: </span>
+                    <span>{months.find(m => m.value === item.bulan.toString())?.label} {item.tahun}</span>
+                  </div>
+                </div>
+                
+                {item.bukti_transfer_url && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">Bukti Transfer:</span>
+                    <div className="mt-1">
+                      <ImageZoom 
+                        src={item.bukti_transfer_url} 
+                        alt="Bukti Transfer"
+                        thumbnailClassName="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-80"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {isAdmin && (
+                  <div className="flex justify-end pt-2 border-t">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleDelete(item.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Hapus
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table Layout */}
+          <div className="hidden md:block rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
