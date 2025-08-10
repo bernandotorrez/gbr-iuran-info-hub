@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Plus, Search, TrendingDown, Calendar, FileText, Download, Filter, Upload, X, Eye } from "lucide-react"
+import { Plus, Search, TrendingDown, FileText, Download, Filter, Upload, X, Eye, Calendar as CalendarIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -17,6 +17,8 @@ import { ImageZoom } from "@/components/ui/image-zoom"
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { DatePicker } from "@/components/ui/date-picker"
+import { cn } from "@/lib/utils"
 
 interface Pengeluaran {
   id: string
@@ -477,12 +479,15 @@ export default function OutputKas() {
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="tanggal">Tanggal *</Label>
-                      <Input
-                        id="tanggal"
-                        type="date"
-                        value={formData.tanggal_keluar}
-                        onChange={(e) => setFormData({...formData, tanggal_keluar: e.target.value})}
-                        className={formErrors.tanggal_keluar ? "border-red-500" : ""}
+                      <DatePicker
+                        selected={formData.tanggal_keluar ? new Date(formData.tanggal_keluar) : undefined}
+                        onSelect={(date) => {
+                          setFormData({
+                            ...formData, 
+                            tanggal_keluar: date ? date.toISOString().split('T')[0] : ""
+                          })
+                        }}
+                        closeOnSelect={true}
                       />
                       {formErrors.tanggal_keluar && (
                         <p className="text-sm text-red-500 mt-1">{formErrors.tanggal_keluar}</p>
@@ -603,20 +608,6 @@ export default function OutputKas() {
                          <p className="text-xs text-gray-500 mt-1">Pilih tipe iuran terlebih dahulu. Format: .jpg, .jpeg, .png, .gif, .pdf (Max 5MB)</p>
                        </div>
                      </div>
-                    <div>
-                      <Label htmlFor="bukti">Bukti (URL)</Label>
-                      <Input
-                        id="bukti"
-                        value={formData.bukti_transaksi_url}
-                        onChange={(e) => setFormData({...formData, bukti_transaksi_url: e.target.value})}
-                        placeholder="https://example.com/nota.jpg atau upload file di atas"
-                        className={formErrors.bukti_transaksi_url ? "border-red-500" : ""}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Format: .jpg, .jpeg, .png, .gif, .pdf</p>
-                      {formErrors.bukti_transaksi_url && (
-                        <p className="text-sm text-red-500 mt-1">{formErrors.bukti_transaksi_url}</p>
-                      )}
-                    </div>
                   </div>
                 </ScrollArea>
                 <div className="mt-4">
@@ -643,7 +634,7 @@ export default function OutputKas() {
         
         <div className="bg-card p-6 rounded-lg border">
           <div className="flex items-center">
-            <Calendar className="h-8 w-8 text-yellow-600" />
+            <CalendarIcon className="h-8 w-8 text-yellow-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">Total Pending</p>
               <p className="text-2xl font-bold">{formatCurrency(totalPending)}</p>

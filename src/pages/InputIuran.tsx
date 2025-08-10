@@ -20,6 +20,7 @@ import { ImageZoom } from "@/components/ui/image-zoom"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import PaymentStatusTable from "@/components/PaymentStatusTable"
+import { DatePicker } from "@/components/ui/date-picker"
 
 interface Warga {
   id: string
@@ -471,36 +472,17 @@ export default function InputIuran() {
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
                         <FormLabel>Tanggal Bayar</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(new Date(field.value), "dd/MM/yyyy")
-                                ) : (
-                                  <span>Pilih tanggal</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value ? new Date(field.value) : undefined}
-                              onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
-                              disabled={(date) => date > new Date()}
-                              initialFocus
-                              className={cn("p-3 pointer-events-auto")}
-                            />
-                          </PopoverContent>
-                        </Popover>
+                        <DatePicker
+                          selected={field.value ? new Date(field.value) : undefined}
+                            onSelect={(date) => {
+                            field.onChange(date ? format(date, "yyyy-MM-dd") : "")
+                            // Close the popover by triggering a click outside
+                            document.body.click()
+                          }}
+                          disabledOption={(date) => date > new Date()}
+                          closeOnSelect={true}
+                          className={cn("p-3 pointer-events-auto")}
+                        />
                         <FormMessage />
                       </FormItem>
                     )}

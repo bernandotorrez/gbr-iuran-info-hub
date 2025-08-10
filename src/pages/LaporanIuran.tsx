@@ -110,9 +110,10 @@ export default function LaporanIuran() {
     // Summary statistics
     doc.text(`Total Pemasukan: ${formatCurrency(totalPemasukan)}`, 14, 48)
     doc.text(`Total Pengeluaran: ${formatCurrency(totalPengeluaran)}`, 14, 55)
-    doc.text(`Saldo Kas: ${formatCurrency(saldoKas)}`, 14, 62)
-    
-    // Table data
+    doc.text(`Saldo Kas ${monthName} ${filterPeriod}: ${formatCurrency(saldoKas)}`, 14, 62)
+    doc.text(`Saldo Kas Keseluruhan: ${formatCurrency(dashboardStats.sisa_saldo_kas)}`, 14, 69)
+
+    // Table data starts 13 points lower to accommodate the new line
     const tableData = transactions.map(transaction => [
       getWargaDisplayName(transaction.warga),
       transaction.warga?.blok_rumah || '',
@@ -125,7 +126,7 @@ export default function LaporanIuran() {
     autoTable(doc, {
       head: [['Warga', 'Alamat', 'Jenis Iuran', 'Nominal', 'Tanggal', 'Status']],
       body: tableData,
-      startY: 75,
+      startY: 82, // Changed from 75 to 82 to accommodate the new line
     })
 
     doc.save(`laporan-iuran-${monthName}-${filterPeriod}.pdf`)

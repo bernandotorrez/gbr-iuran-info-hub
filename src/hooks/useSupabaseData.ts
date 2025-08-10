@@ -27,6 +27,7 @@ export interface DashboardStats {
   total_warga_belum_bayar: number;
   percent_warga_sudah_bayar: number;
   percent_warga_belum_bayar: number;
+  sisa_saldo_kas: number;
 }
 
 // Define BukuTamu interface
@@ -61,7 +62,8 @@ export const useSupabaseData = () => {
     total_warga_sudah_bayar: 0,
     total_warga_belum_bayar: 0,
     percent_warga_sudah_bayar: 0,
-    percent_warga_belum_bayar: 0
+    percent_warga_belum_bayar: 0,
+    sisa_saldo_kas: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -102,7 +104,8 @@ export const useSupabaseData = () => {
           total_warga_sudah_bayar: Number(statsData.total_warga_sudah_bayar) || 0,
           total_warga_belum_bayar: Number(statsData.total_warga_belum_bayar) || 0,
           percent_warga_sudah_bayar: Number(statsData.percent_warga_sudah_bayar) || 0,
-          percent_warga_belum_bayar: Number(statsData.percent_warga_belum_bayar) || 0
+          percent_warga_belum_bayar: Number(statsData.percent_warga_belum_bayar) || 0,
+          sisa_saldo_kas: Number(statsData.sisa_saldo_kas) || 0
         };
 
         setDashboardStats(newStats);
