@@ -117,135 +117,137 @@ export default function BukuTamu() {
           <h1 className="text-3xl font-bold">Buku Tamu</h1>
           <p className="text-muted-foreground">Kelola data kunjungan tamu</p>
         </div>
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90">
-              <Plus className="w-4 h-4 mr-2" />
-              Tambah Pengunjung
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md max-h-[80vh]">
-            <DialogHeader>
-              <DialogTitle>Tambah Data Pengunjung</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="max-h-[60vh] pr-4">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="nama_pengunjung">Nama Pengunjung *</Label>
-                  <Input
-                    id="nama_pengunjung"
-                    value={formData.nama_pengunjung}
-                    onChange={(e) => setFormData(prev => ({ ...prev, nama_pengunjung: e.target.value }))}
-                    placeholder="Masukkan nama lengkap"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="instansi">Instansi/Perusahaan</Label>
-                  <Input
-                    id="instansi"
-                    value={formData.instansi}
-                    onChange={(e) => setFormData(prev => ({ ...prev, instansi: e.target.value }))}
-                    placeholder="Nama instansi atau perusahaan"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="keperluan">Keperluan *</Label>
-                  <Textarea
-                    id="keperluan"
-                    value={formData.keperluan}
-                    onChange={(e) => setFormData(prev => ({ ...prev, keperluan: e.target.value }))}
-                    placeholder="Tujuan kunjungan"
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="nomor_hp">Nomor HP</Label>
-                  <Input
-                    id="nomor_hp"
-                    value={formData.nomor_hp}
-                    onChange={(e) => setFormData(prev => ({ ...prev, nomor_hp: e.target.value }))}
-                    placeholder="08xxxxxxxxxx"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="email@example.com"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="ktp_upload">Upload Foto KTP</Label>
-                  <div className="mt-2">
+        {isAdmin && (
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90">
+                <Plus className="w-4 h-4 mr-2" />
+                Tambah Pengunjung
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md max-h-[80vh]">
+              <DialogHeader>
+                <DialogTitle>Tambah Data Pengunjung</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="max-h-[60vh] pr-4">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="nama_pengunjung">Nama Pengunjung *</Label>
                     <Input
-                      id="ktp_upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0]
-                        if (file) {
-                          const uploadedUrl = await handleFileUpload(file)
-                          if (uploadedUrl) {
-                            setKtpFileUrl(uploadedUrl)
-                          }
-                        }
-                      }}
-                      disabled={uploadingFile}
-                      className="cursor-pointer"
+                      id="nama_pengunjung"
+                      value={formData.nama_pengunjung}
+                      onChange={(e) => setFormData(prev => ({ ...prev, nama_pengunjung: e.target.value }))}
+                      placeholder="Masukkan nama lengkap"
                     />
-                    {uploadingFile && (
-                      <div className="flex items-center mt-2 text-sm text-blue-600">
-                        <Upload className="w-4 h-4 mr-2 animate-spin" />
-                        Mengupload file...
-                      </div>
-                    )}
-                    {ktpFileUrl && (
-                      <div className="flex items-center justify-between mt-2 p-2 bg-green-50 rounded border">
-                        <span className="text-sm text-green-700">File KTP berhasil diupload</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setKtpFileUrl("")}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    )}
-                    <p className="text-xs text-gray-500 mt-1">Format: .jpg, .jpeg, .png (Max 5MB)</p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="instansi">Instansi/Perusahaan</Label>
+                    <Input
+                      id="instansi"
+                      value={formData.instansi}
+                      onChange={(e) => setFormData(prev => ({ ...prev, instansi: e.target.value }))}
+                      placeholder="Nama instansi atau perusahaan"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="keperluan">Keperluan *</Label>
+                    <Textarea
+                      id="keperluan"
+                      value={formData.keperluan}
+                      onChange={(e) => setFormData(prev => ({ ...prev, keperluan: e.target.value }))}
+                      placeholder="Tujuan kunjungan"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="nomor_hp">Nomor HP</Label>
+                    <Input
+                      id="nomor_hp"
+                      value={formData.nomor_hp}
+                      onChange={(e) => setFormData(prev => ({ ...prev, nomor_hp: e.target.value }))}
+                      placeholder="08xxxxxxxxxx"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="email@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="ktp_upload">Upload Foto KTP</Label>
+                    <div className="mt-2">
+                      <Input
+                        id="ktp_upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            const uploadedUrl = await handleFileUpload(file)
+                            if (uploadedUrl) {
+                              setKtpFileUrl(uploadedUrl)
+                            }
+                          }
+                        }}
+                        disabled={uploadingFile}
+                        className="cursor-pointer"
+                      />
+                      {uploadingFile && (
+                        <div className="flex items-center mt-2 text-sm text-blue-600">
+                          <Upload className="w-4 h-4 mr-2 animate-spin" />
+                          Mengupload file...
+                        </div>
+                      )}
+                      {ktpFileUrl && (
+                        <div className="flex items-center justify-between mt-2 p-2 bg-green-50 rounded border">
+                          <span className="text-sm text-green-700">File KTP berhasil diupload</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setKtpFileUrl("")}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500 mt-1">Format: .jpg, .jpeg, .png (Max 5MB)</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="catatan">Catatan</Label>
+                    <Textarea
+                      id="catatan"
+                      value={formData.catatan}
+                      onChange={(e) => setFormData(prev => ({ ...prev, catatan: e.target.value }))}
+                      placeholder="Catatan tambahan (opsional)"
+                      rows={2}
+                    />
                   </div>
                 </div>
-
-                <div>
-                  <Label htmlFor="catatan">Catatan</Label>
-                  <Textarea
-                    id="catatan"
-                    value={formData.catatan}
-                    onChange={(e) => setFormData(prev => ({ ...prev, catatan: e.target.value }))}
-                    placeholder="Catatan tambahan (opsional)"
-                    rows={2}
-                  />
-                </div>
+              </ScrollArea>
+              <div className="mt-4">
+                <Button
+                  onClick={handleSubmit}
+                  className="w-full"
+                  disabled={uploadingFile}
+                >
+                  {uploadingFile ? "Mengupload..." : "Simpan Data Pengunjung"}
+                </Button>
               </div>
-            </ScrollArea>
-            <div className="mt-4">
-              <Button
-                onClick={handleSubmit}
-                className="w-full"
-                disabled={uploadingFile}
-              >
-                {uploadingFile ? "Mengupload..." : "Simpan Data Pengunjung"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {/* Filter Controls */}

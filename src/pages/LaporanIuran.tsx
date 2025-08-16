@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData, DashboardStats } from "@/hooks/useSupabaseData"
+import { useUserRole } from "@/hooks/useUserRole"
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -50,10 +51,12 @@ export default function LaporanIuran() {
     total_warga_sudah_bayar: 0,
     total_warga_belum_bayar: 0,
     percent_warga_sudah_bayar: 0,
-    percent_warga_belum_bayar: 0
+    percent_warga_belum_bayar: 0,
+    sisa_saldo_kas: 0
   })
   const { toast } = useToast()
   const { fetchIuran, fetchKasKeluar, fetchDashboardStats, dashboardStats } = useSupabaseData()
+  const { isAdmin } = useUserRole()
 
   useEffect(() => {
     loadData()
@@ -228,16 +231,18 @@ export default function LaporanIuran() {
           <h1 className="text-3xl font-bold">Laporan Iuran</h1>
           <p className="text-muted-foreground">Dashboard dan laporan keuangan perumahan</p>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={handleExportPDF}>
-            <Download className="w-4 h-4 mr-2" />
-            Export PDF
-          </Button>
-          <Button variant="outline" onClick={handleExportExcel}>
-            <Download className="w-4 h-4 mr-2" />
-            Export Excel
-          </Button>
-        </div>
+        {isAdmin && (
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={handleExportPDF}>
+              <Download className="w-4 h-4 mr-2" />
+              Export PDF
+            </Button>
+            <Button variant="outline" onClick={handleExportExcel}>
+              <Download className="w-4 h-4 mr-2" />
+              Export Excel
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Statistik Cards */}

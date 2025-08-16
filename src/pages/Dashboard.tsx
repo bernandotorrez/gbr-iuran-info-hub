@@ -26,7 +26,8 @@ export default function Dashboard() {
     total_warga_sudah_bayar: 0,
     total_warga_belum_bayar: 0,
     percent_warga_sudah_bayar: 0,
-    percent_warga_belum_bayar: 0
+    percent_warga_belum_bayar: 0,
+    sisa_saldo_kas: 0
   })
 
   const currentMonth = new Date().getMonth() + 1;

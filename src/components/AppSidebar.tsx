@@ -36,7 +36,7 @@ const menuItems = [
     title: "Dashboard",
     url: "/cms",
     icon: Home,
-    roles: ['admin', 'warga', 'security']
+    roles: ['admin', 'warga']
   },
   {
     title: "Master Data Warga",
@@ -45,40 +45,22 @@ const menuItems = [
     roles: ['admin', 'warga', 'security']
   },
   {
-    title: "Master Tipe Iuran",
-    url: "/cms/tipe-iuran",
-    icon: CreditCard,
-    roles: ['admin', 'warga', 'security']
-  },
-  {
-    title: "Master Kategori Kas",
-    url: "/cms/master-kategori-kas",
-    icon: Settings,
-    roles: ['admin', 'warga', 'security']
-  },
-  {
     title: "Input Iuran",
     url: "/cms/input-iuran",
     icon: TrendingUp,
-    roles: ['admin', 'warga', 'security']
+    roles: ['admin', 'warga']
   },
   {
     title: "Output Kas",
     url: "/cms/output-kas",
     icon: ArrowUpDown,
-    roles: ['admin', 'warga', 'security']
+    roles: ['admin', 'warga']
   },
   {
     title: "Laporan Iuran",
     url: "/cms/laporan",
     icon: BarChart3,
-    roles: ['admin', 'warga', 'security']
-  },
-  {
-    title: "Artikel Berita",
-    url: "/cms/artikel",
-    icon: Newspaper,
-    roles: ['admin', 'warga', 'security']
+    roles: ['admin', 'warga']
   },
   {
     title: "Buku Tamu",
@@ -91,6 +73,24 @@ const menuItems = [
     url: "/cms/struktur-pengurus",
     icon: UserCheck,
     roles: ['admin', 'warga', 'security']
+  },
+  {
+    title: "Master Tipe Iuran",
+    url: "/cms/tipe-iuran",
+    icon: CreditCard,
+    roles: ['admin']
+  },
+  {
+    title: "Master Kategori Kas",
+    url: "/cms/master-kategori-kas",
+    icon: Settings,
+    roles: ['admin']
+  },
+  {
+    title: "Artikel Berita",
+    url: "/cms/artikel",
+    icon: Newspaper,
+    roles: ['admin']
   },
 ]
 

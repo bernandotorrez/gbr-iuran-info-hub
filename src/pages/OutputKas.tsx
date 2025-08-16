@@ -452,171 +452,173 @@ export default function OutputKas() {
           <p className="text-muted-foreground">Kelola pengeluaran kas perumahan</p>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" onClick={exportToPDF}>
-            <Download className="w-4 h-4 mr-2" />
-            Export PDF
-          </Button>
-          <Button variant="outline" onClick={exportToExcel}>
-            <Download className="w-4 h-4 mr-2" />
-            Export Excel
-          </Button>
           {isAdmin && (
-            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-primary hover:bg-primary/90">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Tambah Pengeluaran
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md max-h-[80vh]">
-                <DialogHeader>
-                  <DialogTitle>Tambah Pengeluaran Kas</DialogTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Saldo Kas Tersedia: {formatCurrency(dashboardStats.saldo_kas)}
-                  </p>
-                </DialogHeader>
-                <ScrollArea className="max-h-[60vh] pr-4">
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="tanggal">Tanggal *</Label>
-                      <DatePicker
-                        selected={formData.tanggal_keluar ? new Date(formData.tanggal_keluar) : undefined}
-                        onSelect={(date) => {
-                          setFormData({
-                            ...formData, 
-                            tanggal_keluar: date ? date.toISOString().split('T')[0] : ""
-                          })
-                        }}
-                        closeOnSelect={true}
-                      />
-                      {formErrors.tanggal_keluar && (
-                        <p className="text-sm text-red-500 mt-1">{formErrors.tanggal_keluar}</p>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="tipe_iuran">Tipe Iuran *</Label>
-                      <Select value={formData.tipe_iuran} onValueChange={(value) => setFormData({...formData, tipe_iuran: value})}>
-                        <SelectTrigger className={formErrors.tipe_iuran ? "border-red-500" : ""}>
-                          <SelectValue placeholder="-- Pilih Tipe Iuran --" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {tipeIuranList.map(tipe => (
-                            <SelectItem key={tipe.id} value={tipe.nama}>{tipe.nama}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {formErrors.tipe_iuran && (
-                        <p className="text-sm text-red-500 mt-1">{formErrors.tipe_iuran}</p>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="kategori">Kategori *</Label>
-                      <select
-                        id="kategori"
-                        value={formData.kategori}
-                        onChange={(e) => setFormData({...formData, kategori: e.target.value})}
-                        className={`w-full p-2 border rounded-md ${formErrors.kategori ? "border-red-500" : ""}`}
-                        disabled={kategoriLoading}
-                      >
-                        <option value="">-- Pilih Kategori --</option>
-                        {kategoriList.map(kategori => (
-                          <option key={kategori.id} value={kategori.nama}>{kategori.nama}</option>
-                        ))}
-                      </select>
-                      {formErrors.kategori && (
-                        <p className="text-sm text-red-500 mt-1">{formErrors.kategori}</p>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="judul">Judul *</Label>
-                      <Input
-                        id="judul"
-                        value={formData.judul}
-                        onChange={(e) => setFormData({...formData, judul: e.target.value})}
-                        placeholder="Judul pengeluaran"
-                        className={formErrors.judul ? "border-red-500" : ""}
-                      />
-                      {formErrors.judul && (
-                        <p className="text-sm text-red-500 mt-1">{formErrors.judul}</p>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="deskripsi">Deskripsi *</Label>
-                      <Input
-                        id="deskripsi"
-                        value={formData.deskripsi}
-                        onChange={(e) => setFormData({...formData, deskripsi: e.target.value})}
-                        placeholder="Deskripsi pengeluaran"
-                        className={formErrors.deskripsi ? "border-red-500" : ""}
-                      />
-                      {formErrors.deskripsi && (
-                        <p className="text-sm text-red-500 mt-1">{formErrors.deskripsi}</p>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="nominal">Nominal (Rp) *</Label>
-                      <Input
-                        id="nominal"
-                        type="text"
-                        value={formData.nominal}
-                        onChange={(e) => setFormData({...formData, nominal: e.target.value})}
-                        onKeyDown={handleNominalKeyDown}
-                        placeholder="150000"
-                        className={formErrors.nominal ? "border-red-500" : ""}
-                      />
-                      {formErrors.nominal && (
-                        <p className="text-sm text-red-500 mt-1">{formErrors.nominal}</p>
-                      )}
-                    </div>
-                     <div>
-                       <Label htmlFor="bukti_upload">Upload Bukti Transfer</Label>
-                       <div className="mt-2">
-                         <Input
-                           id="bukti_upload"
-                           type="file"
-                           accept="image/*,.pdf"
-                           onChange={async (e) => {
-                             const file = e.target.files?.[0]
-                             if (file) {
-                               const uploadedUrl = await handleFileUpload(file)
-                               if (uploadedUrl) {
-                                 setBuktiTransferUrl(uploadedUrl)
-                               }
-                             }
-                           }}
-                           disabled={uploadingFile || !formData.tipe_iuran}
-                           className="cursor-pointer"
-                         />
-                         {uploadingFile && (
-                           <div className="flex items-center mt-2 text-sm text-blue-600">
-                             <Upload className="w-4 h-4 mr-2 animate-spin" />
-                             Mengupload file...
-                           </div>
-                         )}
-                         {buktiTransferUrl && (
-                           <div className="flex items-center justify-between mt-2 p-2 bg-green-50 rounded border">
-                             <span className="text-sm text-green-700">File berhasil diupload</span>
-                             <Button
-                               variant="ghost"
-                               size="sm"
-                               onClick={() => setBuktiTransferUrl("")}
-                             >
-                               <X className="w-4 h-4" />
-                             </Button>
-                           </div>
-                         )}
-                         <p className="text-xs text-gray-500 mt-1">Pilih tipe iuran terlebih dahulu. Format: .jpg, .jpeg, .png, .gif, .pdf (Max 5MB)</p>
-                       </div>
-                     </div>
-                  </div>
-                </ScrollArea>
-                <div className="mt-4">
-                  <Button onClick={handleAdd} className="w-full" disabled={uploadingFile}>
-                    {uploadingFile ? "Mengupload..." : "Simpan Pengeluaran"}
+            <>
+              <Button variant="outline" onClick={exportToPDF}>
+                <Download className="w-4 h-4 mr-2" />
+                Export PDF
+              </Button>
+              <Button variant="outline" onClick={exportToExcel}>
+                <Download className="w-4 h-4 mr-2" />
+                Export Excel
+              </Button>
+              <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-primary hover:bg-primary/90">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Tambah Pengeluaran
                   </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent className="max-w-md max-h-[80vh]">
+                  <DialogHeader>
+                    <DialogTitle>Tambah Pengeluaran Kas</DialogTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Saldo Kas Tersedia: {formatCurrency(dashboardStats.saldo_kas)}
+                    </p>
+                  </DialogHeader>
+                  <ScrollArea className="max-h-[60vh] pr-4">
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="tanggal">Tanggal *</Label>
+                        <DatePicker
+                          selected={formData.tanggal_keluar ? new Date(formData.tanggal_keluar) : undefined}
+                          onSelect={(date) => {
+                            setFormData({
+                              ...formData, 
+                              tanggal_keluar: date ? date.toISOString().split('T')[0] : ""
+                            })
+                          }}
+                          closeOnSelect={true}
+                        />
+                        {formErrors.tanggal_keluar && (
+                          <p className="text-sm text-red-500 mt-1">{formErrors.tanggal_keluar}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="tipe_iuran">Tipe Iuran *</Label>
+                        <Select value={formData.tipe_iuran} onValueChange={(value) => setFormData({...formData, tipe_iuran: value})}>
+                          <SelectTrigger className={formErrors.tipe_iuran ? "border-red-500" : ""}>
+                            <SelectValue placeholder="-- Pilih Tipe Iuran --" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tipeIuranList.map(tipe => (
+                              <SelectItem key={tipe.id} value={tipe.nama}>{tipe.nama}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {formErrors.tipe_iuran && (
+                          <p className="text-sm text-red-500 mt-1">{formErrors.tipe_iuran}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="kategori">Kategori *</Label>
+                        <select
+                          id="kategori"
+                          value={formData.kategori}
+                          onChange={(e) => setFormData({...formData, kategori: e.target.value})}
+                          className={`w-full p-2 border rounded-md ${formErrors.kategori ? "border-red-500" : ""}`}
+                          disabled={kategoriLoading}
+                        >
+                          <option value="">-- Pilih Kategori --</option>
+                          {kategoriList.map(kategori => (
+                            <option key={kategori.id} value={kategori.nama}>{kategori.nama}</option>
+                          ))}
+                        </select>
+                        {formErrors.kategori && (
+                          <p className="text-sm text-red-500 mt-1">{formErrors.kategori}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="judul">Judul *</Label>
+                        <Input
+                          id="judul"
+                          value={formData.judul}
+                          onChange={(e) => setFormData({...formData, judul: e.target.value})}
+                          placeholder="Judul pengeluaran"
+                          className={formErrors.judul ? "border-red-500" : ""}
+                        />
+                        {formErrors.judul && (
+                          <p className="text-sm text-red-500 mt-1">{formErrors.judul}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="deskripsi">Deskripsi *</Label>
+                        <Input
+                          id="deskripsi"
+                          value={formData.deskripsi}
+                          onChange={(e) => setFormData({...formData, deskripsi: e.target.value})}
+                          placeholder="Deskripsi pengeluaran"
+                          className={formErrors.deskripsi ? "border-red-500" : ""}
+                        />
+                        {formErrors.deskripsi && (
+                          <p className="text-sm text-red-500 mt-1">{formErrors.deskripsi}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="nominal">Nominal (Rp) *</Label>
+                        <Input
+                          id="nominal"
+                          type="text"
+                          value={formData.nominal}
+                          onChange={(e) => setFormData({...formData, nominal: e.target.value})}
+                          onKeyDown={handleNominalKeyDown}
+                          placeholder="150000"
+                          className={formErrors.nominal ? "border-red-500" : ""}
+                        />
+                        {formErrors.nominal && (
+                          <p className="text-sm text-red-500 mt-1">{formErrors.nominal}</p>
+                        )}
+                      </div>
+                       <div>
+                         <Label htmlFor="bukti_upload">Upload Bukti Transfer</Label>
+                         <div className="mt-2">
+                           <Input
+                             id="bukti_upload"
+                             type="file"
+                             accept="image/*,.pdf"
+                             onChange={async (e) => {
+                               const file = e.target.files?.[0]
+                               if (file) {
+                                 const uploadedUrl = await handleFileUpload(file)
+                                 if (uploadedUrl) {
+                                   setBuktiTransferUrl(uploadedUrl)
+                                 }
+                               }
+                             }}
+                             disabled={uploadingFile || !formData.tipe_iuran}
+                             className="cursor-pointer"
+                           />
+                           {uploadingFile && (
+                             <div className="flex items-center mt-2 text-sm text-blue-600">
+                               <Upload className="w-4 h-4 mr-2 animate-spin" />
+                               Mengupload file...
+                             </div>
+                           )}
+                           {buktiTransferUrl && (
+                             <div className="flex items-center justify-between mt-2 p-2 bg-green-50 rounded border">
+                               <span className="text-sm text-green-700">File berhasil diupload</span>
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 onClick={() => setBuktiTransferUrl("")}
+                               >
+                                 <X className="w-4 h-4" />
+                               </Button>
+                             </div>
+                           )}
+                           <p className="text-xs text-gray-500 mt-1">Pilih tipe iuran terlebih dahulu. Format: .jpg, .jpeg, .png, .gif, .pdf (Max 5MB)</p>
+                         </div>
+                       </div>
+                    </div>
+                  </ScrollArea>
+                  <div className="mt-4">
+                    <Button onClick={handleAdd} className="w-full" disabled={uploadingFile}>
+                      {uploadingFile ? "Mengupload..." : "Simpan Pengeluaran"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </>
           )}
         </div>
       </div>
