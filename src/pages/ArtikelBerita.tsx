@@ -20,6 +20,7 @@ interface Artikel {
   kategori: string
   gambar_url?: string
   excerpt?: string
+  slug_url?: string
   created_at: string
 }
 
@@ -32,6 +33,32 @@ const normalizeStatus = (status: string | null | undefined): ValidStatus => {
     return status;
   }
   return "draft"; // Default to draft for any invalid status
+}
+
+// Function to generate slug from title
+const generateSlug = (title: string): string => {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim()
+}
+
+// Function to generate unique slug
+const generateUniqueSlug = async (title: string, fetchArtikel: () => Promise<any[]>): Promise<string> => {
+  const baseSlug = generateSlug(title)
+  const existingArticles = await fetchArtikel()
+  
+  let slug = baseSlug
+  let counter = 1
+  
+  while (existingArticles.some(article => article.slug_url === slug)) {
+    slug = `${baseSlug}-${counter}`
+    counter++
+  }
+  
+  return slug
 }
 
 export default function ArtikelBerita() {
@@ -58,6 +85,7 @@ export default function ArtikelBerita() {
         status: normalizeStatus(item.status),
         excerpt: item.excerpt || "",
         gambar_url: item.gambar_url || "",
+        slug_url: item.slug_url || "",
         published_at: item.published_at || undefined
       }));
       
@@ -116,6 +144,19 @@ export default function ArtikelBerita() {
     try {
       let finalFormData = { ...formData }
       
+      // Generate unique slug from title
+      try {
+        const uniqueSlug = await generateUniqueSlug(formData.judul, fetchArtikel)
+        finalFormData.slug_url = uniqueSlug
+      } catch (slugError) {
+        toast({ 
+          title: "Error", 
+          description: "Gagal membuat slug URL yang unik",
+          variant: "destructive" 
+        })
+        return
+      }
+      
       // Handle image upload if file is provided
       if (formData.imageFile) {
         const imageUrl = await handleImageUpload(formData.imageFile)
@@ -143,6 +184,21 @@ export default function ArtikelBerita() {
     try {
       let finalFormData = { ...formData }
       
+      // Generate new slug if title has changed
+      if (formData.judul !== selectedArtikel.judul) {
+        try {
+          const uniqueSlug = await generateUniqueSlug(formData.judul, fetchArtikel)
+          finalFormData.slug_url = uniqueSlug
+        } catch (slugError) {
+          toast({ 
+            title: "Error", 
+            description: "Gagal membuat slug URL yang unik",
+            variant: "destructive" 
+          })
+          return
+        }
+      }
+      
       // Handle image upload if new file is provided
       if (formData.imageFile) {
         // Delete old image if exists
@@ -162,6 +218,7 @@ export default function ArtikelBerita() {
         judul: finalFormData.judul,
         kategori: finalFormData.kategori,
         konten: finalFormData.konten,
+        slug_url: finalFormData.slug_url,
         status: finalFormData.status
       }
 

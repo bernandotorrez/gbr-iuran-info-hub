@@ -491,6 +491,22 @@ export const useSupabaseData = () => {
     }
   }
 
+  const fetchArtikelBySlug = async (slug: string) => {
+    const { data, error } = await supabase
+      .from('artikel_berita')
+      .select('*')
+      .eq('slug_url', slug)
+      .eq('status', 'published')
+      .single();
+    
+    if (error) {
+      console.error('Error fetching artikel by slug:', error);
+      return null;
+    }
+    
+    return data;
+  };
+
   // Buku Tamu functions - Fixed query
   const fetchBukuTamu = async () => {
     const { data, error } = await supabase
@@ -566,6 +582,7 @@ export const useSupabaseData = () => {
     deleteArtikel,
     uploadImageArtikel,
     deleteImageArtikel,
+    fetchArtikelBySlug,
     // Buku Tamu functions
     fetchBukuTamu,
     addBukuTamu,

@@ -44,6 +44,7 @@ const App = () => (
             <Route path="/cms/login" element={<LoginPage />} />
             <Route path="/cms/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/public/artikel" element={<PublicArtikel />} />
+            <Route path="/public/artikel/:slug" element={<PublicArtikel />} />
             <Route path="/public/pengurus" element={<PublicPengurus />} />
             
             {/* Protected Routes with Layout */}

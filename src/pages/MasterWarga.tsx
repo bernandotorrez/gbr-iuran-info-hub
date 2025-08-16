@@ -33,7 +33,7 @@ export default function MasterWarga() {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const { fetchWarga, addWarga, updateWarga, deleteWarga } = useSupabaseData()
-  const { isAdmin } = useUserRole()
+  const { isAdmin, isSecurity } = useUserRole()
 
   const loadWarga = async () => {
     try {
@@ -184,7 +184,7 @@ export default function MasterWarga() {
                 <TableCell>{warga.nama_suami || '-'}</TableCell>
                 <TableCell>{warga.nama_istri || '-'}</TableCell>
                 <TableCell>{warga.nomor_hp_suami || '-'}</TableCell>
-                <TableCell>{warga.nomor_hp_istri || '-'}</TableCell>
+                <TableCell>{isSecurity ? '-' : (warga.nomor_hp_istri || '-')}</TableCell>
                 <TableCell>
                   <Badge variant={getStatusBadgeVariant(warga.status_tinggal)}>
                     {warga.status_tinggal}

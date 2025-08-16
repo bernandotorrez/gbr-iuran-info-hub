@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Calendar, User, Eye, ArrowLeft, Building2 } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Link, useParams, useNavigate } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
+import { useSupabaseData } from "@/hooks/useSupabaseData"
 
 interface Artikel {
   id: string
@@ -16,15 +17,20 @@ interface Artikel {
   kategori: string | null
   published_at: string | null
   author_id: string
+  slug_url: string | null
   warga_new: {
     nama_suami: string
   } | null
 }
 
 export default function PublicArtikel() {
+  const { slug } = useParams<{ slug?: string }>()
+  const navigate = useNavigate()
+  const { fetchArtikelBySlug } = useSupabaseData()
   const [artikelList, setArtikelList] = useState<Artikel[]>([])
   const [selectedArtikel, setSelectedArtikel] = useState<Artikel | null>(null)
   const [loading, setLoading] = useState(true)
+  const [articleLoading, setArticleLoading] = useState(false)
 
   const fetchArtikel = async () => {
     try {
@@ -51,9 +57,34 @@ export default function PublicArtikel() {
     }
   }
 
+  const fetchArtikelBySlugUrl = async (slugUrl: string) => {
+    try {
+      setArticleLoading(true)
+      const artikel = await fetchArtikelBySlug(slugUrl)
+      if (artikel) {
+        setSelectedArtikel(artikel as Artikel)
+      } else {
+        // Article not found, redirect to article list
+        navigate('/public/artikel')
+      }
+    } catch (error) {
+      console.error('Error fetching artikel by slug:', error)
+      navigate('/public/artikel')
+    } finally {
+      setArticleLoading(false)
+    }
+  }
+
   useEffect(() => {
-    fetchArtikel()
-  }, [])
+    if (slug) {
+      // If there's a slug in the URL, fetch the specific article
+      fetchArtikelBySlugUrl(slug)
+    } else {
+      // Otherwise, fetch the article list and clear selected article
+      setSelectedArtikel(null)
+      fetchArtikel()
+    }
+  }, [slug])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('id-ID', {
@@ -63,7 +94,7 @@ export default function PublicArtikel() {
     })
   }
 
-  if (loading) {
+  if (loading || articleLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center">
         <div className="text-center">
@@ -94,7 +125,7 @@ export default function PublicArtikel() {
                     variant="outline"
                     size="sm"
                     className="w-full sm:w-auto text-xs sm:text-sm"
-                    onClick={() => setSelectedArtikel(null)}
+                    onClick={() => navigate('/public/artikel')}
                   >
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Kembali
@@ -200,11 +231,12 @@ export default function PublicArtikel() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {artikelList.map((artikel) => (
-              <Card 
-                key={artikel.id} 
-                className="cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => setSelectedArtikel(artikel)}
+              <Link 
+                key={artikel.id}
+                to={`/public/artikel/${artikel.slug_url || artikel.id}`}
+                className="block"
               >
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow h-full">
                 {artikel.gambar_url && (
                   <div className="aspect-video overflow-hidden">
                     <img
@@ -246,7 +278,8 @@ export default function PublicArtikel() {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
+                </Card>
+              </Link>
             ))}
           </div>
         )}

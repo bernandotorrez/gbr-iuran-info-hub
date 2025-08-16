@@ -25,6 +25,7 @@ export type Database = {
           kategori: string | null
           konten: string
           published_at: string | null
+          slug_url: string | null
           status: string | null
           updated_at: string | null
         }
@@ -38,6 +39,7 @@ export type Database = {
           kategori?: string | null
           konten: string
           published_at?: string | null
+          slug_url?: string | null
           status?: string | null
           updated_at?: string | null
         }
@@ -51,6 +53,7 @@ export type Database = {
           kategori?: string | null
           konten?: string
           published_at?: string | null
+          slug_url?: string | null
           status?: string | null
           updated_at?: string | null
         }

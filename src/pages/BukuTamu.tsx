@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useUserRole } from "@/hooks/useUserRole"
 import { useSupabaseData, type BukuTamu } from "@/hooks/useSupabaseData"
+import { ImageZoom } from "@/components/ui/image-zoom"
 
 export default function BukuTamu() {
   const [bukuTamuList, setBukuTamuList] = useState<BukuTamu[]>([])
@@ -365,34 +366,34 @@ export default function BukuTamu() {
                 <TableCell className="text-right">
                   <div className="flex justify-end space-x-2">
                     {item.ktp_file_url && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={async () => {
-                          if (imageUrls[item.id]) {
-                            // Jika URL sudah ada, langsung buka
-                            window.open(imageUrls[item.id], '_blank')
-                          } else {
-                            const signedUrl = await getSignedUrl(item.id, item.ktp_file_url)
-                            if (signedUrl) {
-                              window.open(signedUrl, '_blank')
-                            } else {
-                              toast({
-                                title: "Gagal membuka gambar",
-                                description: "Tidak bisa membuat signed URL",
-                                variant: "destructive"
-                              })
-                            }
-                          }
-                        }}
-                        disabled={loadingImages[item.id]}
-                      >
+                      <div className="flex items-center">
                         {loadingImages[item.id] ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : imageUrls[item.id] ? (
+                          <ImageZoom 
+                            src={imageUrls[item.id]} 
+                            alt="KTP Pengunjung"
+                            thumbnailClassName="w-8 h-8 object-cover rounded cursor-pointer hover:opacity-80"
+                          />
                         ) : (
-                          <Image className="w-4 h-4" />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={async () => {
+                              const signedUrl = await getSignedUrl(item.id, item.ktp_file_url)
+                              if (!signedUrl) {
+                                toast({
+                                  title: "Gagal membuka gambar",
+                                  description: "Tidak bisa membuat signed URL",
+                                  variant: "destructive"
+                                })
+                              }
+                            }}
+                          >
+                            <Image className="w-4 h-4" />
+                          </Button>
                         )}
-                      </Button>
+                      </div>
                     )}
                     {hasSecurityAccess && item.status === 'masuk' && (
                       <Button
