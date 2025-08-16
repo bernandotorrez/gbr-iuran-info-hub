@@ -22,13 +22,28 @@ export const useUserRole = () => {
             setUserProfile(data);
           } else {
             console.log('User profile not found in warga_new table for user ID:', user.id);
-            // For users not in warga_new table, set default role as 'warga'
-            setUserProfile({ role: 'warga' });
+            // Check user metadata for role if not found in warga_new table
+            const userRole = user.user_metadata?.role;
+            if (userRole) {
+              console.log('Found role in user metadata:', userRole);
+              setUserProfile({ role: userRole });
+            } else {
+              // Fallback to default role only if no role found anywhere
+              console.log('No role found, defaulting to warga');
+              setUserProfile({ role: 'warga' });
+            }
           }
         } catch (error) {
           console.error('Error fetching user profile:', error);
-          // Fallback to default role
-          setUserProfile({ role: 'warga' });
+          // Check user metadata for role as fallback
+          const userRole = user.user_metadata?.role;
+          if (userRole) {
+            console.log('Found role in user metadata (fallback):', userRole);
+            setUserProfile({ role: userRole });
+          } else {
+            // Final fallback to default role
+            setUserProfile({ role: 'warga' });
+          }
         }
       }
       setLoading(false);
