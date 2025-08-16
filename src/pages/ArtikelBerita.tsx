@@ -163,8 +163,11 @@ export default function ArtikelBerita() {
         if (imageUrl) {
           finalFormData.gambar_url = imageUrl
         }
-        delete finalFormData.imageFile // Remove file object from form data
       }
+      
+      // Remove imageFile from form data before sending to database
+      const { imageFile, ...cleanFormData } = finalFormData
+      finalFormData = cleanFormData
 
       await addArtikel(finalFormData)
       setIsAddOpen(false)
@@ -211,6 +214,10 @@ export default function ArtikelBerita() {
           finalFormData.gambar_url = imageUrl
         }
       }
+      
+      // Remove imageFile from form data before processing
+      const { imageFile, ...cleanFormData } = finalFormData
+      finalFormData = cleanFormData
 
       const updateData = {
         excerpt: finalFormData.excerpt,
