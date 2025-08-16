@@ -106,9 +106,7 @@ const App = () => (
             <Route path="/cms/buku-tamu" element={
               <ProtectedRoute>
                 <Layout>
-                  <SecurityRoute>
-                    <BukuTamu />
-                  </SecurityRoute>
+                  <BukuTamu />
                 </Layout>
               </ProtectedRoute>
             } />

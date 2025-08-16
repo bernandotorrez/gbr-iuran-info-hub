@@ -81,6 +81,8 @@ export default function InputIuran() {
   const [buktiTransferUrl, setBuktiTransferUrl] = useState("")
   const [processedIuranList, setProcessedIuranList] = useState<Iuran[]>([])
   const [processedFilteredIuran, setProcessedFilteredIuran] = useState<Iuran[]>([])
+  // Cache for signed URLs to reduce API calls
+  const [urlCache, setUrlCache] = useState<Map<string, { url: string, timestamp: number }>>(new Map())
   const { toast } = useToast()
   const { fetchWarga, fetchTipeIuran, fetchIuran, addIuran, deleteIuran } = useSupabaseData()
   const { isAdmin } = useUserRole()
@@ -95,7 +97,7 @@ export default function InputIuran() {
     keterangan: ""
   })
 
-  // Function to generate signed URLs for private bucket images
+  // Function to generate signed URLs for private bucket images with caching
   const generateSignedUrl = async (filePath: string): Promise<string> => {
     if (!filePath) return ""
     
@@ -107,6 +109,15 @@ export default function InputIuran() {
           : filePath
         : filePath
 
+      // Check cache first (URLs expire in 1 hour, so cache for 50 minutes to be safe)
+      const cached = urlCache.get(pathOnly)
+      const now = Date.now()
+      const cacheExpiry = 50 * 60 * 1000 // 50 minutes in milliseconds
+      
+      if (cached && (now - cached.timestamp) < cacheExpiry) {
+        return cached.url
+      }
+
       const { data, error } = await supabase.storage
         .from('images-private')
         .createSignedUrl(pathOnly, 3600) // 1 hour expiry
@@ -115,6 +126,13 @@ export default function InputIuran() {
         console.error('Error generating signed URL:', error)
         return ""
       }
+
+      // Cache the new URL
+      setUrlCache(prev => {
+        const newCache = new Map(prev)
+        newCache.set(pathOnly, { url: data.signedUrl, timestamp: now })
+        return newCache
+      })
 
       return data.signedUrl
     } catch (error) {

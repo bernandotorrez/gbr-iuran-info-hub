@@ -240,6 +240,7 @@ export function UserManagementDialog({
               <SelectContent>
                 <SelectItem value="warga">Warga</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="security">Security</SelectItem>
                 <SelectItem value="bendahara">Bendahara</SelectItem>
                 <SelectItem value="ketua">Ketua</SelectItem>
               </SelectContent>

@@ -20,9 +20,15 @@ export const useUserRole = () => {
           
           if (!error && data) {
             setUserProfile(data);
+          } else {
+            console.log('User profile not found in warga_new table for user ID:', user.id);
+            // For users not in warga_new table, set default role as 'warga'
+            setUserProfile({ role: 'warga' });
           }
         } catch (error) {
           console.error('Error fetching user profile:', error);
+          // Fallback to default role
+          setUserProfile({ role: 'warga' });
         }
       }
       setLoading(false);

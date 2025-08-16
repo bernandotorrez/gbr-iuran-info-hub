@@ -377,48 +377,54 @@ export default function ArtikelBerita() {
 
       {/* View Dialog */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="max-w-4xl bg-card text-card-foreground">
+        <DialogContent className="max-w-4xl max-h-[90vh] bg-card text-card-foreground">
           <DialogHeader>
             <DialogTitle>Preview Artikel</DialogTitle>
           </DialogHeader>
           {selectedArtikel && (
-            <div className="space-y-4">
-              {selectedArtikel.gambar_url && (
-                <div className="w-full">
-                  <img 
-                    src={selectedArtikel.gambar_url} 
-                    alt={selectedArtikel.judul}
-                    className="w-full h-64 object-cover rounded-lg"
-                  />
-                </div>
-              )}
-              <div>
-                <h2 className="text-2xl font-bold">{selectedArtikel.judul}</h2>
-                <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-2">
-                  <span>{new Date(selectedArtikel.created_at).toLocaleDateString('id-ID')}</span>
-                  <span>•</span>
-                  <span>{selectedArtikel.kategori}</span>
-                  <span>•</span>
-                  <span>{selectedArtikel.status}</span>
-                </div>
-              </div>
-              {selectedArtikel.excerpt && (
-                <div className="bg-muted p-4 rounded-lg">
-                  <p className="font-medium">{selectedArtikel.excerpt}</p>
-                </div>
-              )}
-              <div className="prose max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: selectedArtikel.konten }} />
-              <div className="flex space-x-2 pt-4">
-                {selectedArtikel.status === 'draft' && (
-                  <Button onClick={() => updateStatus(selectedArtikel.id, 'published')}>
-                    Publikasikan
-                  </Button>
+            <div className="overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
+              <div className="space-y-4">
+                {selectedArtikel.gambar_url && (
+                  <div className="w-full">
+                    <img 
+                      src={selectedArtikel.gambar_url} 
+                      alt={selectedArtikel.judul}
+                      className="w-full h-64 object-cover rounded-lg"
+                    />
+                  </div>
                 )}
-                {selectedArtikel.status === 'published' && (
-                  <Button variant="outline" onClick={() => updateStatus(selectedArtikel.id, 'archived')}>
-                    Arsipkan
-                  </Button>
+                <div>
+                  <h2 className="text-2xl font-bold">{selectedArtikel.judul}</h2>
+                  <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-2">
+                    <span>{new Date(selectedArtikel.created_at).toLocaleDateString('id-ID')}</span>
+                    <span>•</span>
+                    <span>{selectedArtikel.kategori}</span>
+                    <span>•</span>
+                    <span>{selectedArtikel.status}</span>
+                  </div>
+                </div>
+                {selectedArtikel.excerpt && (
+                  <div className="bg-muted p-4 rounded-lg">
+                    <p className="font-medium">{selectedArtikel.excerpt}</p>
+                  </div>
                 )}
+                <div className="prose max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: selectedArtikel.konten }} />
+                <div className="flex space-x-2 pt-4">
+                  {selectedArtikel.status === 'draft' && (
+                    <Button onClick={() => updateStatus(selectedArtikel.id, 'published')}>
+                      Publikasikan
+                    </Button>
+                  )}
+                  {selectedArtikel.status === 'published' && (
+                    <Button variant="outline" onClick={() => updateStatus(selectedArtikel.id, 'archived')}>
+                      Arsipkan
+                    </Button>
+                  )}
+                  <Button variant="outline" onClick={() => setIsViewOpen(false)}>
+                    <X className="w-4 h-4 mr-2" />
+                    Tutup
+                  </Button>
+                </div>
               </div>
             </div>
           )}

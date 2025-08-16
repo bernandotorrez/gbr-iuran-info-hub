@@ -36,43 +36,43 @@ const menuItems = [
     title: "Dashboard",
     url: "/cms",
     icon: Home,
-    roles: ['admin', 'warga']
+    roles: ['admin', 'warga', 'bendahara', 'ketua']
   },
   {
     title: "Master Data Warga",
     url: "/cms/warga",
     icon: Users,
-    roles: ['admin', 'warga', 'security']
+    roles: ['admin', 'warga', 'security', 'bendahara', 'ketua']
   },
   {
     title: "Input Iuran",
     url: "/cms/input-iuran",
     icon: TrendingUp,
-    roles: ['admin', 'warga']
+    roles: ['admin', 'warga', 'bendahara']
   },
   {
     title: "Output Kas",
     url: "/cms/output-kas",
     icon: ArrowUpDown,
-    roles: ['admin', 'warga']
+    roles: ['admin', 'warga', 'bendahara']
   },
   {
     title: "Laporan Iuran",
     url: "/cms/laporan",
     icon: BarChart3,
-    roles: ['admin', 'warga']
+    roles: ['admin', 'warga', 'bendahara', 'ketua']
   },
   {
     title: "Buku Tamu",
     url: "/cms/buku-tamu",
     icon: BookOpen,
-    roles: ['admin', 'warga', 'security']
+    roles: ['admin', 'warga', 'security', 'bendahara', 'ketua']
   },
   {
     title: "Struktur Pengurus",
     url: "/cms/struktur-pengurus",
     icon: UserCheck,
-    roles: ['admin', 'warga', 'security']
+    roles: ['admin', 'warga', 'security', 'bendahara', 'ketua']
   },
   {
     title: "Master Tipe Iuran",
@@ -97,7 +97,7 @@ const menuItems = [
 export function AppSidebar() {
   const location = useLocation();
   const { signOut } = useAuth();
-  const { userProfile } = useUserRole();
+  const { userProfile, loading } = useUserRole();
 
   const handleLogout = async () => {
     await signOut();
@@ -106,8 +106,9 @@ export function AppSidebar() {
 
   // Filter menu items based on user role
   const filteredMenuItems = menuItems.filter(item => {
-    if (!userProfile?.role) return true; // Show all if role not loaded yet
-    return item.roles.includes(userProfile.role);
+    if (loading || !userProfile?.role) return false; // Hide all if still loading or role not available
+    // Case-insensitive role comparison
+    return item.roles.some(role => role.toLowerCase() === userProfile.role.toLowerCase());
   });
 
   return (
@@ -134,21 +135,30 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredMenuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    className={`hover:bg-sidebar-accent hover:text-sidebar-primary transition-colors ${
-                      location.pathname === item.url ? 'bg-sidebar-primary text-sidebar-primary-foreground' : ''
-                    }`}
-                  >
-                    <Link to={item.url} className="flex items-center space-x-2 md:space-x-3 py-2 md:py-3">
-                      <item.icon className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-                      <span className="font-medium text-xs md:text-sm truncate">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+              {loading ? (
+                <SidebarMenuItem>
+                  <div className="flex items-center space-x-2 md:space-x-3 py-2 md:py-3 px-3">
+                    <div className="w-4 h-4 md:w-5 md:h-5 bg-gray-300 rounded animate-pulse"></div>
+                    <span className="font-medium text-xs md:text-sm text-sidebar-foreground/70">Memuat menu...</span>
+                  </div>
                 </SidebarMenuItem>
-              ))}
+              ) : (
+                filteredMenuItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton 
+                      asChild 
+                      className={`hover:bg-sidebar-accent hover:text-sidebar-primary transition-colors ${
+                        location.pathname === item.url ? 'bg-sidebar-primary text-sidebar-primary-foreground' : ''
+                      }`}
+                    >
+                      <Link to={item.url} className="flex items-center space-x-2 md:space-x-3 py-2 md:py-3">
+                        <item.icon className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                        <span className="font-medium text-xs md:text-sm truncate">{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
