@@ -56,7 +56,7 @@ export default function LaporanIuran() {
   })
   const { toast } = useToast()
   const { fetchIuran, fetchKasKeluar, fetchDashboardStats, dashboardStats } = useSupabaseData()
-  const { isAdmin } = useUserRole()
+  const { isAdmin, userProfile } = useUserRole()
 
   useEffect(() => {
     loadData()
@@ -231,7 +231,7 @@ export default function LaporanIuran() {
           <h1 className="text-3xl font-bold">Laporan Iuran</h1>
           <p className="text-muted-foreground">Dashboard dan laporan keuangan perumahan</p>
         </div>
-        {isAdmin && (
+        {(isAdmin || userProfile?.role === 'warga') && (
           <div className="flex space-x-2">
             <Button variant="outline" onClick={handleExportPDF}>
               <Download className="w-4 h-4 mr-2" />

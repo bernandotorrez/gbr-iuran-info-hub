@@ -63,7 +63,7 @@ export default function OutputKas() {
   const { session } = useAuth()
   const { fetchKasKeluar, addKasKeluar, updateKasKeluarStatus, dashboardStats, fetchDashboardStats, fetchTipeIuran } = useSupabaseData()
   const { kategoriList, loading: kategoriLoading } = useKategoriKas()
-  const { isAdmin } = useUserRole()
+  const { isAdmin, userProfile } = useUserRole()
   const [tipeIuranList, setTipeIuranList] = useState<any[]>([])
 
   const [formData, setFormData] = useState({
@@ -452,7 +452,7 @@ export default function OutputKas() {
           <p className="text-muted-foreground">Kelola pengeluaran kas perumahan</p>
         </div>
         <div className="flex space-x-2">
-          {isAdmin && (
+          {(isAdmin || userProfile?.role === 'warga') && (
             <>
               <Button variant="outline" onClick={exportToPDF}>
                 <Download className="w-4 h-4 mr-2" />
@@ -462,6 +462,10 @@ export default function OutputKas() {
                 <Download className="w-4 h-4 mr-2" />
                 Export Excel
               </Button>
+            </>
+          )}
+          {isAdmin && (
+            <>
               <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-primary hover:bg-primary/90">

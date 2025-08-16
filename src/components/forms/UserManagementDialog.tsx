@@ -38,7 +38,8 @@ export function UserManagementDialog({
     email: "",
     alamat: "",
     role: "warga",
-    warga_id: ""
+    warga_id: "",
+    password: "warga123"
   })
   
   const [wargaList, setWargaList] = useState<Warga[]>([])
@@ -99,8 +100,8 @@ export function UserManagementDialog({
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         id: userData.warga_id,
-        email: `${userData.phone_number}@gbr.com`,
-        password: 'warga123',
+        email: userData.email || `${userData.phone_number}@gbr.com`,
+        password: userData.password,
         phone: userData.phone_number.slice(1),
         email_confirm: true,
         user_metadata: {
@@ -134,13 +135,14 @@ export function UserManagementDialog({
         email: "",
         alamat: "",
         role: "warga",
-        warga_id: ""
+        warga_id: "",
+        password: "warga123"
       })
       onUserAdded()
       onClose()
       toast({ 
         title: "Berhasil", 
-        description: "User berhasil ditambahkan dengan password default: warga123" 
+        description: `User berhasil ditambahkan dengan password: ${formData.password}` 
       })
     } catch (error) {
       console.error('Error saving user:', error)
@@ -156,12 +158,13 @@ export function UserManagementDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Tambah User Login</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="overflow-y-auto flex-1 pr-2">
+          <form id="user-form" onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="warga_id">Pilih Data Warga (Opsional)</Label>
             <Select
@@ -247,22 +250,37 @@ export function UserManagementDialog({
             </Select>
           </div>
 
+          <div>
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+              placeholder="Masukkan password"
+              required
+              minLength={6}
+            />
+          </div>
+
           <div className="bg-blue-50 p-4 rounded-lg">
             <p className="text-sm text-blue-800">
-              <strong>Info:</strong> User akan dibuat dengan email: {formData.phone_number}@gbr.com dan password default: <code>warga123</code>
+              <strong>Info:</strong> User akan dibuat dengan email: {formData.email || `${formData.phone_number}@gbr.com`} dan password yang Anda tentukan.
               {formData.warga_id && formData.warga_id !== "none" && <br />}<span className="text-green-700">Data user akan terhubung dengan data warga yang dipilih.</span>
             </p>
           </div>
           
-          <div className="flex gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-              Batal
-            </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? "Menyimpan..." : "Tambah User"}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </div>
+        
+        <div className="flex gap-2 pt-4 border-t flex-shrink-0">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+            Batal
+          </Button>
+          <Button type="submit" disabled={loading} className="flex-1" form="user-form">
+            {loading ? "Menyimpan..." : "Tambah User"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   )

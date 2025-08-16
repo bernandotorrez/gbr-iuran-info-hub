@@ -81,7 +81,7 @@ export default function InputIuran() {
   const [buktiTransferUrl, setBuktiTransferUrl] = useState("")
   const [processedIuranList, setProcessedIuranList] = useState<Iuran[]>([])
   const [processedFilteredIuran, setProcessedFilteredIuran] = useState<Iuran[]>([])
-  // Cache for signed URLs to reduce API calls
+  // Cache for signed URLs to reduce API calls (using localStorage for persistence)
   const [urlCache, setUrlCache] = useState<Map<string, { url: string, timestamp: number }>>(new Map())
   const { toast } = useToast()
   const { fetchWarga, fetchTipeIuran, fetchIuran, addIuran, deleteIuran } = useSupabaseData()
@@ -97,7 +97,30 @@ export default function InputIuran() {
     keterangan: ""
   })
 
-  // Function to generate signed URLs for private bucket images with caching
+  // Load cache from localStorage on component mount
+  useEffect(() => {
+    try {
+      const savedCache = localStorage.getItem('iuran_image_cache')
+      if (savedCache) {
+        const parsedCache = JSON.parse(savedCache)
+        const now = Date.now()
+        const cacheExpiry = 55 * 60 * 1000 // 55 minutes in milliseconds
+        
+        // Filter out expired entries
+        const validEntries = Object.entries(parsedCache).filter(
+          ([_, value]: [string, any]) => (now - value.timestamp) < cacheExpiry
+        )
+        
+        if (validEntries.length > 0) {
+          setUrlCache(new Map(validEntries))
+        }
+      }
+    } catch (error) {
+      console.error('Error loading cache from localStorage:', error)
+    }
+  }, [])
+
+  // Function to generate signed URLs for private bucket images with browser caching
   const generateSignedUrl = async (filePath: string): Promise<string> => {
     if (!filePath) return ""
     
@@ -109,10 +132,10 @@ export default function InputIuran() {
           : filePath
         : filePath
 
-      // Check cache first (URLs expire in 1 hour, so cache for 50 minutes to be safe)
+      // Check cache first (URLs expire in 1 hour, so cache for 55 minutes to be safe)
       const cached = urlCache.get(pathOnly)
       const now = Date.now()
-      const cacheExpiry = 50 * 60 * 1000 // 50 minutes in milliseconds
+      const cacheExpiry = 55 * 60 * 1000 // 55 minutes in milliseconds
       
       if (cached && (now - cached.timestamp) < cacheExpiry) {
         return cached.url
@@ -127,10 +150,21 @@ export default function InputIuran() {
         return ""
       }
 
-      // Cache the new URL
+      // Cache the new URL in memory and localStorage
+      const cacheEntry = { url: data.signedUrl, timestamp: now }
+      
       setUrlCache(prev => {
         const newCache = new Map(prev)
-        newCache.set(pathOnly, { url: data.signedUrl, timestamp: now })
+        newCache.set(pathOnly, cacheEntry)
+        
+        // Save to localStorage
+        try {
+          const cacheObject = Object.fromEntries(newCache)
+          localStorage.setItem('iuran_image_cache', JSON.stringify(cacheObject))
+        } catch (error) {
+          console.error('Error saving cache to localStorage:', error)
+        }
+        
         return newCache
       })
 

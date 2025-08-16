@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import { Plus, Search, Users, Clock, Upload, X, Eye, CheckCircle, Loader2, CircleCheck } from "lucide-react"
+import { Plus, Search, Users, Clock, Upload, X, Image, CheckCircle, Loader2, CircleCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -42,8 +42,19 @@ export default function BukuTamu() {
     try {
       setLoading(true)
       const data = await fetchBukuTamu()
-      setBukuTamuList(data)
-      setFilteredBukuTamu(data)
+      
+      // Auto-generate presigned URLs for all items with KTP files
+      const processedData = await Promise.all(
+        data.map(async (item) => {
+          if (item.ktp_file_url) {
+            await getSignedUrl(item.id, item.ktp_file_url)
+          }
+          return item
+        })
+      )
+      
+      setBukuTamuList(processedData)
+      setFilteredBukuTamu(processedData)
     } catch (error) {
       toast({
         title: "Error",
@@ -379,7 +390,7 @@ export default function BukuTamu() {
                         {loadingImages[item.id] ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                          <Eye className="w-4 h-4" />
+                          <Image className="w-4 h-4" />
                         )}
                       </Button>
                     )}
