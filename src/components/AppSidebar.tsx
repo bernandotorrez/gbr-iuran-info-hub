@@ -66,7 +66,7 @@ const menuItems = [
     title: "Buku Tamu",
     url: "/cms/buku-tamu",
     icon: BookOpen,
-    roles: ['admin', 'security']
+    roles: ['admin', 'warga', 'security']
   },
   {
     title: "Struktur Pengurus",

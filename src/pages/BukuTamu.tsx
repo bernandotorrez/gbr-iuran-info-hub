@@ -23,7 +23,7 @@ export default function BukuTamu() {
   const [ktpFileUrl, setKtpFileUrl] = useState("")
   const [statusFilter, setStatusFilter] = useState("semua")
   const { toast } = useToast()
-  const { isAdmin } = useUserRole()
+  const { isAdmin, isSecurity, hasSecurityAccess } = useUserRole()
   const { fetchBukuTamu, addBukuTamu, updateBukuTamu } = useSupabaseData()
   const [imageUrls, setImageUrls] = useState({});
   const [loadingImages, setLoadingImages] = useState({});
@@ -117,7 +117,7 @@ export default function BukuTamu() {
           <h1 className="text-3xl font-bold">Buku Tamu</h1>
           <p className="text-muted-foreground">Kelola data kunjungan tamu</p>
         </div>
-        {isAdmin && (
+        {hasSecurityAccess && (
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
               <Button className="bg-primary hover:bg-primary/90">
@@ -383,7 +383,7 @@ export default function BukuTamu() {
                         )}
                       </Button>
                     )}
-                    {item.status === 'masuk' && (
+                    {hasSecurityAccess && item.status === 'masuk' && (
                       <Button
                         variant="ghost"
                         size="sm"
