@@ -9,7 +9,7 @@ import { Link } from "react-router-dom"
 import { useSupabaseData, UMKM } from "@/hooks/useSupabaseData"
 
 export default function PublicUMKM() {
-  const { fetchUMKMPublic } = useSupabaseData()
+  const { fetchUMKMPublic, generateSignedUrlUMKM } = useSupabaseData()
   
   const [umkmList, setUmkmList] = useState<UMKM[]>([])
   const [filteredUmkm, setFilteredUmkm] = useState<UMKM[]>([])
@@ -35,10 +35,6 @@ export default function PublicUMKM() {
     { value: 'lainnya', label: 'Lainnya' }
   ]
 
-  useEffect(() => {
-    loadUmkm()
-  }, [selectedTag])
-
   // Load all UMKM data when page first opens
   useEffect(() => {
     loadUmkm()
@@ -46,13 +42,30 @@ export default function PublicUMKM() {
 
   useEffect(() => {
     filterUmkm()
-  }, [searchTerm, umkmList])
+  }, [searchTerm, selectedTag, umkmList])
 
   const loadUmkm = async () => {
     try {
       setLoading(true)
-      const data = await fetchUMKMPublic(selectedTag === 'all' ? undefined : selectedTag)
-      setUmkmList(data)
+      const data = await fetchUMKMPublic()
+      
+      // Generate signed URLs for images
+      const dataWithSignedUrls = await Promise.all(
+        data.map(async (umkm) => {
+          if (umkm.gambar_url) {
+            try {
+              const signedUrl = await generateSignedUrlUMKM(umkm.gambar_url)
+              return { ...umkm, gambar_url: signedUrl }
+            } catch (error) {
+              console.error('Error generating signed URL for UMKM image:', error)
+              return umkm
+            }
+          }
+          return umkm
+        })
+      )
+      
+      setUmkmList(dataWithSignedUrls)
     } catch (error) {
       console.error('Error loading UMKM:', error)
     } finally {
@@ -61,41 +74,57 @@ export default function PublicUMKM() {
   }
 
   const filterUmkm = () => {
-    if (!searchTerm) {
-      setFilteredUmkm(umkmList)
-    } else {
-      const filtered = umkmList.filter(umkm => 
-        umkm.nama_umkm.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        umkm.deskripsi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        umkm.alamat?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        umkm.warga_new?.nama_suami.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        umkm.warga_new?.nama_istri.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-      setFilteredUmkm(filtered)
+    let filtered = umkmList
+    
+    // Filter by selected tag
+    if (selectedTag !== 'all') {
+      filtered = filtered.filter(umkm => {
+        const tagNames = umkm.umkm_tags?.map(ut => ut.tag_umkm?.nama_tag).filter(Boolean) || []
+        return tagNames.some(tagName => tagName.toLowerCase().includes(selectedTag.toLowerCase()))
+      })
     }
+    
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(umkm => {
+        const tagNames = umkm.umkm_tags?.map(ut => ut.tag_umkm?.nama_tag).filter(Boolean).join(' ') || ''
+        
+        return umkm.nama_umkm.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               umkm.deskripsi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               umkm.alamat?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               tagNames.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               umkm.warga_new?.nama_suami.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               umkm.warga_new?.nama_istri.toLowerCase().includes(searchTerm.toLowerCase())
+      })
+    }
+    
+    setFilteredUmkm(filtered)
   }
 
-  const getTagBadge = (tag: string) => {
-    const colors: { [key: string]: string } = {
-      'gas': 'bg-red-100 text-red-800',
-      'galon': 'bg-blue-100 text-blue-800',
-      'siomay': 'bg-yellow-100 text-yellow-800',
-      'makanan': 'bg-green-100 text-green-800',
-      'minuman': 'bg-purple-100 text-purple-800',
-      'jasa': 'bg-indigo-100 text-indigo-800',
-      'elektronik': 'bg-gray-100 text-gray-800',
-      'pakaian': 'bg-pink-100 text-pink-800',
-      'kecantikan': 'bg-rose-100 text-rose-800',
-      'kesehatan': 'bg-emerald-100 text-emerald-800',
-      'pendidikan': 'bg-cyan-100 text-cyan-800',
-      'otomotif': 'bg-orange-100 text-orange-800',
-      'lainnya': 'bg-slate-100 text-slate-800'
+  const getTagBadges = (umkmTags: any[]) => {
+    if (!umkmTags || umkmTags.length === 0) {
+      return <span className="text-gray-400">-</span>
     }
     
     return (
-      <Badge className={colors[tag] || colors['lainnya']}>
-        {tag.charAt(0).toUpperCase() + tag.slice(1)}
-      </Badge>
+      <div className="flex flex-wrap gap-1">
+        {umkmTags.map((umkmTag, index) => {
+          const tag = umkmTag.tag_umkm
+          if (!tag) return null
+          
+          return (
+            <Badge 
+              key={index}
+              style={{ 
+                backgroundColor: tag.warna, 
+                color: 'white' 
+              }}
+            >
+              {tag.nama_tag}
+            </Badge>
+          )
+        })}
+      </div>
     )
   }
 
@@ -221,22 +250,23 @@ export default function PublicUMKM() {
                 {filteredUmkm.map((umkm) => (
                   <Card key={umkm.id} className="hover:shadow-lg transition-shadow duration-200">
                     {umkm.gambar_url && (
-                      <div className="aspect-video w-full overflow-hidden rounded-t-lg">
-                        <img 
-                          src={umkm.gambar_url} 
-                          alt={umkm.nama_umkm}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-                        />
-                      </div>
+                      <>
+                        <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+                          <img 
+                            src={umkm.gambar_url} 
+                            alt={umkm.nama_umkm}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                          />
+                        </div>
+                        <div className="border-b border-gray-200"></div>
+                      </>
                     )}
                     <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <CardTitle className="text-lg font-semibold line-clamp-2">
-                          {umkm.nama_umkm}
-                        </CardTitle>
-                        <div className="ml-2 flex-shrink-0">
-                          {getTagBadge(umkm.tag)}
-                        </div>
+                      <CardTitle className="text-lg font-semibold line-clamp-2 mb-2">
+                        {umkm.nama_umkm}
+                      </CardTitle>
+                      <div className="flex flex-wrap gap-1">
+                        {getTagBadges(umkm.umkm_tags)}
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
@@ -265,6 +295,27 @@ export default function PublicUMKM() {
                           <div className="flex items-center text-sm text-gray-600">
                             <Tag className="h-4 w-4 mr-2 flex-shrink-0" />
                             <span>Pemilik: {umkm.warga_new.nama_suami} {umkm.warga_new.nama_istri && `& ${umkm.warga_new.nama_istri}`}</span>
+                          </div>
+                        )}
+                        
+                        {umkm.nomor_telepon && (
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Phone className="h-4 w-4 mr-2 flex-shrink-0" />
+                            <span>{formatPhoneNumber(umkm.nomor_telepon)}</span>
+                          </div>
+                        )}
+                        
+                        {umkm.email && (
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
+                            <span className="truncate">{umkm.email}</span>
+                          </div>
+                        )}
+                        
+                        {umkm.website && (
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Globe className="h-4 w-4 mr-2 flex-shrink-0" />
+                            <span className="truncate">{umkm.website}</span>
                           </div>
                         )}
                       </div>

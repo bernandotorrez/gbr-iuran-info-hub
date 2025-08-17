@@ -579,70 +579,122 @@ export const useSupabaseData = () => {
 
   // UMKM functions
   const fetchUMKM = async () => {
-    const { data, error } = await supabase
-      .from('umkm')
-      .select(`
-        *,
-        warga_new (
-          nama_suami,
-          nama_istri,
-          nomor_hp_suami,
-          nomor_hp_istri
-        ),
-        umkm_tags (
-          tag_id,
-          tag_umkm (
-            id,
-            nama_tag,
-            warna
+    try {
+      // First try the full query with joins
+      const { data, error } = await supabase
+        .from('umkm')
+        .select(`
+          *,
+          warga_new (
+            nama_suami,
+            nama_istri,
+            nomor_hp_suami,
+            nomor_hp_istri
+          ),
+          umkm_tags (
+            tag_id,
+            tag_umkm (
+              id,
+              nama_tag,
+              warna
+            )
           )
-        )
-      `)
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching UMKM:', error);
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching UMKM with joins:', error);
+        
+        // Fallback: try simple query without joins
+        const { data: simpleData, error: simpleError } = await supabase
+          .from('umkm')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (simpleError) {
+          console.error('Error fetching UMKM simple:', simpleError);
+          return [];
+        }
+        
+        console.log('UMKM data fetched successfully (simple):', simpleData?.length, 'records');
+        return simpleData || [];
+      }
+      
+      console.log('UMKM data fetched successfully:', data?.length, 'records');
+      return data || [];
+    } catch (error) {
+      console.error('Unexpected error fetching UMKM:', error);
       return [];
     }
-    
-    return data || [];
   };
 
   const fetchUMKMPublic = async (tag?: string) => {
-    let query = supabase
-      .from('umkm')
-      .select(`
-        *,
-        warga_new (
-          nama_suami,
-          nama_istri,
-          nomor_hp_suami,
-          nomor_hp_istri
-        )
-      `)
-      .eq('status', 'aktif')
-      .order('created_at', { ascending: false });
-    
-    if (tag) {
-      query = query.eq('tag', tag);
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) {
-      console.error('Error fetching public UMKM:', error);
+    try {
+      let query = supabase
+        .from('umkm')
+        .select(`
+          *,
+          warga_new (
+            nama_suami,
+            nama_istri,
+            nomor_hp_suami,
+            nomor_hp_istri
+          ),
+          umkm_tags (
+            tag_id,
+            tag_umkm (
+              id,
+              nama_tag,
+              warna
+            )
+          )
+        `)
+        .eq('status', 'aktif')
+        .order('created_at', { ascending: false });
+      
+      // Note: tag filtering will be handled in the frontend since we now use many-to-many relationship
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Error fetching public UMKM with joins:', error);
+        
+        // Fallback: try simple query without joins
+        const { data: simpleData, error: simpleError } = await supabase
+          .from('umkm')
+          .select('*')
+          .eq('status', 'aktif')
+          .order('created_at', { ascending: false });
+        
+        if (simpleError) {
+          console.error('Error fetching public UMKM simple:', simpleError);
+          return [];
+        }
+        
+        return simpleData || [];
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error('Unexpected error fetching public UMKM:', error);
       return [];
     }
-    
-    return data || [];
   };
 
   const addUMKM = async (umkmData: any) => {
     const { selectedTags, ...umkmDataWithoutTags } = umkmData;
     
+    // Clean up empty strings to NULL for optional fields to satisfy database constraints
+    const cleanedData = {
+      ...umkmDataWithoutTags,
+      email: umkmDataWithoutTags.email?.trim() === '' ? null : umkmDataWithoutTags.email,
+      nomor_telepon: umkmDataWithoutTags.nomor_telepon?.trim() === '' ? null : umkmDataWithoutTags.nomor_telepon,
+      website: umkmDataWithoutTags.website?.trim() === '' ? null : umkmDataWithoutTags.website
+    };
+    
     const { data, error } = await supabase
       .from('umkm')
-      .insert([umkmDataWithoutTags])
+      .insert([cleanedData])
       .select()
       .single();
     
@@ -674,9 +726,17 @@ export const useSupabaseData = () => {
   const updateUMKM = async (id: string, umkmData: any) => {
     const { selectedTags, ...umkmDataWithoutTags } = umkmData;
     
+    // Clean up empty strings to NULL for optional fields to satisfy database constraints
+    const cleanedData = {
+      ...umkmDataWithoutTags,
+      email: umkmDataWithoutTags.email?.trim() === '' ? null : umkmDataWithoutTags.email,
+      nomor_telepon: umkmDataWithoutTags.nomor_telepon?.trim() === '' ? null : umkmDataWithoutTags.nomor_telepon,
+      website: umkmDataWithoutTags.website?.trim() === '' ? null : umkmDataWithoutTags.website
+    };
+    
     const { data, error } = await supabase
       .from('umkm')
-      .update(umkmDataWithoutTags)
+      .update(cleanedData)
       .eq('id', id)
       .select()
       .single();
@@ -734,7 +794,7 @@ export const useSupabaseData = () => {
       const filePath = `umkm_images/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('public')
+        .from('images')
         .upload(filePath, file);
 
       if (uploadError) {
@@ -743,7 +803,7 @@ export const useSupabaseData = () => {
       }
 
       const { data } = supabase.storage
-        .from('public')
+        .from('images')
         .getPublicUrl(filePath);
 
       return data.publicUrl;
@@ -760,7 +820,7 @@ export const useSupabaseData = () => {
       const filePath = `umkm_images/${fileName}`;
 
       const { error } = await supabase.storage
-        .from('public')
+        .from('images')
         .remove([filePath]);
 
       if (error) {
@@ -768,6 +828,42 @@ export const useSupabaseData = () => {
       }
     } catch (error) {
       console.error('Error in deleteImageUMKM:', error);
+    }
+  };
+
+  // Generate signed URL for UMKM images
+  const generateSignedUrlUMKM = async (imageUrl: string): Promise<string> => {
+    if (!imageUrl) return "";
+    
+    try {
+      // If it's already a public URL, return as is
+      if (imageUrl.includes('supabase') && !imageUrl.includes('images')) {
+        return imageUrl;
+      }
+      
+      // Extract path from full URL if needed
+      let filePath = imageUrl;
+      if (imageUrl.includes('umkm_images/')) {
+        const pathParts = imageUrl.split('umkm_images/');
+        if (pathParts.length > 1) {
+          filePath = `umkm_images/${pathParts[1].split('?')[0]}`; // Remove query parameters
+        }
+      }
+      
+      // Try to generate signed URL for private bucket first
+      const { data, error } = await supabase.storage
+        .from('images')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (error) {
+        console.error('Error generating signed URL for UMKM image:', error);
+        return imageUrl; // Return original URL as fallback
+      }
+
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Error generating signed URL for UMKM image:', error);
+      return imageUrl; // Return original URL as fallback
     }
   };
 
@@ -871,6 +967,7 @@ export const useSupabaseData = () => {
     deleteUMKM,
     uploadImageUMKM,
     deleteImageUMKM,
+    generateSignedUrlUMKM,
     // Tag UMKM functions
     fetchTagUMKM,
     addTagUMKM,

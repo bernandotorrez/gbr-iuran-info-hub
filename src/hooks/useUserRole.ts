@@ -12,36 +12,40 @@ export const useUserRole = () => {
     const fetchUserProfile = async () => {
       if (user?.id) {
         try {
+          // First check user metadata for role (prioritize this for admin users)
+          const userMetadataRole = user.user_metadata?.role;
+          
+          // If user has admin role in metadata, use it directly
+          if (userMetadataRole && userMetadataRole.toLowerCase() === 'admin') {
+            setUserProfile({ role: userMetadataRole });
+            setLoading(false);
+            return;
+          }
+          
+          // For non-admin users, check warga_new table
           const { data, error } = await supabase
             .from('warga_new')
             .select('role')
             .eq('id', user.id)
             .single();
           
-          if (!error && data) {
+          if (!error && data && data.role) {
             setUserProfile(data);
           } else {
-            console.log('User profile not found in warga_new table for user ID:', user.id);
-            // Check user metadata for role if not found in warga_new table
-            const userRole = user.user_metadata?.role;
-            if (userRole) {
-              console.log('Found role in user metadata:', userRole);
-              setUserProfile({ role: userRole });
+            // Fallback to user metadata or default
+            if (userMetadataRole) {
+              setUserProfile({ role: userMetadataRole });
             } else {
-              // Fallback to default role only if no role found anywhere
-              console.log('No role found, defaulting to warga');
               setUserProfile({ role: 'warga' });
             }
           }
         } catch (error) {
           console.error('Error fetching user profile:', error);
-          // Check user metadata for role as fallback
+          // Fallback to user metadata
           const userRole = user.user_metadata?.role;
           if (userRole) {
-            console.log('Found role in user metadata (fallback):', userRole);
             setUserProfile({ role: userRole });
           } else {
-            // Final fallback to default role
             setUserProfile({ role: 'warga' });
           }
         }

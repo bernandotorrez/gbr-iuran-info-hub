@@ -18,7 +18,8 @@ export default function MasterUMKM() {
     updateUMKM, 
     deleteUMKM, 
     uploadImageUMKM, 
-    deleteImageUMKM 
+    deleteImageUMKM,
+    generateSignedUrlUMKM 
   } = useSupabaseData()
   
   const [umkmList, setUmkmList] = useState<UMKM[]>([])
@@ -46,6 +47,7 @@ export default function MasterUMKM() {
       })
       return
     }
+    
     loadUmkm()
   }, [hasAdminAccess, userLoading])
 
@@ -57,8 +59,26 @@ export default function MasterUMKM() {
     try {
       setLoading(true)
       const data = await fetchUMKM()
-      setUmkmList(data)
+      
+      // Generate signed URLs for images
+      const dataWithSignedUrls = await Promise.all(
+        data.map(async (umkm) => {
+          if (umkm.gambar_url) {
+            try {
+              const signedUrl = await generateSignedUrlUMKM(umkm.gambar_url)
+              return { ...umkm, gambar_url: signedUrl }
+            } catch (error) {
+              console.error('Error generating signed URL for UMKM image:', error)
+              return umkm
+            }
+          }
+          return umkm
+        })
+      )
+      
+      setUmkmList(dataWithSignedUrls)
     } catch (error) {
+      console.error('Error loading UMKM:', error)
       toast({
         title: "Error",
         description: "Gagal memuat data UMKM",
@@ -73,13 +93,15 @@ export default function MasterUMKM() {
     if (!searchTerm) {
       setFilteredUmkm(umkmList)
     } else {
-      const filtered = umkmList.filter(umkm => 
-        umkm.nama_umkm.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        umkm.tag.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        umkm.alamat?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        umkm.warga_new?.nama_suami.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        umkm.warga_new?.nama_istri.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      const filtered = umkmList.filter(umkm => {
+        const tagNames = umkm.umkm_tags?.map(ut => ut.tag_umkm?.nama_tag).filter(Boolean).join(' ') || ''
+        
+        return umkm.nama_umkm.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               tagNames.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               umkm.alamat?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               umkm.warga_new?.nama_suami.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               umkm.warga_new?.nama_istri.toLowerCase().includes(searchTerm.toLowerCase())
+      })
       setFilteredUmkm(filtered)
     }
   }
@@ -203,47 +225,55 @@ export default function MasterUMKM() {
     )
   }
 
-  const getTagBadge = (tag: string) => {
-    const colors: { [key: string]: string } = {
-      'gas': 'bg-red-100 text-red-800',
-      'galon': 'bg-blue-100 text-blue-800',
-      'siomay': 'bg-yellow-100 text-yellow-800',
-      'makanan': 'bg-green-100 text-green-800',
-      'minuman': 'bg-purple-100 text-purple-800',
-      'jasa': 'bg-indigo-100 text-indigo-800',
-      'elektronik': 'bg-gray-100 text-gray-800',
-      'pakaian': 'bg-pink-100 text-pink-800',
-      'kecantikan': 'bg-rose-100 text-rose-800',
-      'kesehatan': 'bg-emerald-100 text-emerald-800',
-      'pendidikan': 'bg-cyan-100 text-cyan-800',
-      'otomotif': 'bg-orange-100 text-orange-800',
-      'lainnya': 'bg-slate-100 text-slate-800'
+  const getTagBadges = (umkmTags: any[]) => {
+    if (!umkmTags || umkmTags.length === 0) {
+      return <span className="text-gray-400">-</span>
     }
     
     return (
-      <Badge className={colors[tag] || colors['lainnya']}>
-        {tag.charAt(0).toUpperCase() + tag.slice(1)}
-      </Badge>
+      <div className="flex flex-wrap gap-1">
+        {umkmTags.map((umkmTag, index) => {
+          const tag = umkmTag.tag_umkm
+          if (!tag) return null
+          
+          return (
+            <Badge 
+              key={index}
+              style={{ 
+                backgroundColor: tag.warna, 
+                color: 'white' 
+              }}
+            >
+              {tag.nama_tag}
+            </Badge>
+          )
+        })}
+      </div>
     )
   }
 
-  if (!hasAdminAccess) {
+  if (!hasAdminAccess && !userLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Akses Ditolak</h2>
-          <p className="text-gray-600">Anda tidak memiliki akses untuk halaman ini</p>
-        </div>
+      <div className="flex flex-col items-center justify-center h-96 text-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Akses Ditolak</h2>
+        <p className="text-gray-600 mb-4">
+          Anda tidak memiliki izin untuk mengakses halaman ini.
+        </p>
+        <p className="text-sm text-gray-500">
+          Halaman ini hanya dapat diakses oleh Admin.
+        </p>
+
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
+      
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Master Data UMKM</h1>
+        <h1 className="text-3xl font-bold">Master UMKM</h1>
         <Button onClick={() => setIsAddOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4 mr-2" />
           Tambah UMKM
         </Button>
       </div>
@@ -305,7 +335,7 @@ export default function MasterUMKM() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{getTagBadge(umkm.tag)}</TableCell>
+                    <TableCell>{getTagBadges(umkm.umkm_tags)}</TableCell>
                     <TableCell>
                       {umkm.warga_new ? (
                         <div>
@@ -424,7 +454,7 @@ export default function MasterUMKM() {
                   <h3 className="font-semibold text-lg">{selectedUmkm.nama_umkm}</h3>
                   <div className="flex items-center mt-2">
                     <Tag className="h-4 w-4 mr-2" />
-                    {getTagBadge(selectedUmkm.tag)}
+                    {getTagBadges(selectedUmkm.umkm_tags)}
                   </div>
                   <div className="mt-2">{getStatusBadge(selectedUmkm.status)}</div>
                 </div>

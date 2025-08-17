@@ -35,6 +35,7 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
     deskripsi: '',
     alamat: '',
     nomor_telepon: '',
+    phone_source: '', // 'suami' or 'istri'
     email: '',
     website: '',
     jam_operasional: '',
@@ -63,6 +64,7 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
         deskripsi: editData.deskripsi || '',
         alamat: editData.alamat || '',
         nomor_telepon: editData.nomor_telepon || '',
+        phone_source: editData.phone_source || '',
         email: editData.email || '',
         website: editData.website || '',
         jam_operasional: editData.jam_operasional || '',
@@ -71,6 +73,20 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
         warga_id: editData.warga_id || '',
         gambar_url: editData.gambar_url || ''
       })
+      
+      // Auto-detect phone source if not set but phone number exists
+      if (editData.nomor_telepon && !editData.phone_source && editData.warga_id) {
+        setTimeout(() => {
+          const warga = wargaList.find(w => w.id === editData.warga_id)
+          if (warga) {
+            if (warga.nomor_hp_suami === editData.nomor_telepon) {
+              setFormData(prev => ({ ...prev, phone_source: 'suami' }))
+            } else if (warga.nomor_hp_istri === editData.nomor_telepon) {
+              setFormData(prev => ({ ...prev, phone_source: 'istri' }))
+            }
+          }
+        }, 100)
+      }
       setPreviewUrl(editData.gambar_url || '')
       // Load existing tags for edit mode
       loadExistingTags(editData.id)
@@ -80,6 +96,7 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
         deskripsi: '',
         alamat: '',
         nomor_telepon: '',
+        phone_source: '',
         email: '',
         website: '',
         jam_operasional: '',
@@ -97,7 +114,7 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
   const loadWarga = async () => {
     try {
       const data = await fetchWarga()
-      console.log('Loaded warga data:', data) // Debug log
+      // console.log('Loaded warga data:', data) // Debug log
       setWargaList(data)
     } catch (error) {
       console.error('Error loading warga:', error)
@@ -142,6 +159,35 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
     }))
   }
 
+  const updatePhoneNumber = (wargaId: string, phoneSource: string) => {
+    if (!wargaId || !phoneSource) {
+      setFormData(prev => ({ ...prev, nomor_telepon: '' }))
+      return
+    }
+    
+    const selectedWarga = wargaList.find(w => w.id === wargaId)
+    if (selectedWarga) {
+      const phoneNumber = phoneSource === 'suami' 
+        ? selectedWarga.nomor_hp_suami 
+        : selectedWarga.nomor_hp_istri
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        nomor_telepon: phoneNumber || '' 
+      }))
+    }
+  }
+
+  const handleWargaChange = (wargaId: string) => {
+    setFormData(prev => ({ ...prev, warga_id: wargaId, phone_source: '' }))
+    updatePhoneNumber(wargaId, '')
+  }
+
+  const handlePhoneSourceChange = (phoneSource: string) => {
+    setFormData(prev => ({ ...prev, phone_source: phoneSource }))
+    updatePhoneNumber(formData.warga_id, phoneSource)
+  }
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -166,8 +212,9 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
+    const { phone_source, ...cleanFormData } = formData
     const submitData = {
-      ...formData,
+      ...cleanFormData,
       imageFile: selectedFile, // Include the file for upload
       selectedTags: selectedTags // Include selected tags
     }
@@ -286,13 +333,52 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="nomor_telepon">Nomor Telepon (opsional)</Label>
-                <Input
-                  id="nomor_telepon"
-                  value={formData.nomor_telepon}
-                  onChange={(e) => handleInputChange('nomor_telepon', e.target.value)}
-                  placeholder="Nomor telepon"
-                />
+                <Label>Nomor Telepon (dari data pemilik)</Label>
+                <div className="space-y-2">
+                  <Select 
+                    value={formData.phone_source} 
+                    onValueChange={handlePhoneSourceChange}
+                    disabled={!formData.warga_id}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={formData.warga_id ? "Pilih nomor telepon" : "Pilih pemilik terlebih dahulu"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {formData.warga_id && (() => {
+                        const selectedWarga = wargaList.find(w => w.id === formData.warga_id)
+                        if (!selectedWarga) return null
+                        
+                        const options = []
+                        if (selectedWarga.nomor_hp_suami) {
+                          options.push(
+                            <SelectItem key="suami" value="suami">
+                              Suami: {selectedWarga.nomor_hp_suami}
+                            </SelectItem>
+                          )
+                        }
+                        if (selectedWarga.nomor_hp_istri) {
+                          options.push(
+                            <SelectItem key="istri" value="istri">
+                              Istri: {selectedWarga.nomor_hp_istri}
+                            </SelectItem>
+                          )
+                        }
+                        
+                        return options.length > 0 ? options : (
+                          <SelectItem value="" disabled>
+                            Tidak ada nomor telepon tersedia
+                          </SelectItem>
+                        )
+                      })()}
+                    </SelectContent>
+                  </Select>
+                  
+                  {formData.nomor_telepon && (
+                    <div className="text-sm text-muted-foreground">
+                      Nomor terpilih: {formData.nomor_telepon}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -360,7 +446,7 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
                           <CommandItem
                             key={warga.id}
                             onSelect={() => {
-                              handleInputChange('warga_id', warga.id)
+                              handleWargaChange(warga.id)
                               setOpenWargaCombobox(false)
                             }}
                           >
