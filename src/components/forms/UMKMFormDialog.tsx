@@ -286,7 +286,7 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="nomor_telepon">Nomor Telepon</Label>
+                <Label htmlFor="nomor_telepon">Nomor Telepon (opsional)</Label>
                 <Input
                   id="nomor_telepon"
                   value={formData.nomor_telepon}
@@ -298,7 +298,7 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email (opsional)</Label>
                 <Input
                   id="email"
                   type="email"
@@ -309,7 +309,7 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="website">Website</Label>
+                <Label htmlFor="website">Website (opsional)</Label>
                 <Input
                   id="website"
                   value={formData.website}
