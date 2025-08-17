@@ -19,6 +19,9 @@ import OutputKas from "./pages/OutputKas";
 import LaporanIuran from "./pages/LaporanIuran";
 import ArtikelBerita from "./pages/ArtikelBerita";
 import PublicArtikel from "./pages/PublicArtikel";
+import MasterUMKM from "./pages/MasterUMKM";
+import { MasterTag } from "./pages/cms/MasterTag";
+import PublicUMKM from "./pages/PublicUMKM";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import CompanyProfile from "./pages/CompanyProfile";
@@ -46,6 +49,7 @@ const App = () => (
             <Route path="/public/artikel" element={<PublicArtikel />} />
             <Route path="/public/artikel/:slug" element={<PublicArtikel />} />
             <Route path="/public/pengurus" element={<PublicPengurus />} />
+            <Route path="/public/umkm" element={<PublicUMKM />} />
             
             {/* Protected Routes with Layout */}
             <Route path="/cms" element={
@@ -115,6 +119,20 @@ const App = () => (
               <ProtectedRoute>
                 <Layout>
                   <StrukturPengurus />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/cms/umkm" element={
+              <ProtectedRoute>
+                <Layout>
+                  <MasterUMKM />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/cms/tag" element={
+              <ProtectedRoute>
+                <Layout>
+                  <MasterTag />
                 </Layout>
               </ProtectedRoute>
             } />

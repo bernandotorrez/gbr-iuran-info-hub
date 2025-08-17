@@ -13,6 +13,8 @@ import {
   ArrowUpDown,
   UserCheck,
   BookOpen,
+  Store,
+  Tag,
 } from "lucide-react"
 import {
   Sidebar,
@@ -92,6 +94,18 @@ const menuItems = [
     icon: Newspaper,
     roles: ['admin']
   },
+  {
+    title: "Master UMKM",
+    url: "/cms/umkm",
+    icon: Store,
+    roles: ['admin']
+  },
+  {
+    title: "Master Tag UMKM",
+    url: "/cms/tag",
+    icon: Tag,
+    roles: ['admin']
+  },
 ]
 
 export function AppSidebar() {
@@ -166,14 +180,16 @@ export function AppSidebar() {
       
       <SidebarFooter className="p-3 md:p-4 border-t border-sidebar-border">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild className="hover:bg-sidebar-accent">
-              <Link to="/cms/settings" className="flex items-center space-x-2 md:space-x-3 py-2 md:py-3">
-                <Settings className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="text-xs md:text-sm">Pengaturan</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {userProfile?.role?.toLowerCase() === 'admin' && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild className="hover:bg-sidebar-accent">
+                <Link to="/cms/settings" className="flex items-center space-x-2 md:space-x-3 py-2 md:py-3">
+                  <Settings className="w-4 h-4 md:w-5 md:h-5" />
+                  <span className="text-xs md:text-sm">Pengaturan</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton 
               onClick={handleLogout}

@@ -47,6 +47,11 @@ export default function CompanyProfile() {
                   Struktur Pengurus
                 </Button>
               </Link>
+              <Link to="/public/umkm" className="w-full sm:w-auto">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm">
+                  Direktori UMKM
+                </Button>
+              </Link>
               <Link to="/cms/login" className="w-full sm:w-auto">
                 <Button size="sm" className="w-full sm:w-auto text-xs sm:text-sm">
                   Login Sistem

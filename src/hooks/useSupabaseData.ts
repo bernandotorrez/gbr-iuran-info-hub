@@ -48,6 +48,30 @@ export interface BukuTamu {
   updated_at?: string;
 }
 
+// Define UMKM interface
+export interface UMKM {
+  id: string;
+  nama_umkm: string;
+  deskripsi?: string;
+  alamat?: string;
+  nomor_telepon?: string;
+  email?: string;
+  website?: string;
+  jam_operasional?: string;
+  tag: string;
+  gambar_url?: string;
+  status: string;
+  warga_id?: string;
+  created_at: string;
+  updated_at?: string;
+  warga_new?: {
+    nama_suami: string;
+    nama_istri: string;
+    nomor_hp_suami: string;
+    nomor_hp_istri: string;
+  };
+}
+
 export const useSupabaseData = () => {
   const { session } = useAuth();
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
@@ -553,6 +577,258 @@ export const useSupabaseData = () => {
     return data;
   };
 
+  // UMKM functions
+  const fetchUMKM = async () => {
+    const { data, error } = await supabase
+      .from('umkm')
+      .select(`
+        *,
+        warga_new (
+          nama_suami,
+          nama_istri,
+          nomor_hp_suami,
+          nomor_hp_istri
+        ),
+        umkm_tags (
+          tag_id,
+          tag_umkm (
+            id,
+            nama_tag,
+            warna
+          )
+        )
+      `)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching UMKM:', error);
+      return [];
+    }
+    
+    return data || [];
+  };
+
+  const fetchUMKMPublic = async (tag?: string) => {
+    let query = supabase
+      .from('umkm')
+      .select(`
+        *,
+        warga_new (
+          nama_suami,
+          nama_istri,
+          nomor_hp_suami,
+          nomor_hp_istri
+        )
+      `)
+      .eq('status', 'aktif')
+      .order('created_at', { ascending: false });
+    
+    if (tag) {
+      query = query.eq('tag', tag);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Error fetching public UMKM:', error);
+      return [];
+    }
+    
+    return data || [];
+  };
+
+  const addUMKM = async (umkmData: any) => {
+    const { selectedTags, ...umkmDataWithoutTags } = umkmData;
+    
+    const { data, error } = await supabase
+      .from('umkm')
+      .insert([umkmDataWithoutTags])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error adding UMKM:', error);
+      throw error;
+    }
+    
+    // Add tags if any are selected
+    if (selectedTags && selectedTags.length > 0) {
+      const tagInserts = selectedTags.map((tagId: string) => ({
+        umkm_id: data.id,
+        tag_id: tagId
+      }));
+      
+      const { error: tagError } = await supabase
+        .from('umkm_tags')
+        .insert(tagInserts);
+      
+      if (tagError) {
+        console.error('Error adding UMKM tags:', tagError);
+        // Don't throw here, UMKM was created successfully
+      }
+    }
+    
+    return data;
+  };
+
+  const updateUMKM = async (id: string, umkmData: any) => {
+    const { selectedTags, ...umkmDataWithoutTags } = umkmData;
+    
+    const { data, error } = await supabase
+      .from('umkm')
+      .update(umkmDataWithoutTags)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating UMKM:', error);
+      throw error;
+    }
+    
+    // Update tags if provided
+    if (selectedTags !== undefined) {
+      // First, delete existing tags
+      await supabase
+        .from('umkm_tags')
+        .delete()
+        .eq('umkm_id', id);
+      
+      // Then add new tags if any are selected
+      if (selectedTags.length > 0) {
+        const tagInserts = selectedTags.map((tagId: string) => ({
+          umkm_id: id,
+          tag_id: tagId
+        }));
+        
+        const { error: tagError } = await supabase
+          .from('umkm_tags')
+          .insert(tagInserts);
+        
+        if (tagError) {
+          console.error('Error updating UMKM tags:', tagError);
+          // Don't throw here, UMKM was updated successfully
+        }
+      }
+    }
+    
+    return data;
+  };
+
+  const deleteUMKM = async (id: string) => {
+    const { error } = await supabase
+      .from('umkm')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting UMKM:', error);
+      throw error;
+    }
+  };
+
+  const uploadImageUMKM = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `umkm_images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('public')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        return null;
+      }
+
+      const { data } = supabase.storage
+        .from('public')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error in uploadImageUMKM:', error);
+      return null;
+    }
+  };
+
+  const deleteImageUMKM = async (imageUrl: string): Promise<void> => {
+    try {
+      const urlParts = imageUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      const filePath = `umkm_images/${fileName}`;
+
+      const { error } = await supabase.storage
+        .from('public')
+        .remove([filePath]);
+
+      if (error) {
+        console.error('Error deleting image:', error);
+      }
+    } catch (error) {
+      console.error('Error in deleteImageUMKM:', error);
+    }
+  };
+
+  // Tag UMKM functions
+  const fetchTagUMKM = async () => {
+    const { data, error } = await supabase
+      .from('tag_umkm')
+      .select('*')
+      .order('nama_tag', { ascending: true });
+    
+    if (error) {
+      console.error('Error fetching tag UMKM:', error);
+      return [];
+    }
+    
+    return data || [];
+  };
+
+  const addTagUMKM = async (tagData: any) => {
+    const { data, error } = await supabase
+      .from('tag_umkm')
+      .insert([tagData])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error adding tag UMKM:', error);
+      throw error;
+    }
+    
+    return data;
+  };
+
+  const updateTagUMKM = async (id: string, tagData: any) => {
+    const { data, error } = await supabase
+      .from('tag_umkm')
+      .update(tagData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating tag UMKM:', error);
+      throw error;
+    }
+    
+    return data;
+  };
+
+  const deleteTagUMKM = async (id: string) => {
+    const { error } = await supabase
+      .from('tag_umkm')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting tag UMKM:', error);
+      throw error;
+    }
+  };
+
   return {
     dashboardStats,
     loading,
@@ -586,6 +862,19 @@ export const useSupabaseData = () => {
     // Buku Tamu functions
     fetchBukuTamu,
     addBukuTamu,
-    updateBukuTamu
+    updateBukuTamu,
+    // UMKM functions
+    fetchUMKM,
+    fetchUMKMPublic,
+    addUMKM,
+    updateUMKM,
+    deleteUMKM,
+    uploadImageUMKM,
+    deleteImageUMKM,
+    // Tag UMKM functions
+    fetchTagUMKM,
+    addTagUMKM,
+    updateTagUMKM,
+    deleteTagUMKM
   };
 };
