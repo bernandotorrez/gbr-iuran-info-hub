@@ -77,7 +77,7 @@ export function PWAInstallPrompt() {
   // iOS Install Instructions
   if (showIOSInstructions && isIOS()) {
     return (
-      <Card className="fixed bottom-4 left-4 right-4 z-50 shadow-lg border-primary/20 bg-card/95 backdrop-blur-sm">
+      <Card className="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-[50%] max-w-md z-50 shadow-lg border-primary/20 bg-card/95 backdrop-blur-sm">
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
@@ -117,7 +117,7 @@ export function PWAInstallPrompt() {
   }
 
   return (
-    <Card className="fixed bottom-4 left-4 right-4 z-50 shadow-lg border-primary/20 bg-card/95 backdrop-blur-sm">
+    <Card className="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-[50%] max-w-md z-50 shadow-lg border-primary/20 bg-card/95 backdrop-blur-sm">
       <CardContent className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">

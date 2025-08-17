@@ -2,6 +2,7 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/AppSidebar"
 import { Header } from "@/components/Header"
+import ScrollIndicator from "@/components/ScrollIndicator"
 
 interface LayoutProps {
   children: React.ReactNode
@@ -27,6 +28,7 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </footer>
       </SidebarInset>
+      <ScrollIndicator />
     </SidebarProvider>
   )
 }

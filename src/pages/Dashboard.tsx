@@ -218,69 +218,93 @@ export default function Dashboard() {
       </Card>
 
       {/* Stats Cards */}
-      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
-        <Card className="card-hover">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm font-medium">
-              Total Warga
-            </CardTitle>
-            <Users className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg md:text-2xl font-bold">{dashboardStats.total_warga}</div>
-            <p className="text-xs text-muted-foreground">
-              Total semua warga
-            </p>
-          </CardContent>
-        </Card>
+      <div className="space-y-4">
+        {/* Row 1: Total Warga & Kas Masuk */}
+        <div className="grid gap-3 md:gap-4 grid-cols-2">
+          <Card className="card-hover">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs md:text-sm font-medium">
+                Total Warga
+              </CardTitle>
+              <Users className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-lg md:text-2xl font-bold">{dashboardStats.total_warga}</div>
+              <p className="text-xs text-muted-foreground">
+                Total semua warga
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="card-hover">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs md:text-sm font-medium">
+                Kas Masuk
+              </CardTitle>
+              <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm md:text-2xl font-bold text-primary">
+                {formatCurrency(dashboardStats.total_kas_masuk)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Periode {months.find(m => m.value === dashboardStats.filter_month)?.label} {dashboardStats.filter_year}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
         
-        <Card className="card-hover">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm font-medium">
-              Kas Masuk
-            </CardTitle>
-            <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm md:text-2xl font-bold text-primary">
-              {formatCurrency(dashboardStats.total_kas_masuk)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Periode {months.find(m => m.value === dashboardStats.filter_month)?.label} {dashboardStats.filter_year}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Row 2: Kas Keluar & Saldo Kas */}
+        <div className="grid gap-3 md:gap-4 grid-cols-2">
+          <Card className="card-hover">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs md:text-sm font-medium">
+                Kas Keluar
+              </CardTitle>
+              <CreditCard className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm md:text-2xl font-bold text-destructive">
+                {formatCurrency(dashboardStats.total_kas_keluar)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Periode {months.find(m => m.value === dashboardStats.filter_month)?.label} {dashboardStats.filter_year}
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="card-hover border-primary/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs md:text-sm font-medium">
+                Saldo Kas
+              </CardTitle>
+              <Wallet className="h-3 w-3 md:h-4 md:w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm md:text-2xl font-bold text-primary">
+                {formatCurrency(dashboardStats.saldo_kas)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Saldo {months.find(m => m.value === dashboardStats.filter_month)?.label} {dashboardStats.filter_year}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
         
-        <Card className="card-hover">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm font-medium">
-              Kas Keluar
-            </CardTitle>
-            <CreditCard className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm md:text-2xl font-bold text-destructive">
-              {formatCurrency(dashboardStats.total_kas_keluar)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Periode {months.find(m => m.value === dashboardStats.filter_month)?.label} {dashboardStats.filter_year}
-            </p>
-          </CardContent>
-        </Card>
-        
+        {/* Row 3: Sisa Saldo Kas Keseluruhan (Full Width) */}
         <Card className="card-hover border-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm font-medium">
-              Saldo Kas
+            <CardTitle className="text-sm md:text-base font-medium">
+              Sisa Saldo Kas Keseluruhan
             </CardTitle>
-            <Wallet className="h-3 w-3 md:h-4 md:w-4 text-primary" />
+            <Wallet className="h-4 w-4 md:h-5 md:w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-sm md:text-2xl font-bold text-primary">
-              {formatCurrency(dashboardStats.saldo_kas)}
+            <div className="text-xl md:text-3xl font-bold text-primary">
+              {formatCurrency(dashboardStats.sisa_saldo_kas)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Saldo {months.find(m => m.value === dashboardStats.filter_month)?.label} {dashboardStats.filter_year}
+            <p className="text-xs md:text-sm text-muted-foreground">
+              Total akumulasi saldo kas dari semua periode
             </p>
           </CardContent>
         </Card>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
-import { Calendar, TrendingUp, Users, CreditCard, Download, Filter } from "lucide-react"
+import { Calendar, TrendingUp, Users, CreditCard, Download, Filter, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -246,50 +246,68 @@ export default function LaporanIuran() {
       </div>
 
       {/* Statistik Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-card p-6 rounded-lg border">
-          <div className="flex items-center">
-            <TrendingUp className="h-8 w-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Total Pemasukan</p>
-              <p className="text-2xl font-bold">{formatCurrency(totalPemasukan)}</p>
-              <p className="text-xs text-green-600">Periode {months.find(m => m.value === filterMonth)?.label} {dashboardFilter.filter_year}</p>
+      <div className="space-y-4">
+        {/* Row 1: Total Pemasukan & Total Pengeluaran */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-card p-6 rounded-lg border">
+            <div className="flex items-center">
+              <TrendingUp className="h-8 w-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-muted-foreground">Total Pemasukan</p>
+                <p className="text-2xl font-bold">{formatCurrency(totalPemasukan)}</p>
+                <p className="text-xs text-green-600">Periode {months.find(m => m.value === filterMonth)?.label} {dashboardFilter.filter_year}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-card p-6 rounded-lg border">
+            <div className="flex items-center">
+              <Calendar className="h-8 w-8 text-red-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-muted-foreground">Total Pengeluaran</p>
+                <p className="text-2xl font-bold">{formatCurrency(totalPengeluaran)}</p>
+                <p className="text-xs text-red-600">Periode {months.find(m => m.value === filterMonth)?.label} {dashboardFilter.filter_year}</p>
+              </div>
             </div>
           </div>
         </div>
         
-        <div className="bg-card p-6 rounded-lg border">
-          <div className="flex items-center">
-            <Calendar className="h-8 w-8 text-red-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Total Pengeluaran</p>
-              <p className="text-2xl font-bold">{formatCurrency(totalPengeluaran)}</p>
-              <p className="text-xs text-red-600">Periode {months.find(m => m.value === filterMonth)?.label} {dashboardFilter.filter_year}</p>
+        {/* Row 2: Saldo Kas & Tingkat Pembayaran */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-card p-6 rounded-lg border">
+            <div className="flex items-center">
+              <CreditCard className="h-8 w-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-muted-foreground">Saldo Kas</p>
+                <p className="text-2xl font-bold">{formatCurrency(saldoKas)}</p>
+                <p className="text-xs text-blue-600">Saldo periode {months.find(m => m.value === filterMonth)?.label} {dashboardFilter.filter_year}</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="bg-card p-6 rounded-lg border">
-          <div className="flex items-center">
-            <CreditCard className="h-8 w-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Saldo Kas</p>
-              <p className="text-2xl font-bold">{formatCurrency(saldoKas)}</p>
-              <p className="text-xs text-blue-600">Saldo periode {months.find(m => m.value === filterMonth)?.label} {dashboardFilter.filter_year}</p>
+          <div className="bg-card p-6 rounded-lg border">
+            <div className="flex items-center">
+              <Users className="h-8 w-8 text-purple-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-muted-foreground">Tingkat Pembayaran</p>
+                <p className="text-2xl font-bold">{tingkatPembayaran}%</p>
+                <p className="text-xs text-purple-600">Dari total warga</p>
+              </div>
             </div>
           </div>
         </div>
-
-        <div className="bg-card p-6 rounded-lg border">
-          <div className="flex items-center">
-            <Users className="h-8 w-8 text-purple-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Tingkat Pembayaran</p>
-              <p className="text-2xl font-bold">{tingkatPembayaran}%</p>
-              <p className="text-xs text-purple-600">Dari total warga</p>
+        
+        {/* Row 3: Sisa Saldo Kas Keseluruhan (Full Width) */}
+          <div className="bg-card p-6 rounded-lg border border-primary/20">
+            <div className="flex items-center">
+              <Wallet className="h-8 w-8 text-primary" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-muted-foreground">Sisa Saldo Kas Keseluruhan</p>
+                <p className="text-3xl font-bold text-primary">{formatCurrency(dashboardFilter.sisa_saldo_kas)}</p>
+                <p className="text-xs text-muted-foreground">Total akumulasi saldo kas dari semua periode</p>
+              </div>
             </div>
           </div>
-        </div>
       </div>
 
       {/* Filter Controls */}
