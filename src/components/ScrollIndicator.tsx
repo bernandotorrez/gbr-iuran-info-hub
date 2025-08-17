@@ -50,14 +50,21 @@ const ScrollIndicator = () => {
     <div className="fixed bottom-6 right-6 z-50">
       <Button
         onClick={handleClick}
-        size="icon"
-        className="rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground"
+        className="rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground p-3 h-auto w-auto flex flex-col items-center justify-center gap-0"
         aria-label={isAtBottom ? 'Scroll to top' : 'Scroll to bottom'}
       >
         {isAtBottom ? (
-          <ChevronUp className="h-5 w-5" />
+          <div className="flex flex-col items-center animate-bounce">
+            <ChevronUp className="h-3 w-3 animate-pulse" style={{ animationDelay: '0ms' }} />
+            <ChevronUp className="h-3 w-3 animate-pulse" style={{ animationDelay: '200ms' }} />
+            <ChevronUp className="h-3 w-3 animate-pulse" style={{ animationDelay: '400ms' }} />
+          </div>
         ) : (
-          <ChevronDown className="h-5 w-5" />
+          <div className="flex flex-col items-center animate-bounce">
+            <ChevronDown className="h-3 w-3 animate-pulse" style={{ animationDelay: '0ms' }} />
+            <ChevronDown className="h-3 w-3 animate-pulse" style={{ animationDelay: '200ms' }} />
+            <ChevronDown className="h-3 w-3 animate-pulse" style={{ animationDelay: '400ms' }} />
+          </div>
         )}
       </Button>
     </div>
