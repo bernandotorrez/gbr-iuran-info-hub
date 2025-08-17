@@ -62,6 +62,7 @@ export interface UMKM {
   gambar_url?: string;
   status: string;
   warga_id?: string;
+  slug_url?: string;
   created_at: string;
   updated_at?: string;
   warga_new?: {
@@ -531,6 +532,25 @@ export const useSupabaseData = () => {
     return data;
   };
 
+  const fetchUMKMBySlug = async (slug: string) => {
+    const { data, error } = await supabase
+      .from('umkm')
+      .select(`
+        *,
+        warga_new:warga_id(nama_suami, nama_istri, nomor_hp_suami, nomor_hp_istri)
+      `)
+      .eq('slug_url', slug)
+      .eq('status', 'aktif')
+      .single();
+    
+    if (error) {
+      console.error('Error fetching UMKM by slug:', error);
+      return null;
+    }
+    
+    return data;
+  };
+
   // Buku Tamu functions - Fixed query
   const fetchBukuTamu = async () => {
     const { data, error } = await supabase
@@ -962,6 +982,7 @@ export const useSupabaseData = () => {
     // UMKM functions
     fetchUMKM,
     fetchUMKMPublic,
+    fetchUMKMBySlug,
     addUMKM,
     updateUMKM,
     deleteUMKM,

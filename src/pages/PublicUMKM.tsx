@@ -137,10 +137,30 @@ export default function PublicUMKM() {
     return formatted
   }
 
+  const displayPhoneNumber = (phone: string) => {
+    // Format phone number for display (convert 62 to 0)
+    let formatted = phone.replace(/\D/g, '') // Remove non-digits
+    if (formatted.startsWith('62')) {
+      formatted = '0' + formatted.substring(2) // Replace leading 62 with 0
+    } else if (!formatted.startsWith('0')) {
+      formatted = '0' + formatted // Add leading 0 if not present
+    }
+    return formatted
+  }
+
   const getWhatsAppLink = (phone: string, umkmName: string) => {
     const formattedPhone = formatPhoneNumber(phone)
     const message = encodeURIComponent(`Halo, saya tertarik dengan ${umkmName}. Bisa minta informasi lebih lanjut?`)
     return `https://wa.me/${formattedPhone}?text=${message}`
+  }
+
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+      .trim()
   }
 
   return (
@@ -263,7 +283,12 @@ export default function PublicUMKM() {
                     )}
                     <CardHeader className="pb-3">
                       <CardTitle className="text-lg font-semibold line-clamp-2 mb-2">
-                        {umkm.nama_umkm}
+                        <Link 
+                          to={`/umkm/${umkm.slug_url || generateSlug(umkm.nama_umkm)}`}
+                          className="hover:text-primary transition-colors duration-200"
+                        >
+                          {umkm.nama_umkm}
+                        </Link>
                       </CardTitle>
                       <div className="flex flex-wrap gap-1">
                         {getTagBadges(umkm.umkm_tags)}
@@ -301,7 +326,7 @@ export default function PublicUMKM() {
                         {umkm.nomor_telepon && (
                           <div className="flex items-center text-sm text-gray-600">
                             <Phone className="h-4 w-4 mr-2 flex-shrink-0" />
-                            <span>{formatPhoneNumber(umkm.nomor_telepon)}</span>
+                            <span>{displayPhoneNumber(umkm.nomor_telepon)}</span>
                           </div>
                         )}
                         
@@ -356,6 +381,18 @@ export default function PublicUMKM() {
                             Website
                           </Button>
                         )}
+                      </div>
+                      
+                      <div className="mt-3">
+                        <Link to={`/umkm/${umkm.slug_url || generateSlug(umkm.nama_umkm)}`}>
+                          <Button 
+                            size="sm" 
+                            className="w-full"
+                            variant="default"
+                          >
+                            Lihat Detail
+                          </Button>
+                        </Link>
                       </div>
                     </CardContent>
                   </Card>

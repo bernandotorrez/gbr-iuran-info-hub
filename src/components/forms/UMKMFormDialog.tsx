@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
 import { supabase } from "@/integrations/supabase/client"
+import { WysiwygEditor } from "@/components/WysiwygEditor"
 
 interface TagUMKM {
   id: string
@@ -312,13 +313,13 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
 
             <div className="space-y-2">
               <Label htmlFor="deskripsi">Deskripsi</Label>
-              <Textarea
-                id="deskripsi"
-                value={formData.deskripsi}
-                onChange={(e) => handleInputChange('deskripsi', e.target.value)}
-                placeholder="Deskripsi UMKM"
-                rows={3}
-              />
+              <div className="min-h-[400px]">
+                <WysiwygEditor
+                  value={formData.deskripsi}
+                  onChange={(value) => handleInputChange('deskripsi', value)}
+                  placeholder="Masukkan deskripsi UMKM dengan formatting lengkap..."
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -503,7 +503,7 @@ export default function MasterUMKM() {
               {selectedUmkm.deskripsi && (
                 <div>
                   <strong>Deskripsi:</strong>
-                  <p className="mt-1 text-gray-700">{selectedUmkm.deskripsi}</p>
+                  <div className="mt-1 text-gray-700 prose max-w-none" dangerouslySetInnerHTML={{ __html: selectedUmkm.deskripsi }} />
                 </div>
               )}
             </div>

@@ -22,6 +22,7 @@ import PublicArtikel from "./pages/PublicArtikel";
 import MasterUMKM from "./pages/MasterUMKM";
 import { MasterTag } from "./pages/cms/MasterTag";
 import PublicUMKM from "./pages/PublicUMKM";
+import PublicUMKMDetail from "./pages/PublicUMKMDetail";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import CompanyProfile from "./pages/CompanyProfile";
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/public/artikel/:slug" element={<PublicArtikel />} />
             <Route path="/public/pengurus" element={<PublicPengurus />} />
             <Route path="/public/umkm" element={<PublicUMKM />} />
+            <Route path="/umkm/:slug" element={<PublicUMKMDetail />} />
             
             {/* Protected Routes with Layout */}
             <Route path="/cms" element={
