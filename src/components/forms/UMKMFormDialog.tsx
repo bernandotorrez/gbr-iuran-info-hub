@@ -34,9 +34,8 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
   const [formData, setFormData] = useState({
     nama_umkm: '',
     deskripsi: '',
-    alamat: '',
     nomor_telepon: '',
-    phone_source: '', // 'suami' or 'istri'
+    phone_source: '',
     email: '',
     website: '',
     jam_operasional: '',
@@ -63,7 +62,6 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
       setFormData({
         nama_umkm: editData.nama_umkm || '',
         deskripsi: editData.deskripsi || '',
-        alamat: editData.alamat || '',
         nomor_telepon: editData.nomor_telepon || '',
         phone_source: editData.phone_source || '',
         email: editData.email || '',
@@ -74,28 +72,15 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
         warga_id: editData.warga_id || '',
         gambar_url: editData.gambar_url || ''
       })
-      
-      // Auto-detect phone source if not set but phone number exists
-      if (editData.nomor_telepon && !editData.phone_source && editData.warga_id) {
-        setTimeout(() => {
-          const warga = wargaList.find(w => w.id === editData.warga_id)
-          if (warga) {
-            if (warga.nomor_hp_suami === editData.nomor_telepon) {
-              setFormData(prev => ({ ...prev, phone_source: 'suami' }))
-            } else if (warga.nomor_hp_istri === editData.nomor_telepon) {
-              setFormData(prev => ({ ...prev, phone_source: 'istri' }))
-            }
-          }
-        }, 100)
-      }
       setPreviewUrl(editData.gambar_url || '')
-      // Load existing tags for edit mode
-      loadExistingTags(editData.id)
+      
+      if (editData.id) {
+        loadExistingTags(editData.id)
+      }
     } else {
       setFormData({
         nama_umkm: '',
         deskripsi: '',
-        alamat: '',
         nomor_telepon: '',
         phone_source: '',
         email: '',
@@ -115,7 +100,6 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
   const loadWarga = async () => {
     try {
       const data = await fetchWarga()
-      // console.log('Loaded warga data:', data) // Debug log
       setWargaList(data)
     } catch (error) {
       console.error('Error loading warga:', error)
@@ -125,7 +109,7 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
   const loadTags = async () => {
     try {
       const data = await fetchTagUMKM()
-      setTagList(data || [])
+      setTagList(data)
     } catch (error) {
       console.error('Error loading tags:', error)
     }
@@ -145,7 +129,47 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
     }
   }
 
-  const toggleTag = (tagId: string) => {
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleWargaChange = (wargaId: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      warga_id: wargaId,
+      nomor_telepon: '',
+      phone_source: ''
+    }))
+  }
+
+  const handlePhoneSourceChange = (source: string) => {
+    const selectedWarga = wargaList.find(w => w.id === formData.warga_id)
+    if (selectedWarga) {
+      const phoneNumber = source === 'suami' ? selectedWarga.nomor_hp_suami : selectedWarga.nomor_hp_istri
+      setFormData(prev => ({
+        ...prev,
+        phone_source: source,
+        nomor_telepon: phoneNumber || ''
+      }))
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setSelectedFile(file)
+      const url = URL.createObjectURL(file)
+      setPreviewUrl(url)
+    }
+  }
+
+  const removeImage = () => {
+    setSelectedFile(null)
+    setPreviewUrl('')
+    setFormData(prev => ({ ...prev, gambar_url: '' }))
+  }
+
+  const handleTagToggle = (tagId: string) => {
     setSelectedTags(prev => 
       prev.includes(tagId) 
         ? prev.filter(id => id !== tagId)
@@ -153,233 +177,209 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
     )
   }
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
-
-  const updatePhoneNumber = (wargaId: string, phoneSource: string) => {
-    if (!wargaId || !phoneSource) {
-      setFormData(prev => ({ ...prev, nomor_telepon: '' }))
-      return
-    }
-    
-    const selectedWarga = wargaList.find(w => w.id === wargaId)
-    if (selectedWarga) {
-      const phoneNumber = phoneSource === 'suami' 
-        ? selectedWarga.nomor_hp_suami 
-        : selectedWarga.nomor_hp_istri
-      
-      setFormData(prev => ({ 
-        ...prev, 
-        nomor_telepon: phoneNumber || '' 
-      }))
-    }
-  }
-
-  const handleWargaChange = (wargaId: string) => {
-    setFormData(prev => ({ ...prev, warga_id: wargaId, phone_source: '' }))
-    updatePhoneNumber(wargaId, '')
-  }
-
-  const handlePhoneSourceChange = (phoneSource: string) => {
-    setFormData(prev => ({ ...prev, phone_source: phoneSource }))
-    updatePhoneNumber(formData.warga_id, phoneSource)
-  }
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setSelectedFile(file)
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setPreviewUrl(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const removeImage = () => {
-    setSelectedFile(null)
-    setPreviewUrl('')
-    setFormData(prev => ({
-      ...prev,
-      gambar_url: ''
-    }))
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    const { phone_source, ...cleanFormData } = formData
     const submitData = {
-      ...cleanFormData,
-      imageFile: selectedFile, // Include the file for upload
-      selectedTags: selectedTags // Include selected tags
+      ...formData,
+      selectedTags,
+      imageFile: selectedFile
     }
     
     onSave(submitData)
   }
 
+  const selectedWarga = wargaList.find(w => w.id === formData.warga_id)
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] bg-card text-card-foreground">
         <DialogHeader>
-          <DialogTitle>{editData ? 'Edit UMKM' : 'Tambah UMKM Baru'}</DialogTitle>
+          <DialogTitle>{editData ? 'Edit UMKM' : 'Tambah UMKM'}</DialogTitle>
         </DialogHeader>
-        
         <div className="overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="nama_umkm">Nama UMKM *</Label>
-                <Input
-                  id="nama_umkm"
-                  value={formData.nama_umkm}
-                  onChange={(e) => handleInputChange('nama_umkm', e.target.value)}
-                  placeholder="Masukkan nama UMKM"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Tags UMKM *</Label>
-                <Popover open={openTagCombobox} onOpenChange={setOpenTagCombobox}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openTagCombobox}
-                      className="w-full justify-between h-auto min-h-[40px] p-2"
-                    >
-                      <div className="flex flex-wrap gap-1">
-                        {selectedTags.length === 0 ? (
-                          <span className="text-muted-foreground">Pilih tags...</span>
-                        ) : (
-                          selectedTags.map(tagId => {
-                            const tag = tagList.find(t => t.id === tagId)
-                            return tag ? (
-                              <Badge 
-                                key={tagId} 
-                                style={{ backgroundColor: tag.warna, color: 'white' }}
-                                className="text-xs"
-                              >
-                                {tag.nama_tag}
-                              </Badge>
-                            ) : null
-                          })
-                        )}
-                      </div>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput placeholder="Cari tags..." />
-                      <CommandEmpty>Tidak ada tags ditemukan.</CommandEmpty>
-                      <CommandGroup className="max-h-64 overflow-auto">
-                        {tagList.map((tag) => (
-                          <CommandItem
-                            key={tag.id}
-                            onSelect={() => toggleTag(tag.id)}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedTags.includes(tag.id) ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <Badge 
-                              style={{ backgroundColor: tag.warna, color: 'white' }}
-                              className="mr-2"
-                            >
-                              {tag.nama_tag}
-                            </Badge>
-                            {tag.deskripsi && (
-                              <span className="text-sm text-muted-foreground">
-                                - {tag.deskripsi}
-                              </span>
-                            )}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="nama_umkm">Nama UMKM</Label>
+              <Input
+                id="nama_umkm"
+                value={formData.nama_umkm}
+                onChange={(e) => handleInputChange('nama_umkm', e.target.value)}
+                placeholder="Nama UMKM"
+                required
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="deskripsi">Deskripsi</Label>
-              <div className="min-h-[400px]">
-                <WysiwygEditor
-                  value={formData.deskripsi}
-                  onChange={(value) => handleInputChange('deskripsi', value)}
-                  placeholder="Masukkan deskripsi UMKM dengan formatting lengkap..."
-                />
-              </div>
+              <WysiwygEditor
+                value={formData.deskripsi}
+                onChange={(value) => handleInputChange('deskripsi', value)}
+                placeholder="Deskripsi UMKM..."
+              />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="alamat">Alamat</Label>
-                <Input
-                  id="alamat"
-                  value={formData.alamat}
-                  onChange={(e) => handleInputChange('alamat', e.target.value)}
-                  placeholder="Alamat UMKM"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Nomor Telepon (dari data pemilik)</Label>
-                <div className="space-y-2">
-                  <Select 
-                    value={formData.phone_source} 
-                    onValueChange={handlePhoneSourceChange}
-                    disabled={!formData.warga_id}
+            <div className="space-y-2">
+              <Label>Kategori/Tag</Label>
+              <Popover open={openTagCombobox} onOpenChange={setOpenTagCombobox}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openTagCombobox}
+                    className="w-full justify-between"
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder={formData.warga_id ? "Pilih nomor telepon" : "Pilih pemilik terlebih dahulu"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {formData.warga_id && (() => {
-                        const selectedWarga = wargaList.find(w => w.id === formData.warga_id)
-                        if (!selectedWarga) return null
-                        
-                        const options = []
-                        if (selectedWarga.nomor_hp_suami) {
-                          options.push(
-                            <SelectItem key="suami" value="suami">
-                              Suami: {selectedWarga.nomor_hp_suami}
-                            </SelectItem>
-                          )
-                        }
-                        if (selectedWarga.nomor_hp_istri) {
-                          options.push(
-                            <SelectItem key="istri" value="istri">
-                              Istri: {selectedWarga.nomor_hp_istri}
-                            </SelectItem>
-                          )
-                        }
-                        
-                        return options.length > 0 ? options : (
-                          <SelectItem value="" disabled>
-                            Tidak ada nomor telepon tersedia
+                    {selectedTags.length > 0 
+                      ? `${selectedTags.length} tag dipilih`
+                      : "Pilih kategori/tag..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="Cari tag..." />
+                    <CommandEmpty>Tag tidak ditemukan.</CommandEmpty>
+                    <CommandGroup className="max-h-64 overflow-auto">
+                      {tagList.map((tag) => (
+                        <CommandItem
+                          key={tag.id}
+                          onSelect={() => handleTagToggle(tag.id)}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedTags.includes(tag.id) ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex items-center space-x-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: tag.warna }}
+                            />
+                            <span>{tag.nama_tag}</span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              
+              {selectedTags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {selectedTags.map(tagId => {
+                    const tag = tagList.find(t => t.id === tagId)
+                    return tag ? (
+                      <Badge 
+                        key={tag.id} 
+                        variant="secondary" 
+                        style={{ backgroundColor: tag.warna, color: 'white' }}
+                      >
+                        {tag.nama_tag}
+                      </Badge>
+                    ) : null
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Pemilik (Warga)</Label>
+              <Popover open={openWargaCombobox} onOpenChange={setOpenWargaCombobox}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openWargaCombobox}
+                    className="w-full justify-between"
+                  >
+                    {selectedWarga 
+                      ? `${selectedWarga.nama_suami}${selectedWarga.nama_istri ? ` & ${selectedWarga.nama_istri}` : ''}`
+                      : "Pilih pemilik..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="Cari warga..." />
+                    <CommandEmpty>Warga tidak ditemukan.</CommandEmpty>
+                    <CommandGroup className="max-h-64 overflow-auto">
+                      {wargaList.map((warga) => (
+                        <CommandItem
+                          key={warga.id}
+                          onSelect={() => {
+                            handleWargaChange(warga.id)
+                            setOpenWargaCombobox(false)
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              formData.warga_id === warga.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-medium">{warga.nama_suami}{warga.nama_istri ? ` & ${warga.nama_istri}` : ''}</span>
+                            {warga.blok_rumah && (
+                              <span className="text-sm text-muted-foreground">
+                                Blok {warga.blok_rumah}
+                              </span>
+                            )}
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Nomor Telepon (dari data pemilik)</Label>
+              <div className="space-y-2">
+                <Select 
+                  value={formData.phone_source} 
+                  onValueChange={handlePhoneSourceChange}
+                  disabled={!formData.warga_id}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={formData.warga_id ? "Pilih nomor telepon" : "Pilih pemilik terlebih dahulu"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formData.warga_id && (() => {
+                      const selectedWarga = wargaList.find(w => w.id === formData.warga_id)
+                      if (!selectedWarga) return null
+                      
+                      const options = []
+                      if (selectedWarga.nomor_hp_suami) {
+                        options.push(
+                          <SelectItem key="suami" value="suami">
+                            Suami: {selectedWarga.nomor_hp_suami}
                           </SelectItem>
                         )
-                      })()}
-                    </SelectContent>
-                  </Select>
-                  
-                  {formData.nomor_telepon && (
-                    <div className="text-sm text-muted-foreground">
-                      Nomor terpilih: {formData.nomor_telepon}
-                    </div>
-                  )}
-                </div>
+                      }
+                      if (selectedWarga.nomor_hp_istri) {
+                        options.push(
+                          <SelectItem key="istri" value="istri">
+                            Istri: {selectedWarga.nomor_hp_istri}
+                          </SelectItem>
+                        )
+                      }
+                      
+                      return options.length > 0 ? options : (
+                        <SelectItem value="" disabled>
+                          Tidak ada nomor telepon tersedia
+                        </SelectItem>
+                      )
+                    })()} 
+                  </SelectContent>
+                </Select>
+                
+                {formData.nomor_telepon && (
+                  <div className="text-sm text-muted-foreground">
+                    Nomor terpilih: {formData.nomor_telepon}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -416,78 +416,19 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Pemilik (Warga)</Label>
-                <Popover open={openWargaCombobox} onOpenChange={setOpenWargaCombobox}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openWargaCombobox}
-                      className="w-full justify-between"
-                    >
-                      {formData.warga_id ? (
-                        (() => {
-                          const warga = wargaList.find(w => w.id === formData.warga_id);
-                          return warga ? `${warga.nama_suami}${warga.nama_istri ? ` & ${warga.nama_istri}` : ''}` : "Pilih pemilik UMKM";
-                        })()
-                      ) : (
-                        "Pilih pemilik UMKM"
-                      )}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput placeholder="Cari warga..." />
-                      <CommandEmpty>Tidak ada warga ditemukan.</CommandEmpty>
-                      <CommandGroup className="max-h-64 overflow-auto">
-                        {wargaList.map((warga) => (
-                          <CommandItem
-                            key={warga.id}
-                            onSelect={() => {
-                              handleWargaChange(warga.id)
-                              setOpenWargaCombobox(false)
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                formData.warga_id === warga.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <div className="flex flex-col">
-                              <span className="font-medium">{warga.nama_suami}{warga.nama_istri ? ` & ${warga.nama_istri}` : ''}</span>
-                              {warga.blok_rumah && (
-                                <span className="text-sm text-muted-foreground">
-                                  Blok {warga.blok_rumah}
-                                </span>
-                              )}
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="aktif">Aktif</SelectItem>
-                    <SelectItem value="nonaktif">Non-aktif</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="aktif">Aktif</SelectItem>
+                  <SelectItem value="nonaktif">Non-aktif</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Image Upload Section */}
             <div className="space-y-2">
               <Label>Gambar UMKM</Label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
@@ -512,19 +453,23 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
                   <div className="text-center">
                     <Image className="mx-auto h-12 w-12 text-gray-400" />
                     <div className="mt-2">
-                      <label htmlFor="image-upload" className="cursor-pointer">
+                      <label htmlFor="file-upload" className="cursor-pointer">
                         <span className="mt-2 block text-sm font-medium text-gray-900">
                           Klik untuk upload gambar
                         </span>
                         <input
-                          id="image-upload"
+                          id="file-upload"
+                          name="file-upload"
                           type="file"
-                          className="hidden"
+                          className="sr-only"
                           accept="image/*"
-                          onChange={handleFileSelect}
+                          onChange={handleFileChange}
                         />
                       </label>
                     </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      PNG, JPG, GIF up to 10MB
+                    </p>
                   </div>
                 )}
               </div>

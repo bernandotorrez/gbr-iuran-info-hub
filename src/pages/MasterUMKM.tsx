@@ -10,6 +10,42 @@ import { useSupabaseData, UMKM } from "@/hooks/useSupabaseData"
 import { UMKMFormDialog } from "@/components/forms/UMKMFormDialog"
 import { useUserRole } from "@/hooks/useUserRole"
 
+// Utility function to generate slug from nama_umkm
+const generateSlug = (nama_umkm: string): string => {
+  return nama_umkm
+    .toLowerCase()
+    .trim()
+    // Replace spaces with hyphens
+    .replace(/\s+/g, '-')
+    // Remove special characters except hyphens
+    .replace(/[^a-z0-9-]/g, '')
+    // Remove multiple consecutive hyphens
+    .replace(/-+/g, '-')
+    // Remove leading/trailing hyphens
+    .replace(/^-|-$/g, '')
+}
+
+// Function to ensure slug uniqueness
+const ensureUniqueSlug = async (baseSlug: string, existingUmkmList: UMKM[], excludeId?: string): Promise<string> => {
+  let slug = baseSlug
+  let counter = 1
+  
+  while (true) {
+    const existingSlug = existingUmkmList.find(umkm => 
+      umkm.slug_url === slug && umkm.id !== excludeId
+    )
+    
+    if (!existingSlug) {
+      break
+    }
+    
+    slug = `${baseSlug}-${counter}`
+    counter++
+  }
+  
+  return slug
+}
+
 export default function MasterUMKM() {
   const { toast } = useToast()
   const { 
@@ -129,6 +165,13 @@ export default function MasterUMKM() {
       setUploading(true)
       let finalFormData = { ...formData }
       
+      // Generate slug from nama_umkm
+      if (finalFormData.nama_umkm) {
+        const baseSlug = generateSlug(finalFormData.nama_umkm)
+        const uniqueSlug = await ensureUniqueSlug(baseSlug, umkmList)
+        finalFormData.slug_url = uniqueSlug
+      }
+      
       // Handle image upload if file is provided
       if (formData.imageFile) {
         const imageUrl = await handleImageUpload(formData.imageFile)
@@ -144,8 +187,12 @@ export default function MasterUMKM() {
       await addUMKM(finalFormData)
       setIsAddOpen(false)
       await loadUmkm()
-      toast({ title: "Berhasil", description: "UMKM berhasil ditambahkan" })
+      toast({ 
+        title: "Berhasil", 
+        description: `UMKM berhasil ditambahkan dengan slug: ${finalFormData.slug_url}` 
+      })
     } catch (error) {
+      console.error('Error adding UMKM:', error)
       toast({ 
         title: "Error", 
         description: "Gagal menambahkan UMKM",
@@ -161,6 +208,13 @@ export default function MasterUMKM() {
     try {
       setUploading(true)
       let finalFormData = { ...formData }
+      
+      // Generate new slug if nama_umkm has changed
+      if (finalFormData.nama_umkm && finalFormData.nama_umkm !== selectedUmkm.nama_umkm) {
+        const baseSlug = generateSlug(finalFormData.nama_umkm)
+        const uniqueSlug = await ensureUniqueSlug(baseSlug, umkmList, selectedUmkm.id)
+        finalFormData.slug_url = uniqueSlug
+      }
       
       // Handle image upload if new file is provided
       if (formData.imageFile) {
@@ -183,8 +237,14 @@ export default function MasterUMKM() {
       setIsEditOpen(false)
       setSelectedUmkm(null)
       await loadUmkm()
-      toast({ title: "Berhasil", description: "UMKM berhasil diperbarui" })
+      
+      const slugMessage = finalFormData.slug_url ? ` dengan slug: ${finalFormData.slug_url}` : ''
+      toast({ 
+        title: "Berhasil", 
+        description: `UMKM berhasil diperbarui${slugMessage}` 
+      })
     } catch (error) {
+      console.error('Error updating UMKM:', error)
       toast({ 
         title: "Error", 
         description: "Gagal memperbarui UMKM",
@@ -327,10 +387,8 @@ export default function MasterUMKM() {
                         )}
                         <div>
                           <div className="font-medium">{umkm.nama_umkm}</div>
-                          {umkm.deskripsi && (
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
-                              {umkm.deskripsi}
-                            </div>
+                          {umkm.slug_url && (
+                            <div className="text-xs text-gray-500">/{umkm.slug_url}</div>
                           )}
                         </div>
                       </div>
@@ -433,12 +491,13 @@ export default function MasterUMKM() {
 
       {/* Detail UMKM Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] bg-card text-card-foreground">
           <DialogHeader>
             <DialogTitle>Detail UMKM</DialogTitle>
           </DialogHeader>
           {selectedUmkm && (
-            <div className="space-y-4">
+            <div className="overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
+              <div className="space-y-4">
               {selectedUmkm.gambar_url && (
                 <div className="w-full">
                   <img 
@@ -452,6 +511,11 @@ export default function MasterUMKM() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h3 className="font-semibold text-lg">{selectedUmkm.nama_umkm}</h3>
+                  {selectedUmkm.slug_url && (
+                    <div className="text-sm text-gray-500 mb-2">
+                      URL Slug: /{selectedUmkm.slug_url}
+                    </div>
+                  )}
                   <div className="flex items-center mt-2">
                     <Tag className="h-4 w-4 mr-2" />
                     {getTagBadges(selectedUmkm.umkm_tags)}
@@ -506,6 +570,7 @@ export default function MasterUMKM() {
                   <div className="mt-1 text-gray-700 prose max-w-none" dangerouslySetInnerHTML={{ __html: selectedUmkm.deskripsi }} />
                 </div>
               )}
+              </div>
             </div>
           )}
         </DialogContent>

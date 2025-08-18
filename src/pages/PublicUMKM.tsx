@@ -295,12 +295,6 @@ export default function PublicUMKM() {
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      {umkm.deskripsi && (
-                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                          {umkm.deskripsi}
-                        </p>
-                      )}
-                      
                       <div className="space-y-2 mb-4">
                         {umkm.alamat && (
                           <div className="flex items-start text-sm text-gray-600">
