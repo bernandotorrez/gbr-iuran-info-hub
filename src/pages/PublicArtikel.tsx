@@ -62,7 +62,7 @@ export default function PublicArtikel() {
       setArticleLoading(true)
       const artikel = await fetchArtikelBySlug(slugUrl)
       if (artikel) {
-        setSelectedArtikel(artikel as Artikel)
+        setSelectedArtikel(artikel as any)
       } else {
         // Article not found, redirect to article list
         navigate('/public/artikel')

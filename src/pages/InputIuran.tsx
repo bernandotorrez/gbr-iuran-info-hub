@@ -112,7 +112,7 @@ export default function InputIuran() {
         )
         
         if (validEntries.length > 0) {
-          setUrlCache(new Map(validEntries))
+          setUrlCache(new Map(validEntries as [string, { url: string; timestamp: number }][]))
         }
       }
     } catch (error) {
