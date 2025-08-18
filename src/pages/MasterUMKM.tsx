@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
+import { createSafeHtml } from "@/lib/sanitize"
 import { Plus, Search, Edit2, Trash2, Eye, Phone, Mail, Globe, Clock, Tag, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -567,7 +568,7 @@ export default function MasterUMKM() {
               {selectedUmkm.deskripsi && (
                 <div>
                   <strong>Deskripsi:</strong>
-                  <div className="mt-1 text-gray-700 prose max-w-none" dangerouslySetInnerHTML={{ __html: selectedUmkm.deskripsi }} />
+                  <div className="mt-1 text-gray-700 prose max-w-none" dangerouslySetInnerHTML={createSafeHtml(selectedUmkm.deskripsi)} />
                 </div>
               )}
               </div>

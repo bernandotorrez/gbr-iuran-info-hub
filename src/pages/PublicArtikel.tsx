@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react"
+import { createSafeHtml } from "@/lib/sanitize"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -172,9 +173,7 @@ export default function PublicArtikel() {
               
               <div 
                 className="prose prose-lg max-w-none text-gray-800 leading-relaxed"
-                dangerouslySetInnerHTML={{ 
-                  __html: selectedArtikel.konten.replace(/\n/g, '<br>') 
-                }}
+                dangerouslySetInnerHTML={createSafeHtml(selectedArtikel.konten.replace(/\n/g, '<br>'))}
               />
             </div>
           </article>

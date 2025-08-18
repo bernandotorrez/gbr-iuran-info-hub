@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { createSafeHtml } from '@/lib/sanitize'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -178,7 +179,7 @@ export default function PublicUMKMDetail() {
             {umkm.deskripsi && (
               <div className="mb-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Deskripsi</h2>
-                <div className="prose max-w-none text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: umkm.deskripsi }} />
+                <div className="prose max-w-none text-gray-700 leading-relaxed" dangerouslySetInnerHTML={createSafeHtml(umkm.deskripsi)} />
               </div>
             )}
             

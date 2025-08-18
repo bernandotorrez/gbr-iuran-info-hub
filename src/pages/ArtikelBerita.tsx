@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
+import { createSafeHtml } from "@/lib/sanitize"
 import { Plus, Search, Edit2, Trash2, Eye, Calendar, User, Upload, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -472,7 +473,7 @@ export default function ArtikelBerita() {
                     <p className="font-medium">{selectedArtikel.excerpt}</p>
                   </div>
                 )}
-                <div className="prose max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: selectedArtikel.konten }} />
+                <div className="prose max-w-none dark:prose-invert" dangerouslySetInnerHTML={createSafeHtml(selectedArtikel.konten)} />
                 <div className="flex space-x-2 pt-4">
                   {selectedArtikel.status === 'draft' && (
                     <Button onClick={() => updateStatus(selectedArtikel.id, 'published')}>

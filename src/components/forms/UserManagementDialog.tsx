@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { useSupabaseData } from "@/hooks/useSupabaseData"
 import { supabase } from "@/integrations/supabase/client"
+import { RefreshCw } from "lucide-react"
 
 interface UserManagementDialogProps {
   open: boolean
@@ -32,6 +33,16 @@ export function UserManagementDialog({
   onClose, 
   onUserAdded 
 }: UserManagementDialogProps) {
+  // Generate secure random password
+  const generateSecurePassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
   const [formData, setFormData] = useState({
     nama: "",
     phone_number: "",
@@ -39,7 +50,7 @@ export function UserManagementDialog({
     alamat: "",
     role: "warga",
     warga_id: "",
-    password: "warga123"
+    password: generateSecurePassword()
   })
   
   const [wargaList, setWargaList] = useState<Warga[]>([])
@@ -136,7 +147,7 @@ export function UserManagementDialog({
         alamat: "",
         role: "warga",
         warga_id: "",
-        password: "warga123"
+        password: generateSecurePassword()
       })
       onUserAdded()
       onClose()
@@ -252,15 +263,28 @@ export function UserManagementDialog({
 
           <div>
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              placeholder="Masukkan password"
-              required
-              minLength={6}
-            />
+            <div className="flex gap-2">
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                placeholder="Masukkan password"
+                required
+                minLength={8}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setFormData(prev => ({ ...prev, password: generateSecurePassword() }))}
+                title="Generate password baru"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Minimal 8 karakter. Klik tombol refresh untuk generate password baru.</p>
           </div>
 
           <div className="bg-blue-50 p-4 rounded-lg">
