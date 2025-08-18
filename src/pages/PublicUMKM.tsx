@@ -3,8 +3,9 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Building2, User, Phone, Eye } from "lucide-react"
+import { Building2, User, Phone, Eye, Search } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { useSupabaseData, UMKM } from "@/hooks/useSupabaseData"
 
@@ -15,6 +16,7 @@ export default function PublicUMKM() {
   const [filteredUmkm, setFilteredUmkm] = useState<UMKM[]>([])
   const [tagList, setTagList] = useState<any[]>([])
   const [selectedTag, setSelectedTag] = useState<string>("")
+  const [searchQuery, setSearchQuery] = useState<string>("")
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export default function PublicUMKM() {
 
   useEffect(() => {
     filterUmkm()
-  }, [selectedTag, umkmList])
+  }, [selectedTag, searchQuery, umkmList])
 
   const loadData = async () => {
     try {
@@ -59,14 +61,26 @@ export default function PublicUMKM() {
   }
 
   const filterUmkm = () => {
-    if (!selectedTag || selectedTag === "all") {
-      setFilteredUmkm(umkmList)
-    } else {
-      const filtered = umkmList.filter(umkm => 
+    let filtered = umkmList
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(umkm => 
+        umkm.nama_umkm.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        umkm.deskripsi?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (umkm.warga_new?.nama_suami && umkm.warga_new.nama_suami.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (umkm.warga_new?.nama_istri && umkm.warga_new.nama_istri.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    }
+
+    // Filter by tag
+    if (selectedTag && selectedTag !== "all") {
+      filtered = filtered.filter(umkm => 
         umkm.umkm_tags?.some(ut => ut.tag_id === selectedTag)
       )
-      setFilteredUmkm(filtered)
     }
+
+    setFilteredUmkm(filtered)
   }
 
   const getTagBadges = (umkmTags: any[]) => {
@@ -99,13 +113,13 @@ export default function PublicUMKM() {
 
   const handleViewDetail = (umkm: UMKM) => {
     if (umkm.slug_url) {
-      navigate(`/public/umkm/${umkm.slug_url}`)
+      navigate(`/umkm/${umkm.slug_url}`)
     } else {
       // Generate slug from nama_umkm if slug_url doesn't exist
       const slug = umkm.nama_umkm.toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '')
-      navigate(`/public/umkm/${slug}`)
+      navigate(`/umkm/${slug}`)
     }
   }
 
@@ -152,6 +166,16 @@ export default function PublicUMKM() {
           
           {/* Filter */}
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <div className="relative flex-1 sm:max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Cari UMKM atau nama pemilik..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
             <Select value={selectedTag} onValueChange={setSelectedTag}>
               <SelectTrigger className="w-full sm:w-64">
                 <SelectValue placeholder="Filter berdasarkan kategori" />
@@ -180,7 +204,9 @@ export default function PublicUMKM() {
             <Building2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada UMKM ditemukan</h3>
             <p className="text-gray-500">
-              {selectedTag && selectedTag !== "all" ? 'Tidak ada UMKM dengan kategori yang dipilih' : 'Belum ada data UMKM yang tersedia'}
+              {searchQuery.trim() ? 'Tidak ada UMKM yang sesuai dengan pencarian' : 
+               selectedTag && selectedTag !== "all" ? 'Tidak ada UMKM dengan kategori yang dipilih' : 
+               'Belum ada data UMKM yang tersedia'}
             </p>
           </div>
         ) : (
