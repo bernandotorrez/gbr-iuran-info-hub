@@ -130,13 +130,17 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
 
   const loadExistingTags = async (umkmId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('umkm_tags')
-        .select('tag_id')
-        .eq('umkm_id', umkmId)
-      
-      if (error) throw error
-      setSelectedTags(data?.map(item => item.tag_id) || [])
+      const response = await fetch(
+        `https://gwcneeftdttqgbbzilqg.supabase.co/rest/v1/umkm_tags?umkm_id=eq.${umkmId}&select=tag_id`,
+        {
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3Y25lZWZ0ZHR0cWdiYnppbHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5OTMwMDEsImV4cCI6MjA2NDU2OTAwMX0.qJLOgYVWTJB_IQLxE8l_Isz46I9XWGBqdHXxSJIrPa4',
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3Y25lZWZ0ZHR0cWdiYnppbHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5OTMwMDEsImV4cCI6MjA2NDU2OTAwMX0.qJLOgYVWTJB_IQLxE8l_Isz46I9XWGBqdHXxSJIrPa4`
+          }
+        }
+      )
+      const data = await response.json()
+      setSelectedTags(data?.map((item: any) => item.tag_id) || [])
     } catch (error) {
       console.error('Error loading existing tags:', error)
     }
