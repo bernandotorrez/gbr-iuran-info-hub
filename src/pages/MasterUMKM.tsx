@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { Plus, Search, Edit2, Trash2, Eye, Phone, Mail, Globe, Clock, Tag, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -98,9 +99,8 @@ export default function MasterUMKM() {
         
         return umkm.nama_umkm.toLowerCase().includes(searchTerm.toLowerCase()) ||
                tagNames.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               umkm.alamat?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                umkm.warga_new?.nama_suami.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               umkm.warga_new?.nama_istri.toLowerCase().includes(searchTerm.toLowerCase())
+               umkm.warga_new?.nama_istri?.toLowerCase().includes(searchTerm.toLowerCase())
       })
       setFilteredUmkm(filtered)
     }
@@ -281,7 +281,7 @@ export default function MasterUMKM() {
       <div className="flex items-center space-x-2">
         <Search className="h-4 w-4 text-gray-400" />
         <Input
-          placeholder="Cari UMKM berdasarkan nama, kategori, alamat, atau pemilik..."
+          placeholder="Cari UMKM berdasarkan nama, kategori, atau pemilik..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
@@ -300,7 +300,6 @@ export default function MasterUMKM() {
                 <TableHead>Nama UMKM</TableHead>
                 <TableHead>Kategori</TableHead>
                 <TableHead>Pemilik</TableHead>
-                <TableHead>Alamat</TableHead>
                 <TableHead>Kontak</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Aksi</TableHead>
@@ -309,7 +308,7 @@ export default function MasterUMKM() {
             <TableBody>
               {filteredUmkm.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={6} className="text-center py-8">
                     {searchTerm ? 'Tidak ada UMKM yang sesuai dengan pencarian' : 'Belum ada data UMKM'}
                   </TableCell>
                 </TableRow>
@@ -327,11 +326,6 @@ export default function MasterUMKM() {
                         )}
                         <div>
                           <div className="font-medium">{umkm.nama_umkm}</div>
-                          {umkm.deskripsi && (
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
-                              {umkm.deskripsi}
-                            </div>
-                          )}
                         </div>
                       </div>
                     </TableCell>
@@ -340,16 +334,11 @@ export default function MasterUMKM() {
                       {umkm.warga_new ? (
                         <div>
                           <div className="font-medium">{umkm.warga_new.nama_suami} {umkm.warga_new.nama_istri && `& ${umkm.warga_new.nama_istri}`}</div>
-                          <div className="text-sm text-gray-500">{umkm.warga_new.nomor_hp}</div>
+                          <div className="text-sm text-gray-500">{umkm.warga_new.nomor_hp_suami || umkm.warga_new.nomor_hp_istri}</div>
                         </div>
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="max-w-xs truncate">
-                        {umkm.alamat || '-'}
-                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
@@ -431,83 +420,79 @@ export default function MasterUMKM() {
         uploading={uploading}
       />
 
-      {/* Detail UMKM Dialog */}
+      {/* Detail UMKM Dialog - Made more responsive and scrollable */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Detail UMKM</DialogTitle>
           </DialogHeader>
-          {selectedUmkm && (
-            <div className="space-y-4">
-              {selectedUmkm.gambar_url && (
-                <div className="w-full">
-                  <img 
-                    src={selectedUmkm.gambar_url} 
-                    alt={selectedUmkm.nama_umkm}
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                </div>
-              )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-semibold text-lg">{selectedUmkm.nama_umkm}</h3>
-                  <div className="flex items-center mt-2">
-                    <Tag className="h-4 w-4 mr-2" />
-                    {getTagBadges(selectedUmkm.umkm_tags)}
+          <div className="overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
+            {selectedUmkm && (
+              <div className="space-y-4">
+                {selectedUmkm.gambar_url && (
+                  <div className="w-full">
+                    <img 
+                      src={selectedUmkm.gambar_url} 
+                      alt={selectedUmkm.nama_umkm}
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
                   </div>
-                  <div className="mt-2">{getStatusBadge(selectedUmkm.status)}</div>
+                )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="font-semibold text-lg">{selectedUmkm.nama_umkm}</h3>
+                    <div className="flex items-center mt-2">
+                      <Tag className="h-4 w-4 mr-2" />
+                      {getTagBadges(selectedUmkm.umkm_tags)}
+                    </div>
+                    <div className="mt-2">{getStatusBadge(selectedUmkm.status)}</div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {selectedUmkm.warga_new && (
+                      <div>
+                        <strong>Pemilik:</strong> {selectedUmkm.warga_new.nama_suami} {selectedUmkm.warga_new.nama_istri && `& ${selectedUmkm.warga_new.nama_istri}`}
+                      </div>
+                    )}
+                    {selectedUmkm.nomor_telepon && (
+                      <div className="flex items-center">
+                        <Phone className="h-4 w-4 mr-2" />
+                        {selectedUmkm.nomor_telepon}
+                      </div>
+                    )}
+                    {selectedUmkm.email && (
+                      <div className="flex items-center">
+                        <Mail className="h-4 w-4 mr-2" />
+                        {selectedUmkm.email}
+                      </div>
+                    )}
+                    {selectedUmkm.website && (
+                      <div className="flex items-center">
+                        <Globe className="h-4 w-4 mr-2" />
+                        <a href={selectedUmkm.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                          {selectedUmkm.website}
+                        </a>
+                      </div>
+                    )}
+                    {selectedUmkm.jam_operasional && (
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-2" />
+                        {selectedUmkm.jam_operasional}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
-                <div className="space-y-2">
-                  {selectedUmkm.warga_new && (
-                    <div>
-                      <strong>Pemilik:</strong> {selectedUmkm.warga_new.nama_suami} {selectedUmkm.warga_new.nama_istri && `& ${selectedUmkm.warga_new.nama_istri}`}
-                    </div>
-                  )}
-                  {selectedUmkm.alamat && (
-                    <div className="flex items-start">
-                      <MapPin className="h-4 w-4 mr-2 mt-0.5" />
-                      {selectedUmkm.alamat}
-                    </div>
-                  )}
-                  {selectedUmkm.nomor_telepon && (
-                    <div className="flex items-center">
-                      <Phone className="h-4 w-4 mr-2" />
-                      {selectedUmkm.nomor_telepon}
-                    </div>
-                  )}
-                  {selectedUmkm.email && (
-                    <div className="flex items-center">
-                      <Mail className="h-4 w-4 mr-2" />
-                      {selectedUmkm.email}
-                    </div>
-                  )}
-                  {selectedUmkm.website && (
-                    <div className="flex items-center">
-                      <Globe className="h-4 w-4 mr-2" />
-                      <a href={selectedUmkm.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                        {selectedUmkm.website}
-                      </a>
-                    </div>
-                  )}
-                  {selectedUmkm.jam_operasional && (
-                    <div className="flex items-center">
-                      <Clock className="h-4 w-4 mr-2" />
-                      {selectedUmkm.jam_operasional}
-                    </div>
-                  )}
-                </div>
+                {selectedUmkm.deskripsi && (
+                  <div>
+                    <strong>Deskripsi:</strong>
+                    <div className="mt-1 text-gray-700 prose max-w-none" dangerouslySetInnerHTML={{ __html: selectedUmkm.deskripsi }} />
+                  </div>
+                )}
               </div>
-              
-              {selectedUmkm.deskripsi && (
-                <div>
-                  <strong>Deskripsi:</strong>
-                  <div className="mt-1 text-gray-700 prose max-w-none" dangerouslySetInnerHTML={{ __html: selectedUmkm.deskripsi }} />
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
