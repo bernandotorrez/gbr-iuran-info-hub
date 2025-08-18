@@ -59,7 +59,7 @@ export default function PublicUMKM() {
   }
 
   const filterUmkm = () => {
-    if (!selectedTag) {
+    if (!selectedTag || selectedTag === "all") {
       setFilteredUmkm(umkmList)
     } else {
       const filtered = umkmList.filter(umkm => 
@@ -157,7 +157,7 @@ export default function PublicUMKM() {
                 <SelectValue placeholder="Filter berdasarkan kategori" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Kategori</SelectItem>
+                <SelectItem value="all">Semua Kategori</SelectItem>
                 {tagList.map((tag) => (
                   <SelectItem key={tag.id} value={tag.id}>
                     <div className="flex items-center space-x-2">
@@ -180,7 +180,7 @@ export default function PublicUMKM() {
             <Building2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada UMKM ditemukan</h3>
             <p className="text-gray-500">
-              {selectedTag ? 'Tidak ada UMKM dengan kategori yang dipilih' : 'Belum ada data UMKM yang tersedia'}
+              {selectedTag && selectedTag !== "all" ? 'Tidak ada UMKM dengan kategori yang dipilih' : 'Belum ada data UMKM yang tersedia'}
             </p>
           </div>
         ) : (

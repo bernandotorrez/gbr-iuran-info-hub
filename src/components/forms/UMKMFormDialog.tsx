@@ -412,11 +412,11 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
                           )
                         }
                         
-                        return options.length > 0 ? options : (
-                          <SelectItem value="" disabled>
-                            Tidak ada nomor telepon tersedia
-                          </SelectItem>
-                        )
+                         return options.length > 0 ? options : (
+                           <SelectItem value="no-phone" disabled>
+                             Tidak ada nomor telepon tersedia
+                           </SelectItem>
+                         )
                       })()}
                     </SelectContent>
                   </Select>
