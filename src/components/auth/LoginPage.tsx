@@ -153,10 +153,6 @@ const LoginPage = () => {
             </div>
 
             <div className="mt-6 space-y-3">
-              <div className="text-center">
-                <p className="text-sm text-gray-600 mb-3">Akun Demo (gunakan untuk testing):</p>
-              </div>
-              
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <Button
                   variant="outline"
@@ -170,8 +166,7 @@ const LoginPage = () => {
               </div>
               
               <div className="text-center text-xs text-gray-500 mt-2">
-                <p>Warga: warga@gbr.com / warga123</p>
-                <p className="text-orange-600 mt-1">Note: Jika belum ada akun, silakan hubungi admin untuk pendaftaran</p>
+                <p className="text-orange-600 mt-1">Note: Jika belum ada akun, silakan hubungi admin (Bernand) untuk pendaftaran</p>
               </div>
             </div>
           </CardContent>
