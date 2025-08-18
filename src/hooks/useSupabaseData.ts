@@ -58,28 +58,19 @@ export interface UMKM {
   email?: string;
   website?: string;
   jam_operasional?: string;
-  tag?: string;
+  tag: string;
   gambar_url?: string;
   status: string;
   warga_id?: string;
   slug_url?: string;
   created_at: string;
   updated_at?: string;
-  phone_source?: string;
   warga_new?: {
     nama_suami: string;
     nama_istri: string;
-    nomor_hp_suami?: string;
-    nomor_hp_istri?: string;
+    nomor_hp_suami: string;
+    nomor_hp_istri: string;
   };
-  umkm_tags?: Array<{
-    tag_id: string;
-    tag_umkm?: {
-      id: string;
-      nama_tag: string;
-      warga: string;
-    };
-  }>;
 }
 
 export const useSupabaseData = () => {
@@ -211,7 +202,6 @@ export const useSupabaseData = () => {
     }
   };
 
-  // Tipe Iuran functions
   const fetchTipeIuran = async () => {
     const { data, error } = await supabase
       .from('tipe_iuran')
@@ -273,7 +263,6 @@ export const useSupabaseData = () => {
     }
   };
 
-  // Iuran functions
   const fetchIuran = async (month?: number, year?: number, tipeIuran?: string) => {
     let query = supabase
       .from('iuran')
@@ -338,7 +327,6 @@ export const useSupabaseData = () => {
     }
   };
 
-  // Kas Keluar functions
   const fetchKasKeluar = async (month?: number, year?: number) => {
     let query = supabase
       .from('kas_keluar')
@@ -545,30 +533,22 @@ export const useSupabaseData = () => {
   };
 
   const fetchUMKMBySlug = async (slug: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('umkm')
-        .select(`
-          *,
-          warga_new (
-            nama_suami,
-            nama_istri
-          )
-        `)
-        .eq('slug_url', slug)
-        .eq('status', 'aktif')
-        .single()
-      
-      if (error) {
-        console.error('Error fetching UMKM by slug:', error);
-        return null;
-      }
-      
-      return data;
-    } catch (error) {
-      console.error('Unexpected error fetching UMKM by slug:', error);
+    const { data, error } = await supabase
+      .from('umkm')
+      .select(`
+        *,
+        warga_new:warga_id(nama_suami, nama_istri, nomor_hp_suami, nomor_hp_istri)
+      `)
+      .eq('slug_url', slug)
+      .eq('status', 'aktif')
+      .single();
+    
+    if (error) {
+      console.error('Error fetching UMKM by slug:', error);
       return null;
     }
+    
+    return data;
   };
 
   // Buku Tamu functions - Fixed query
@@ -617,25 +597,50 @@ export const useSupabaseData = () => {
     return data;
   };
 
-  // UMKM functions - Using direct table queries
+  // UMKM functions
   const fetchUMKM = async () => {
     try {
+      // First try the full query with joins
       const { data, error } = await supabase
         .from('umkm')
         .select(`
           *,
           warga_new (
             nama_suami,
-            nama_istri
+            nama_istri,
+            nomor_hp_suami,
+            nomor_hp_istri
+          ),
+          umkm_tags (
+            tag_id,
+            tag_umkm (
+              id,
+              nama_tag,
+              warna
+            )
           )
         `)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('Error fetching UMKM:', error);
-        return [];
+        console.error('Error fetching UMKM with joins:', error);
+        
+        // Fallback: try simple query without joins
+        const { data: simpleData, error: simpleError } = await supabase
+          .from('umkm')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (simpleError) {
+          console.error('Error fetching UMKM simple:', simpleError);
+          return [];
+        }
+        
+        console.log('UMKM data fetched successfully (simple):', simpleData?.length, 'records');
+        return simpleData || [];
       }
       
+      console.log('UMKM data fetched successfully:', data?.length, 'records');
       return data || [];
     } catch (error) {
       console.error('Unexpected error fetching UMKM:', error);
@@ -645,21 +650,48 @@ export const useSupabaseData = () => {
 
   const fetchUMKMPublic = async (tag?: string) => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('umkm')
         .select(`
           *,
           warga_new (
             nama_suami,
-            nama_istri
+            nama_istri,
+            nomor_hp_suami,
+            nomor_hp_istri
+          ),
+          umkm_tags (
+            tag_id,
+            tag_umkm (
+              id,
+              nama_tag,
+              warna
+            )
           )
         `)
         .eq('status', 'aktif')
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false });
+      
+      // Note: tag filtering will be handled in the frontend since we now use many-to-many relationship
+      
+      const { data, error } = await query;
       
       if (error) {
-        console.error('Error fetching public UMKM:', error);
-        return [];
+        console.error('Error fetching public UMKM with joins:', error);
+        
+        // Fallback: try simple query without joins
+        const { data: simpleData, error: simpleError } = await supabase
+          .from('umkm')
+          .select('*')
+          .eq('status', 'aktif')
+          .order('created_at', { ascending: false });
+        
+        if (simpleError) {
+          console.error('Error fetching public UMKM simple:', simpleError);
+          return [];
+        }
+        
+        return simpleData || [];
       }
       
       return data || [];
@@ -680,46 +712,35 @@ export const useSupabaseData = () => {
       website: umkmDataWithoutTags.website?.trim() === '' ? null : umkmDataWithoutTags.website
     };
     
-    try {
-      // Insert UMKM first
-      const { data: umkmResult, error: umkmError } = await supabase
-        .from('umkm')
-        .insert(cleanedData)
-        .select()
-        .single()
-      
-      if (umkmError) throw umkmError
-
-      // Insert tags if any
-      if (selectedTags && selectedTags.length > 0 && umkmResult) {
-        const tagInserts = selectedTags.map((tagId: string) => ({
-          umkm_id: umkmResult.id,
-          tag_id: tagId
-        }))
-
-        const response = await fetch(
-          `https://gwcneeftdttqgbbzilqg.supabase.co/rest/v1/umkm_tags`,
-          {
-            method: 'POST',
-            headers: {
-              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3Y25lZWZ0ZHR0cWdiYnppbHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5OTMwMDEsImV4cCI6MjA2NDU2OTAwMX0.qJLOgYVWTJB_IQLxE8l_Isz46I9XWGBqdHXxSJIrPa4',
-              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3Y25lZWZ0ZHR0cWdiYnppbHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5OTMwMDEsImV4cCI6MjA2NDU2OTAwMX0.qJLOgYVWTJB_IQLxE8l_Isz46I9XWGBqdHXxSJIrPa4`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(tagInserts)
-          }
-        )
-        
-        if (!response.ok) {
-          throw new Error('Failed to insert tags')
-        }
-      }
-      
-      return umkmResult;
-    } catch (error) {
-      console.error('Unexpected error adding UMKM:', error);
+    const { data, error } = await supabase
+      .from('umkm')
+      .insert([cleanedData])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error adding UMKM:', error);
       throw error;
     }
+    
+    // Add tags if any are selected
+    if (selectedTags && selectedTags.length > 0) {
+      const tagInserts = selectedTags.map((tagId: string) => ({
+        umkm_id: data.id,
+        tag_id: tagId
+      }));
+      
+      const { error: tagError } = await supabase
+        .from('umkm_tags')
+        .insert(tagInserts);
+      
+      if (tagError) {
+        console.error('Error adding UMKM tags:', tagError);
+        // Don't throw here, UMKM was created successfully
+      }
+    }
+    
+    return data;
   };
 
   const updateUMKM = async (id: string, umkmData: any) => {
@@ -733,84 +754,55 @@ export const useSupabaseData = () => {
       website: umkmDataWithoutTags.website?.trim() === '' ? null : umkmDataWithoutTags.website
     };
     
-    try {
-      // Update UMKM
-      const { data: umkmResult, error: umkmError } = await supabase
-        .from('umkm')
-        .update(cleanedData)
-        .eq('id', id)
-        .select()
-        .single()
+    const { data, error } = await supabase
+      .from('umkm')
+      .update(cleanedData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating UMKM:', error);
+      throw error;
+    }
+    
+    // Update tags if provided
+    if (selectedTags !== undefined) {
+      // First, delete existing tags
+      await supabase
+        .from('umkm_tags')
+        .delete()
+        .eq('umkm_id', id);
       
-      if (umkmError) throw umkmError
-
-      // Delete existing tags
-      const deleteResponse = await fetch(
-        `https://gwcneeftdttqgbbzilqg.supabase.co/rest/v1/umkm_tags?umkm_id=eq.${id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3Y25lZWZ0ZHR0cWdiYnppbHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5OTMwMDEsImV4cCI6MjA2NDU2OTAwMX0.qJLOgYVWTJB_IQLxE8l_Isz46I9XWGBqdHXxSJIrPa4',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3Y25lZWZ0ZHR0cWdiYnppbHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5OTMwMDEsImV4cCI6MjA2NDU2OTAwMX0.qJLOgYVWTJB_IQLxE8l_Isz46I9XWGBqdHXxSJIrPa4`
-          }
-        }
-      )
-
-      // Insert new tags if any
-      if (selectedTags && selectedTags.length > 0) {
+      // Then add new tags if any are selected
+      if (selectedTags.length > 0) {
         const tagInserts = selectedTags.map((tagId: string) => ({
           umkm_id: id,
           tag_id: tagId
-        }))
-
-        const insertResponse = await fetch(
-          `https://gwcneeftdttqgbbzilqg.supabase.co/rest/v1/umkm_tags`,
-          {
-            method: 'POST',
-            headers: {
-              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3Y25lZWZ0ZHR0cWdiYnppbHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5OTMwMDEsImV4cCI6MjA2NDU2OTAwMX0.qJLOgYVWTJB_IQLxE8l_Isz46I9XWGBqdHXxSJIrPa4',
-              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3Y25lZWZ0ZHR0cWdiYnppbHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5OTMwMDEsImV4cCI6MjA2NDU2OTAwMX0.qJLOgYVWTJB_IQLxE8l_Isz46I9XWGBqdHXxSJIrPa4`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(tagInserts)
-          }
-        )
+        }));
         
-        if (!insertResponse.ok) {
-          throw new Error('Failed to insert new tags')
+        const { error: tagError } = await supabase
+          .from('umkm_tags')
+          .insert(tagInserts);
+        
+        if (tagError) {
+          console.error('Error updating UMKM tags:', tagError);
+          // Don't throw here, UMKM was updated successfully
         }
       }
-      
-      return umkmResult;
-    } catch (error) {
-      console.error('Unexpected error updating UMKM:', error);
-      throw error;
     }
+    
+    return data;
   };
 
   const deleteUMKM = async (id: string) => {
-    try {
-      // Delete tags first
-      const deleteResponse = await fetch(
-        `https://gwcneeftdttqgbbzilqg.supabase.co/rest/v1/umkm_tags?umkm_id=eq.${id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3Y25lZWZ0ZHR0cWdiYnppbHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5OTMwMDEsImV4cCI6MjA2NDU2OTAwMX0.qJLOgYVWTJB_IQLxE8l_Isz46I9XWGBqdHXxSJIrPa4',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3Y25lZWZ0ZHR0cWdiYnppbHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5OTMwMDEsImV4cCI6MjA2NDU2OTAwMX0.qJLOgYVWTJB_IQLxE8l_Isz46I9XWGBqdHXxSJIrPa4`
-          }
-        }
-      )
-
-      // Delete UMKM
-      const { error: umkmError } = await supabase
-        .from('umkm')
-        .delete()
-        .eq('id', id)
-      
-      if (umkmError) throw umkmError
-    } catch (error) {
-      console.error('Unexpected error deleting UMKM:', error);
+    const { error } = await supabase
+      .from('umkm')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting UMKM:', error);
       throw error;
     }
   };

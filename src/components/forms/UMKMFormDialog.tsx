@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { Upload, X, Image, Check, ChevronsUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -35,6 +34,7 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
   const [formData, setFormData] = useState({
     nama_umkm: '',
     deskripsi: '',
+    alamat: '',
     nomor_telepon: '',
     phone_source: '', // 'suami' or 'istri'
     email: '',
@@ -63,6 +63,7 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
       setFormData({
         nama_umkm: editData.nama_umkm || '',
         deskripsi: editData.deskripsi || '',
+        alamat: editData.alamat || '',
         nomor_telepon: editData.nomor_telepon || '',
         phone_source: editData.phone_source || '',
         email: editData.email || '',
@@ -94,6 +95,7 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
       setFormData({
         nama_umkm: '',
         deskripsi: '',
+        alamat: '',
         nomor_telepon: '',
         phone_source: '',
         email: '',
@@ -113,6 +115,7 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
   const loadWarga = async () => {
     try {
       const data = await fetchWarga()
+      // console.log('Loaded warga data:', data) // Debug log
       setWargaList(data)
     } catch (error) {
       console.error('Error loading warga:', error)
@@ -130,17 +133,13 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
 
   const loadExistingTags = async (umkmId: string) => {
     try {
-      const response = await fetch(
-        `https://gwcneeftdttqgbbzilqg.supabase.co/rest/v1/umkm_tags?umkm_id=eq.${umkmId}&select=tag_id`,
-        {
-          headers: {
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3Y25lZWZ0ZHR0cWdiYnppbHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5OTMwMDEsImV4cCI6MjA2NDU2OTAwMX0.qJLOgYVWTJB_IQLxE8l_Isz46I9XWGBqdHXxSJIrPa4',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3Y25lZWZ0ZHR0cWdiYnppbHFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5OTMwMDEsImV4cCI6MjA2NDU2OTAwMX0.qJLOgYVWTJB_IQLxE8l_Isz46I9XWGBqdHXxSJIrPa4`
-          }
-        }
-      )
-      const data = await response.json()
-      setSelectedTags(data?.map((item: any) => item.tag_id) || [])
+      const { data, error } = await supabase
+        .from('umkm_tags')
+        .select('tag_id')
+        .eq('umkm_id', umkmId)
+      
+      if (error) throw error
+      setSelectedTags(data?.map(item => item.tag_id) || [])
     } catch (error) {
       console.error('Error loading existing tags:', error)
     }
@@ -325,6 +324,100 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label htmlFor="alamat">Alamat</Label>
+                <Input
+                  id="alamat"
+                  value={formData.alamat}
+                  onChange={(e) => handleInputChange('alamat', e.target.value)}
+                  placeholder="Alamat UMKM"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Nomor Telepon (dari data pemilik)</Label>
+                <div className="space-y-2">
+                  <Select 
+                    value={formData.phone_source} 
+                    onValueChange={handlePhoneSourceChange}
+                    disabled={!formData.warga_id}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={formData.warga_id ? "Pilih nomor telepon" : "Pilih pemilik terlebih dahulu"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {formData.warga_id && (() => {
+                        const selectedWarga = wargaList.find(w => w.id === formData.warga_id)
+                        if (!selectedWarga) return null
+                        
+                        const options = []
+                        if (selectedWarga.nomor_hp_suami) {
+                          options.push(
+                            <SelectItem key="suami" value="suami">
+                              Suami: {selectedWarga.nomor_hp_suami}
+                            </SelectItem>
+                          )
+                        }
+                        if (selectedWarga.nomor_hp_istri) {
+                          options.push(
+                            <SelectItem key="istri" value="istri">
+                              Istri: {selectedWarga.nomor_hp_istri}
+                            </SelectItem>
+                          )
+                        }
+                        
+                        return options.length > 0 ? options : (
+                          <SelectItem value="" disabled>
+                            Tidak ada nomor telepon tersedia
+                          </SelectItem>
+                        )
+                      })()}
+                    </SelectContent>
+                  </Select>
+                  
+                  {formData.nomor_telepon && (
+                    <div className="text-sm text-muted-foreground">
+                      Nomor terpilih: {formData.nomor_telepon}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email (opsional)</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="Email UMKM"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="website">Website (opsional)</Label>
+                <Input
+                  id="website"
+                  value={formData.website}
+                  onChange={(e) => handleInputChange('website', e.target.value)}
+                  placeholder="Website UMKM"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="jam_operasional">Jam Operasional</Label>
+              <Input
+                id="jam_operasional"
+                value={formData.jam_operasional}
+                onChange={(e) => handleInputChange('jam_operasional', e.target.value)}
+                placeholder="Contoh: Senin-Jumat 08:00-17:00"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label>Pemilik (Warga)</Label>
                 <Popover open={openWargaCombobox} onOpenChange={setOpenWargaCombobox}>
                   <PopoverTrigger asChild>
@@ -381,99 +474,17 @@ export function UMKMFormDialog({ open, onClose, onSave, editData, uploading }: U
               </div>
 
               <div className="space-y-2">
-                <Label>Nomor Telepon (dari data pemilik)</Label>
-                <div className="space-y-2">
-                  <Select 
-                    value={formData.phone_source} 
-                    onValueChange={handlePhoneSourceChange}
-                    disabled={!formData.warga_id}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={formData.warga_id ? "Pilih nomor telepon" : "Pilih pemilik terlebih dahulu"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {formData.warga_id && (() => {
-                        const selectedWarga = wargaList.find(w => w.id === formData.warga_id)
-                        if (!selectedWarga) return null
-                        
-                        const options = []
-                        if (selectedWarga.nomor_hp_suami) {
-                          options.push(
-                            <SelectItem key="suami" value="suami">
-                              Suami: {selectedWarga.nomor_hp_suami}
-                            </SelectItem>
-                          )
-                        }
-                        if (selectedWarga.nomor_hp_istri) {
-                          options.push(
-                            <SelectItem key="istri" value="istri">
-                              Istri: {selectedWarga.nomor_hp_istri}
-                            </SelectItem>
-                          )
-                        }
-                        
-                         return options.length > 0 ? options : (
-                           <SelectItem value="no-phone" disabled>
-                             Tidak ada nomor telepon tersedia
-                           </SelectItem>
-                         )
-                      })()}
-                    </SelectContent>
-                  </Select>
-                  
-                  {formData.nomor_telepon && (
-                    <div className="text-sm text-muted-foreground">
-                      Nomor terpilih: {formData.nomor_telepon}
-                    </div>
-                  )}
-                </div>
+                <Label htmlFor="status">Status</Label>
+                <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="aktif">Aktif</SelectItem>
+                    <SelectItem value="nonaktif">Non-aktif</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email (opsional)</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="Email UMKM"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="website">Website (opsional)</Label>
-                <Input
-                  id="website"
-                  value={formData.website}
-                  onChange={(e) => handleInputChange('website', e.target.value)}
-                  placeholder="Website UMKM"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="jam_operasional">Jam Operasional</Label>
-              <Input
-                id="jam_operasional"
-                value={formData.jam_operasional}
-                onChange={(e) => handleInputChange('jam_operasional', e.target.value)}
-                placeholder="Contoh: Senin-Jumat 08:00-17:00"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="aktif">Aktif</SelectItem>
-                  <SelectItem value="nonaktif">Non-aktif</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             {/* Image Upload Section */}

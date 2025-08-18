@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
+  // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -426,33 +426,6 @@ export type Database = {
           },
         ]
       }
-      tag_umkm: {
-        Row: {
-          created_at: string
-          deskripsi: string | null
-          id: string
-          nama_tag: string
-          updated_at: string
-          warna: string | null
-        }
-        Insert: {
-          created_at?: string
-          deskripsi?: string | null
-          id?: string
-          nama_tag: string
-          updated_at?: string
-          warna?: string | null
-        }
-        Update: {
-          created_at?: string
-          deskripsi?: string | null
-          id?: string
-          nama_tag?: string
-          updated_at?: string
-          warna?: string | null
-        }
-        Relationships: []
-      }
       tipe_iuran: {
         Row: {
           created_at: string | null
@@ -482,107 +455,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
-      }
-      umkm: {
-        Row: {
-          alamat: string | null
-          created_at: string | null
-          deskripsi: string | null
-          email: string | null
-          gambar_url: string | null
-          id: string
-          jam_operasional: string | null
-          nama_umkm: string
-          nomor_telepon: string | null
-          phone_source: string | null
-          slug_url: string | null
-          status: string | null
-          tag: string
-          updated_at: string | null
-          warga_id: string | null
-          website: string | null
-        }
-        Insert: {
-          alamat?: string | null
-          created_at?: string | null
-          deskripsi?: string | null
-          email?: string | null
-          gambar_url?: string | null
-          id?: string
-          jam_operasional?: string | null
-          nama_umkm: string
-          nomor_telepon?: string | null
-          phone_source?: string | null
-          slug_url?: string | null
-          status?: string | null
-          tag: string
-          updated_at?: string | null
-          warga_id?: string | null
-          website?: string | null
-        }
-        Update: {
-          alamat?: string | null
-          created_at?: string | null
-          deskripsi?: string | null
-          email?: string | null
-          gambar_url?: string | null
-          id?: string
-          jam_operasional?: string | null
-          nama_umkm?: string
-          nomor_telepon?: string | null
-          phone_source?: string | null
-          slug_url?: string | null
-          status?: string | null
-          tag?: string
-          updated_at?: string | null
-          warga_id?: string | null
-          website?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "umkm_warga_id_fkey"
-            columns: ["warga_id"]
-            isOneToOne: false
-            referencedRelation: "warga_new"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      umkm_tags: {
-        Row: {
-          created_at: string
-          id: string
-          tag_id: string
-          umkm_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          tag_id: string
-          umkm_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          tag_id?: string
-          umkm_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "umkm_tags_tag_id_fkey"
-            columns: ["tag_id"]
-            isOneToOne: false
-            referencedRelation: "tag_umkm"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "umkm_tags_umkm_id_fkey"
-            columns: ["umkm_id"]
-            isOneToOne: false
-            referencedRelation: "umkm"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       warga_new: {
         Row: {
@@ -631,14 +503,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      add_umkm_with_tags: {
-        Args: { tag_ids: string[]; umkm_data: Json }
-        Returns: string
-      }
-      delete_umkm_with_tags: {
-        Args: { umkm_id_param: string }
-        Returns: boolean
-      }
       generate_monthly_report: {
         Args: { target_month: number; target_year: number }
         Returns: Json
@@ -650,78 +514,14 @@ export type Database = {
       get_dashboard_stats_filtered: {
         Args: {
           target_month?: number
-          target_tipe_iuran_id?: string
           target_year?: number
+          target_tipe_iuran_id?: string
         }
         Returns: Json
       }
       get_dashboard_stats_filtered_backup: {
         Args: { target_month?: number; target_year?: number }
         Returns: Json
-      }
-      get_public_umkm: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          created_at: string
-          deskripsi: string
-          email: string
-          gambar_url: string
-          id: string
-          jam_operasional: string
-          nama_umkm: string
-          nomor_telepon: string
-          slug_url: string
-          status: string
-          tags: Json
-          updated_at: string
-          warga_id: string
-          warga_name: string
-          website: string
-        }[]
-      }
-      get_umkm_by_slug: {
-        Args: { slug_param: string }
-        Returns: {
-          created_at: string
-          deskripsi: string
-          email: string
-          gambar_url: string
-          id: string
-          jam_operasional: string
-          nama_umkm: string
-          nomor_telepon: string
-          slug_url: string
-          status: string
-          tags: Json
-          updated_at: string
-          warga_id: string
-          warga_name: string
-          website: string
-        }[]
-      }
-      get_umkm_with_details: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          created_at: string
-          deskripsi: string
-          email: string
-          gambar_url: string
-          id: string
-          jam_operasional: string
-          nama_umkm: string
-          nomor_telepon: string
-          slug_url: string
-          status: string
-          tags: Json
-          updated_at: string
-          warga_id: string
-          warga_name: string
-          website: string
-        }[]
-      }
-      update_umkm_with_tags: {
-        Args: { tag_ids: string[]; umkm_data: Json; umkm_id_param: string }
-        Returns: boolean
       }
     }
     Enums: {
