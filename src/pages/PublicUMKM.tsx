@@ -8,41 +8,73 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Link } from "react-router-dom"
 import { useSupabaseData, UMKM } from "@/hooks/useSupabaseData"
 
+// Define TagUMKM interface
+interface TagUMKM {
+  id: number
+  nama_tag: string
+  deskripsi?: string
+  warna: string
+}
+
 export default function PublicUMKM() {
-  const { fetchUMKMPublic, generateSignedUrlUMKM } = useSupabaseData()
+  const { fetchUMKMPublic, generateSignedUrlUMKM, fetchTagUMKM } = useSupabaseData()
   
   const [umkmList, setUmkmList] = useState<UMKM[]>([])
   const [filteredUmkm, setFilteredUmkm] = useState<UMKM[]>([])
+  const [tagOptions, setTagOptions] = useState<{ value: string; label: string }[]>([
+    { value: 'all', label: 'Semua Kategori' }
+  ])
   const [loading, setLoading] = useState(true)
+  const [tagsLoading, setTagsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTag, setSelectedTag] = useState<string>('all')
 
-  // Tag options for filtering
-  const tagOptions = [
-    { value: 'all', label: 'Semua Kategori' },
-    { value: 'gas', label: 'Gas' },
-    { value: 'galon', label: 'Galon' },
-    { value: 'siomay', label: 'Siomay' },
-    { value: 'makanan', label: 'Makanan' },
-    { value: 'minuman', label: 'Minuman' },
-    { value: 'jasa', label: 'Jasa' },
-    { value: 'elektronik', label: 'Elektronik' },
-    { value: 'pakaian', label: 'Pakaian' },
-    { value: 'kecantikan', label: 'Kecantikan' },
-    { value: 'kesehatan', label: 'Kesehatan' },
-    { value: 'pendidikan', label: 'Pendidikan' },
-    { value: 'otomotif', label: 'Otomotif' },
-    { value: 'lainnya', label: 'Lainnya' }
-  ]
-
-  // Load all UMKM data when page first opens
+  // Load all UMKM data and tag options when component mounts
   useEffect(() => {
-    loadUmkm()
+    const initializeData = async () => {
+      await Promise.all([
+        loadUmkm(),
+        loadTagOptions()
+      ])
+    }
+    
+    initializeData()
   }, [])
 
   useEffect(() => {
     filterUmkm()
   }, [searchTerm, selectedTag, umkmList])
+
+  const loadTagOptions = async () => {
+    try {
+      setTagsLoading(true)
+      console.log('Loading tag options...')
+      
+      // Use the fetchTagUMKM method from the hook
+      const data = await fetchTagUMKM()
+      console.log('Tag data:', data)
+
+      if (data && data.length > 0) {
+        // Convert to tag options format
+        const options = [
+          { value: 'all', label: 'Semua Kategori' },
+          ...data.map((tag: TagUMKM) => ({
+            value: tag.nama_tag.toLowerCase(),
+            label: tag.nama_tag
+          }))
+        ]
+
+        console.log('Setting tag options:', options)
+        setTagOptions(options)
+      } else {
+        console.log('No tag data found')
+      }
+    } catch (error) {
+      console.error('Error loading tag options:', error)
+    } finally {
+      setTagsLoading(false)
+    }
+  }
 
   const loadUmkm = async () => {
     try {
@@ -222,10 +254,10 @@ export default function PublicUMKM() {
               </div>
             </div>
             <div className="w-full md:w-64">
-              <Select value={selectedTag} onValueChange={setSelectedTag}>
+              <Select value={selectedTag} onValueChange={setSelectedTag} disabled={tagsLoading}>
                 <SelectTrigger>
                   <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter kategori" />
+                  <SelectValue placeholder={tagsLoading ? "Memuat kategori..." : "Filter kategori"} />
                 </SelectTrigger>
                 <SelectContent>
                   {tagOptions.map((option) => (
@@ -393,7 +425,8 @@ export default function PublicUMKM() {
                 ))}
               </div>
             )}
-          </>        )}
+          </>
+        )}
       </div>
 
       {/* Footer */}
