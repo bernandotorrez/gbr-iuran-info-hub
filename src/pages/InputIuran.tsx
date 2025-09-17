@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Plus, Search, Calendar as CalendarIcon, Users, CreditCard, TrendingUp, Filter, Trash2, Upload, X, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -74,8 +74,8 @@ export default function InputIuran() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [filterMonth, setFilterMonth] = useState("")
-  const [filterYear, setFilterYear] = useState("")
+  const [filterMonth, setFilterMonth] = useState((new Date().getMonth() + 1).toString())
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString())
   const [filterTipeIuran, setFilterTipeIuran] = useState("")
   const [uploadingFile, setUploadingFile] = useState(false)
   const [buktiTransferUrl, setBuktiTransferUrl] = useState("")
@@ -83,6 +83,8 @@ export default function InputIuran() {
   const [processedFilteredIuran, setProcessedFilteredIuran] = useState<Iuran[]>([])
   // Cache for signed URLs to reduce API calls (using localStorage for persistence)
   const [urlCache, setUrlCache] = useState<Map<string, { url: string, timestamp: number }>>(new Map())
+  // Session-level cache to avoid regenerating URLs during the same session
+  const sessionCache = useRef<Map<string, string>>(new Map())
   const { toast } = useToast()
   const { fetchWarga, fetchTipeIuran, fetchIuran, addIuran, deleteIuran } = useSupabaseData()
   const { isAdmin } = useUserRole()
@@ -109,7 +111,7 @@ export default function InputIuran() {
         // Filter out expired entries
         const validEntries = Object.entries(parsedCache).filter(
           ([_, value]: [string, any]) => (now - value.timestamp) < cacheExpiry
-        )
+        ) as [string, { url: string; timestamp: number }][];
         
         if (validEntries.length > 0) {
           setUrlCache(new Map(validEntries))
@@ -120,7 +122,7 @@ export default function InputIuran() {
     }
   }, [])
 
-  // Function to generate signed URLs for private bucket images with browser caching
+  // Optimized function to generate signed URLs with better caching and error handling
   const generateSignedUrl = async (filePath: string): Promise<string> => {
     if (!filePath) return ""
     
@@ -141,6 +143,7 @@ export default function InputIuran() {
         return cached.url
       }
 
+      // Generate signed URL only if not cached or expired
       const { data, error } = await supabase.storage
         .from('images-private')
         .createSignedUrl(pathOnly, 3600) // 1 hour expiry
@@ -153,20 +156,18 @@ export default function InputIuran() {
       // Cache the new URL in memory and localStorage
       const cacheEntry = { url: data.signedUrl, timestamp: now }
       
-      setUrlCache(prev => {
-        const newCache = new Map(prev)
-        newCache.set(pathOnly, cacheEntry)
-        
-        // Save to localStorage
+      // Update cache without causing re-renders
+      urlCache.set(pathOnly, cacheEntry)
+      
+      // Save to localStorage in background (non-blocking)
+      setTimeout(() => {
         try {
-          const cacheObject = Object.fromEntries(newCache)
+          const cacheObject = Object.fromEntries(urlCache)
           localStorage.setItem('iuran_image_cache', JSON.stringify(cacheObject))
         } catch (error) {
           console.error('Error saving cache to localStorage:', error)
         }
-        
-        return newCache
-      })
+      }, 0)
 
       return data.signedUrl
     } catch (error) {
@@ -175,33 +176,80 @@ export default function InputIuran() {
     }
   }
 
-  const loadData = async () => {
+  // Optimized function to process images with better caching
+  const processImageUrls = async (iuranData: any[]) => {
+    const processedData = await Promise.all(
+      iuranData.map(async (item: any) => {
+        if (item.bukti_transfer_url && item.bukti_transfer_url.includes('images-private')) {
+          // Extract the file path from the URL
+          const urlParts = item.bukti_transfer_url.split('bukti_transfer_input_kas/')
+          if (urlParts.length > 1) {
+            const fileName = urlParts[1].split('?')[0] // Remove any query parameters
+            const filePath = `bukti_transfer_input_kas/${fileName}`
+            
+            // Check session cache first (fastest)
+            if (sessionCache.current.has(filePath)) {
+              return { ...item, bukti_transfer_url: sessionCache.current.get(filePath) }
+            }
+            
+            // Check localStorage cache
+            const cached = urlCache.get(filePath)
+            const now = Date.now()
+            const cacheExpiry = 55 * 60 * 1000 // 55 minutes
+            
+            if (cached && (now - cached.timestamp) < cacheExpiry) {
+              // Update session cache and use cached URL
+              sessionCache.current.set(filePath, cached.url)
+              return { ...item, bukti_transfer_url: cached.url }
+            } else {
+              // Generate new signed URL only if not cached or expired
+              const signedUrl = await generateSignedUrl(filePath)
+              if (signedUrl) {
+                sessionCache.current.set(filePath, signedUrl)
+              }
+              return { ...item, bukti_transfer_url: signedUrl }
+            }
+          }
+        }
+        return item
+      })
+    )
+    return processedData
+  }
+
+  const loadData = async (month?: number, year?: number, forceReload = false) => {
     try {
       setLoading(true)
+      // Use current month/year if not specified, or use the filter values
+      const targetMonth = month || parseInt(filterMonth) || new Date().getMonth() + 1
+      const targetYear = year || parseInt(filterYear) || new Date().getFullYear()
+      
       const [wargaData, tipeIuranData, iuranData] = await Promise.all([
         fetchWarga(),
         fetchTipeIuran(),
-        fetchIuran()
+        fetchIuran(targetMonth, targetYear)
       ])
       
       setWargaList(wargaData)
       setTipeIuranList(tipeIuranData)
       
-      // Process iuran data to generate signed URLs for private images
-      const processedData = await Promise.all(
-        iuranData.map(async (item: any) => {
-          if (item.bukti_transfer_url && item.bukti_transfer_url.includes('images-private')) {
-            // Extract the file path from the URL
-            const urlParts = item.bukti_transfer_url.split('bukti_transfer_input_kas/')
-            if (urlParts.length > 1) {
-              const fileName = urlParts[1].split('?')[0] // Remove any query parameters
-              const signedUrl = await generateSignedUrl(`bukti_transfer_input_kas/${fileName}`)
-              return { ...item, bukti_transfer_url: signedUrl }
-            }
-          }
-          return item
-        })
-      )
+      // Only process image URLs if we have new data or force reload
+      let processedData
+      if (forceReload || iuranData.length !== processedIuranList.length) {
+        processedData = await processImageUrls(iuranData)
+      } else {
+        // Check if the data is actually different
+        const hasNewData = iuranData.some((item, index) => 
+          !processedIuranList[index] || item.id !== processedIuranList[index].id
+        )
+        
+        if (hasNewData) {
+          processedData = await processImageUrls(iuranData)
+        } else {
+          // Reuse existing processed data if it's the same
+          processedData = processedIuranList
+        }
+      }
       
       setIuranList(processedData)
       setProcessedIuranList(processedData)
@@ -222,6 +270,17 @@ export default function InputIuran() {
     loadData()
   }, [])
 
+  // Reload data when filters change with debouncing
+  useEffect(() => {
+    if (filterMonth && filterYear) {
+      const timeoutId = setTimeout(() => {
+        loadData(parseInt(filterMonth), parseInt(filterYear), false)
+      }, 300) // Debounce for 300ms
+      
+      return () => clearTimeout(timeoutId)
+    }
+  }, [filterMonth, filterYear])
+
   // Apply filters with processed data
   useEffect(() => {
     let filtered = processedIuranList
@@ -233,21 +292,15 @@ export default function InputIuran() {
       )
     }
 
-    if (filterMonth && filterMonth !== "all") {
-      filtered = filtered.filter(item => item.bulan === parseInt(filterMonth))
-    }
-
-    if (filterYear && filterYear !== "all") {
-      filtered = filtered.filter(item => item.tahun === parseInt(filterYear))
-    }
-
+    // Note: Month and year filtering is now handled at the database level
+    // Only apply tipe iuran filter here since it's a client-side filter
     if (filterTipeIuran && filterTipeIuran !== "all") {
       filtered = filtered.filter(item => item.tipe_iuran?.nama === filterTipeIuran)
     }
 
     setProcessedFilteredIuran(filtered)
     
-  }, [processedIuranList, searchTerm, filterMonth, filterYear, filterTipeIuran])
+  }, [processedIuranList, searchTerm, filterTipeIuran])
 
   const handleFileUpload = async (file: File) => {
     if (!file) return ""
@@ -321,7 +374,7 @@ export default function InputIuran() {
   const handleDelete = async (id: string) => {
     try {
       await deleteIuran(id)
-      await loadData()
+      await loadData(parseInt(filterMonth), parseInt(filterYear), true) // Force reload after delete
       toast({ title: "Berhasil", description: "Iuran berhasil dihapus" })
     } catch (error) {
       toast({ 
@@ -356,7 +409,7 @@ export default function InputIuran() {
       })
       setBuktiTransferUrl("")
       setIsAddOpen(false)
-      await loadData()
+      await loadData(parseInt(filterMonth), parseInt(filterYear), true) // Force reload after adding
       toast({ title: "Berhasil", description: "Iuran berhasil dicatat" })
     } catch (error) {
       toast({ 
@@ -389,7 +442,7 @@ export default function InputIuran() {
   const selectedMonthName = filterMonth && filterMonth !== "all" ? months.find(m => m.value === filterMonth)?.label : "Semua Bulan"
   const selectedYearName = filterYear && filterYear !== "all" ? filterYear : "Semua Tahun"
 
-  // Calculate totals for selected type across all periods using processed data
+  // Calculate totals for current period (since we're now fetching filtered data)
   const totalTransaksiTipe = filterTipeIuran && filterTipeIuran !== "all"
     ? processedIuranList.filter(item => item.tipe_iuran?.nama === filterTipeIuran).length
     : processedIuranList.length
@@ -628,6 +681,9 @@ export default function InputIuran() {
             <div className="flex items-center gap-2">
               <Filter className="h-5 w-5 text-muted-foreground" />
               <span className="text-sm font-medium">Filter Pembayaran</span>
+              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                Data dimuat untuk bulan & tahun terpilih • Gambar di-cache otomatis
+              </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="flex flex-col space-y-2">
@@ -684,10 +740,10 @@ export default function InputIuran() {
                 <CalendarIcon className="h-8 w-8 text-blue-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-muted-foreground">
-                    Total Transaksi {selectedMonthName} {selectedYearName}
+                    {filterTipeIuran && filterTipeIuran !== "all" ? "Transaksi Terfilter" : "Total Transaksi"}
                   </p>
                   <p className="text-sm font-medium text-muted-foreground">
-                    dari {selectedTipeIuranName}
+                    {selectedMonthName} {selectedYearName} - {selectedTipeIuranName}
                   </p>
                   <p className="text-2xl font-bold">{totalTransaksiFiltered}</p>
                 </div>
@@ -699,10 +755,10 @@ export default function InputIuran() {
                 <CreditCard className="h-8 w-8 text-green-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-muted-foreground">
-                    Total Nominal {selectedMonthName} {selectedYearName}
+                    {filterTipeIuran && filterTipeIuran !== "all" ? "Nominal Terfilter" : "Total Nominal"}
                   </p>
                   <p className="text-sm font-medium text-muted-foreground">
-                    dari {selectedTipeIuranName}
+                    {selectedMonthName} {selectedYearName} - {selectedTipeIuranName}
                   </p>
                   <p className="text-2xl font-bold">{formatCurrency(totalNominalFiltered)}</p>
                 </div>
@@ -714,10 +770,10 @@ export default function InputIuran() {
                 <Users className="h-8 w-8 text-purple-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-muted-foreground">
-                    Total Transaksi Keseluruhan
+                    Total Transaksi {selectedMonthName} {selectedYearName}
                   </p>
                   <p className="text-sm font-medium text-muted-foreground">
-                    dari {selectedTipeIuranName}
+                    (dari {selectedTipeIuranName})
                   </p>
                   <p className="text-2xl font-bold">{totalTransaksiTipe}</p>
                 </div>
@@ -729,10 +785,10 @@ export default function InputIuran() {
                 <TrendingUp className="h-8 w-8 text-orange-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-muted-foreground">
-                    Total Nominal Keseluruhan
+                    Total Nominal {selectedMonthName} {selectedYearName}
                   </p>
                   <p className="text-sm font-medium text-muted-foreground">
-                    dari {selectedTipeIuranName}
+                    (dari {selectedTipeIuranName})
                   </p>
                   <p className="text-2xl font-bold">{formatCurrency(totalNominalTipe)}</p>
                 </div>
